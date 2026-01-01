@@ -44,22 +44,22 @@ public class UIBottomInGame : UIElement
 
     public void OnBoosterBackClicked()
     {
-        TryUseBooster(1, () => GameController.Instance.UndoLastMove());
+        // TryUseBooster(1, () => GameController.Instance.UndoLastMove());
     }
 
     public void OnBoosterAddClicked()
     {
-        TryUseBooster(2, () => GameController.Instance.AddSlotButton());
+        // TryUseBooster(2, () => GameController.Instance.AddSlotButton());
     }
 
     public void OnBoosterShuffleClicked()
     {
-        TryUseBooster(3, () => GameController.Instance.ShuffleEqualStacks());
+        // TryUseBooster(3, () => GameController.Instance.ShuffleEqualStacks());
     }
 
     public void OnBoosterSwapContainerClicked()
     {
-        TryUseBooster(4, () => GameController.Instance.SwapCurrentAndNextContainers());
+        // TryUseBooster(4, () => GameController.Instance.SwapCurrentAndNextContainers());
     }
 
     private void TryUseBooster(int boosterType, Action onUsed)
@@ -69,10 +69,10 @@ public class UIBottomInGame : UIElement
             return;
         }
 
-        if (GameController.Instance.IsAnimating)
-        {
-            return;
-        }
+        // if (GameController.Instance.IsAnimating)
+        // {
+        //     return;
+        // }
 
         bool used = boosterType switch
         {

@@ -23,11 +23,7 @@ public class UITopInGame : UIElement
     [SerializeField] private TextMeshProUGUI textDeps;
 
     [SerializeField] private RectTransform infoSelectButon;
-    [SerializeField] private ButtonInfoUI buttonInfoUI;
-
-    [SerializeField] private List<CellClearedVfxByColor> _cellClearedVfxByColor;
-
-    private readonly List<ButtonInfoUI> _activeInfoItems = new List<ButtonInfoUI>();
+   
     
     private void Start()
     {
@@ -53,99 +49,6 @@ public class UITopInGame : UIElement
             return;
         }
         infoSelectButon.gameObject.SetActive(true);
-        UpdateUIButton(message);
-    }
-
-    public void UpdateUIButton(string message)
-    {
-        if (infoSelectButon == null) return;
-        if (buttonInfoUI == null) return;
-
-        buttonInfoUI.gameObject.SetActive(false);
-
-        int baseSiblingIndex = 0;
-        if (buttonInfoUI.transform.parent == infoSelectButon)
-        {
-            buttonInfoUI.transform.SetAsFirstSibling();
-            baseSiblingIndex = 1;
-        }
-
-        for (int i = 0; i < _activeInfoItems.Count; i++)
-        {
-            var it = _activeInfoItems[i];
-            if (it == null) continue;
-            if (it.transform.parent == infoSelectButon) it.transform.SetParent(null, false);
-            if (it.gameObject.activeSelf) it.gameObject.SetActive(false);
-        }
-        _activeInfoItems.Clear();
-
-        if (string.IsNullOrEmpty(message)) return;
-
-        var parts = message.Split(',');
-        for (int i = 0; i < parts.Length; i++)
-        {
-            var p = parts[i];
-            if (string.IsNullOrWhiteSpace(p)) continue;
-
-            var raw = p.Trim();
-            var seg = raw.Split(':');
-            var colorToken = seg.Length > 0 ? seg[0].Trim() : string.Empty;
-            var countToken = seg.Length > 1 ? seg[1].Trim() : string.Empty;
-
-            if (string.IsNullOrEmpty(colorToken)) continue;
-
-            if (!Enum.TryParse<ObjectColor>(colorToken, true, out var objColor))
-            {
-                continue;
-            }
-
-            int count = 0;
-            int.TryParse(countToken, out count);
-
-            var item = PoolManager.Instance != null ? PoolManager.Instance.Get(buttonInfoUI) : Instantiate(buttonInfoUI);
-            if (item == null) continue;
-
-            item.transform.SetParent(infoSelectButon, false);
-            item.transform.SetSiblingIndex(baseSiblingIndex + _activeInfoItems.Count);
-            item.gameObject.SetActive(true);
-
-            if (item.txtColor != null)
-            {
-                item.txtColor.text = count > 0 ? count.ToString() : "";
-            }
-
-            if (item.imgColor != null)
-            {
-                item.imgColor.color = TryGetInfoColor(objColor, out var c) ? c : Color.white;
-            }
-
-            _activeInfoItems.Add(item);
-        }
-
-        var size = infoSelectButon.sizeDelta;
-        size.x = _activeInfoItems.Count * 100f;
-        infoSelectButon.sizeDelta = size;
-
-        LayoutRebuilder.ForceRebuildLayoutImmediate(infoSelectButon);
-    }
-
-    private bool TryGetInfoColor(ObjectColor color, out Color uiColor)
-    {
-        uiColor = default;
-        if (_cellClearedVfxByColor != null)
-        {
-            for (int i = 0; i < _cellClearedVfxByColor.Count; i++)
-            {
-                var e = _cellClearedVfxByColor[i];
-                if (e == null) continue;
-                if (e.Color == color)
-                {
-                    uiColor = e.ColorVfx;
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public override void Show()

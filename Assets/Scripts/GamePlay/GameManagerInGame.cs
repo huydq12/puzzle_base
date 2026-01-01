@@ -122,18 +122,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             userData.currentLevel = CurrentLevel;
         }
-
-        LevelConfig config = null;
-        yield return LevelDatabase.LoadLevelAsync(level, c => config = c);
-
-        if (config == null)
-        {
-            ResourceRequest request = Resources.LoadAsync<LevelConfig>("Levels/Level " + level);
-            yield return request;
-            config = request.asset as LevelConfig;
-        }
-
-        Board.Instance.SetupLevel(config);
+        yield return null;
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()

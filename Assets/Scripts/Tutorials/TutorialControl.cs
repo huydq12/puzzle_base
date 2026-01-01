@@ -98,76 +98,29 @@ public class TutorialControl : TutorialBase
 
     private void PlayMoveHand()
     {
-        float fadeDur = 0.5f;
-        float moveDur = 0.7f;
-
-        GridCell startCell = Board.Instance.CellStartInTutorialControl();
-        GridCell endCell = Board.Instance.CellsEndInTutorialControl();
-
-        if (startCell != null && endCell != null)
-        {
-            Vector3 screenPosStart = Camera.main.WorldToScreenPoint(startCell.transform.position + new Vector3(0f, 0f, 0f));
-            Vector3 screenPosEnd = Camera.main.WorldToScreenPoint(endCell.transform.position + new Vector3(0f, 0f, 0f));
-
-            Vector2 localPointStartInCanvas;
-            Vector2 localPointEndInCanvas;
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                _canvasRectTransform,
-                new Vector2(screenPosStart.x, screenPosStart.y),
-                null,
-                out localPointStartInCanvas
-            );
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                _canvasRectTransform,
-                new Vector2(screenPosEnd.x, screenPosEnd.y),
-                null,
-                out localPointEndInCanvas
-            );
-
-            _hand.anchoredPosition = localPointStartInCanvas;
-
-            var sequence = DOTween.Sequence();
-
-            sequence.Append(_handCanvasGroup.DOFade(1f, fadeDur));
-
-            sequence.Append(_hand.DOAnchorPos(localPointEndInCanvas, moveDur).SetEase(Ease.InOutSine));
-
-            sequence.Append(_handCanvasGroup.DOFade(0f, fadeDur));
-
-            sequence.AppendCallback(() =>
-            {
-                _hand.anchoredPosition = localPointStartInCanvas;
-            });
-
-            sequence.SetLoops(-1, LoopType.Restart);
-            sequence.SetTarget(_hand);
-        }
+        
     }
 
     private void PlayShowText(string text)
     {
-
         _tapText.text = text;
-        var topCell = Board.Instance.GetTopCell();
-        if (topCell != null)
-        {
-            _tapTextCanvasGroup.DOFade(1f, 0.5f);
+        // if (topCell != null)
+        // {
+        //     _tapTextCanvasGroup.DOFade(1f, 0.5f);
 
-            Vector3 screenPos =
-                Camera.main.WorldToScreenPoint(topCell.transform.position + new Vector3(0f, 15.0f, 0f));
-            Vector2 localPointInCanvas;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                _canvasRectTransform,
-                new Vector2(screenPos.x, screenPos.y),
-                null,
-                out localPointInCanvas
-            );
+        //     Vector3 screenPos =
+        //         Camera.main.WorldToScreenPoint(topCell.transform.position + new Vector3(0f, 15.0f, 0f));
+        //     Vector2 localPointInCanvas;
+        //     RectTransformUtility.ScreenPointToLocalPointInRectangle(
+        //         _canvasRectTransform,
+        //         new Vector2(screenPos.x, screenPos.y),
+        //         null,
+        //         out localPointInCanvas
+        //     );
 
-            RectTransform rectTransform = _tapTextCanvasGroup.GetComponent<RectTransform>();
-            rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, localPointInCanvas.y-100f);
-        }
+        //     RectTransform rectTransform = _tapTextCanvasGroup.GetComponent<RectTransform>();
+        //     rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, localPointInCanvas.y-100f);
+        // }
     }
 }
 
