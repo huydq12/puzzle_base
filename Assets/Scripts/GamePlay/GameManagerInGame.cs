@@ -122,6 +122,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             userData.currentLevel = CurrentLevel;
         }
+        if (BoardManager.Instance != null)
+        {
+            BoardManager.Instance.LoadLevel(CurrentLevel);
+        }
         yield return null;
     }
 #if UNITY_EDITOR
