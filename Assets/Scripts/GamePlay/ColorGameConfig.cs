@@ -8,21 +8,21 @@ public class GameColorConfig : SerializedScriptableObject
 {
     [DictionaryDrawerSettings(KeyLabel = "Color", ValueLabel = "Materials")]
     public Dictionary<ObjectColor, ColorMaterial> ColorList;
-    public Material GetButtonByColor(ObjectColor color)
+    public Material GetCubeByColor(ObjectColor color)
     {
-        return ColorList[color].Button;
+        return ColorList[color].Cube;
     }
-    public Material GetContainerByColor(ObjectColor color)
+    public Material GetShooterByColor(ObjectColor color)
     {
-        return ColorList[color].Container;
+        return ColorList[color].Shooter;
     }
 }
 [HideReferenceObjectPicker]
 public class ColorMaterial
 {
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
-    public Material Button;
+    public Material Cube;
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
-    public Material Container;
+    public Material Shooter;
 }
 
