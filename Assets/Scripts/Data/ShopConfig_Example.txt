@@ -1,0 +1,155 @@
+SHOP CONFIGURATION GUIDE
+========================
+
+This guide shows how to configure your shop packs in Unity.
+
+1. CREATE SHOP CATALOG ASSET
+   - Right-click in Project window
+   - Create > Game > Shop Catalog
+   - Name it "ShopCatalog"
+
+2. CONFIGURE CATEGORIES
+   
+   CATEGORY: COIN PACKS
+   ---------------------
+   Category Name: "Coins"
+   Packs:
+   
+   Pack 1: Small Coin Pack
+   - ID: "coin_small"
+   - Display Name: "100 Coins"
+   - Currency Type: IAP
+   - Price IAP ID: "com.yourcompany.puzzle.coins100"
+   - Price IAP Display: "$0.99"
+   - Reward Items:
+     * Reward Type: Coin, Amount: 100
+   
+   Pack 2: Medium Coin Pack
+   - ID: "coin_medium"
+   - Display Name: "500 Coins"
+   - Currency Type: IAP
+   - Price IAP ID: "com.yourcompany.puzzle.coins500"
+   - Price IAP Display: "$4.99"
+   - Reward Items:
+     * Reward Type: Coin, Amount: 500
+   - Is Special Offer: true
+   - Discount Percent: 20
+   
+   Pack 3: Large Coin Pack
+   - ID: "coin_large"
+   - Display Name: "1200 Coins"
+   - Currency Type: IAP
+   - Price IAP ID: "com.yourcompany.puzzle.coins1200"
+   - Price IAP Display: "$9.99"
+   - Reward Items:
+     * Reward Type: Coin, Amount: 1200
+   
+   CATEGORY: HEALTH PACKS
+   ----------------------
+   Category Name: "Health"
+   Packs:
+   
+   Pack 1: Small Health
+   - ID: "health_small"
+   - Display Name: "5 Lives"
+   - Currency Type: Coin
+   - Price Coin: 100
+   - Reward Items:
+     * Reward Type: Health, Amount: 5
+   
+   Pack 2: Medium Health
+   - ID: "health_medium"
+   - Display Name: "10 Lives"
+   - Currency Type: Diamond
+   - Price Diamond: 50
+   - Reward Items:
+     * Reward Type: Health, Amount: 10
+   
+   Pack 3: Large Health
+   - ID: "health_large"
+   - Display Name: "Unlimited Lives (1 Day)"
+   - Currency Type: IAP
+   - Price IAP ID: "com.yourcompany.puzzle.unlimitedlives"
+   - Price IAP Display: "$2.99"
+   - Reward Items:
+     * Reward Type: Health, Amount: 999
+   - Purchase Limit: Daily
+   
+   CATEGORY: BOOSTER PACKS
+   -----------------------
+   Category Name: "Boosters"
+   Packs:
+   
+   Pack 1: Hammer Pack
+   - ID: "booster_hammer"
+   - Display Name: "3 Hammers"
+   - Currency Type: Coin
+   - Price Coin: 150
+   - Reward Items:
+     * Reward Type: BoosterHammer, Amount: 3
+   
+   Pack 2: Shuffle Pack
+   - ID: "booster_shuffle"
+   - Display Name: "3 Shuffles"
+   - Currency Type: Coin
+   - Price Coin: 150
+   - Reward Items:
+     * Reward Type: BoosterShuffle, Amount: 3
+   
+   Pack 3: Hint Pack
+   - ID: "booster_hint"
+   - Display Name: "3 Hints"
+   - Currency Type: Coin
+   - Price Coin: 150
+   - Reward Items:
+     * Reward Type: BoosterHint, Amount: 3
+   
+   Pack 4: Booster Bundle
+   - ID: "booster_bundle"
+   - Display Name: "Power Bundle"
+   - Currency Type: Diamond
+   - Price Diamond: 100
+   - Reward Items:
+     * Reward Type: BoosterHammer, Amount: 5
+     * Reward Type: BoosterShuffle, Amount: 5
+     * Reward Type: BoosterHint, Amount: 5
+   - Is Special Offer: true
+   - Discount Percent: 30
+   
+   Pack 5: Ultimate Bundle
+   - ID: "ultimate_bundle"
+   - Display Name: "Ultimate Pack"
+   - Currency Type: IAP
+   - Price IAP ID: "com.yourcompany.puzzle.ultimate"
+   - Price IAP Display: "$9.99"
+   - Reward Items:
+     * Reward Type: Coin, Amount: 1000
+     * Reward Type: Health, Amount: 20
+     * Reward Type: BoosterHammer, Amount: 10
+     * Reward Type: BoosterShuffle, Amount: 10
+     * Reward Type: BoosterHint, Amount: 10
+   - Is Special Offer: true
+   - Discount Percent: 50
+
+3. SETUP IN UNITY SCENE
+   - Add UIShop prefab to your scene
+   - Assign ShopCatalog asset to UIShop component
+   - Create tab button prefab with Button + TextMeshProUGUI
+   - Create shop item prefab with ShopItem component
+   - Assign all UI references in UIShop inspector
+
+4. CURRENCY TYPES
+   - Coin: Purchase with in-game coins (playerCash)
+   - Diamond: Purchase with premium currency (playerDiamond)
+   - IAP: Purchase with real money through app store
+
+5. PURCHASE LIMITS
+   - None: Can purchase unlimited times
+   - Daily: Can purchase once per day
+   - Weekly: Can purchase once per week
+   - OneTime: Can only purchase once ever
+
+6. SPECIAL OFFERS
+   - Set isSpecialOffer = true
+   - Set discountPercent (e.g., 20 for 20% off)
+   - Will display special badge in UI

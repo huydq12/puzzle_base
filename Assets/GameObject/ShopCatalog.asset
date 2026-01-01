@@ -1,0 +1,301 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8c9555f872484951a82396115cf02b8, type: 3}
+  m_Name: ShopCatalog
+  m_EditorClassIdentifier: 
+  categories:
+  - category: 2
+    categoryName: Special Deal
+    categoryBgIcon: {fileID: 21300000, guid: fbad5f50be4d3f648aba0d1d8d9ccb98, type: 2}
+    categoryBgColor: {r: 0.09803922, g: 0.27058825, b: 0.17254902, a: 1}
+    packs:
+    - id: 1
+      displayName: Special Deal
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 4.99$
+      priceIAPId: special_deal_pack
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 3
+      isSpecialOffer: 1
+      discountPercent: 50
+  - category: 3
+    categoryName: No Ads
+    categoryBgIcon: {fileID: 21300000, guid: fbad5f50be4d3f648aba0d1d8d9ccb98, type: 2}
+    categoryBgColor: {r: 0.09803922, g: 0.27058825, b: 0.17254902, a: 1}
+    packs:
+    - id: 2
+      displayName: No Ads Bundle
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: no_ads_pack
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 7
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 3
+      isSpecialOffer: 1
+      discountPercent: 60
+    - id: 3
+      displayName: 'No Ads '
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: no_ads
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+      limit: 3
+      isSpecialOffer: 1
+      discountPercent: 0
+  - category: 1
+    categoryName: Start Pack
+    categoryBgIcon: {fileID: 21300000, guid: fbad5f50be4d3f648aba0d1d8d9ccb98, type: 2}
+    categoryBgColor: {r: 0.09803922, g: 0.27058825, b: 0.17254902, a: 1}
+    packs:
+    - id: 4
+      displayName: No Ads Bundle
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 6.99$
+      priceIAPId: startpack1.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 5
+      displayName: 'No Ads '
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: startpack2.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 6
+      displayName: 'No Ads '
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: startpack3.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 7
+      displayName: 'No Ads '
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: startpack4.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 8
+      displayName: 'No Ads '
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 2.99$
+      priceIAPId: startpack5.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1200
+        - rewardType: 1
+          amount: 1
+        - rewardType: 2
+          amount: 1
+        - rewardType: 3
+          amount: 1
+        - rewardType: 4
+          amount: 1
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+  - category: 0
+    categoryName: Coin Pack
+    categoryBgIcon: {fileID: 21300000, guid: fbad5f50be4d3f648aba0d1d8d9ccb98, type: 2}
+    categoryBgColor: {r: 0.09803922, g: 0.27058825, b: 0.17254902, a: 1}
+    packs:
+    - id: 9
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 1.99$
+      priceIAPId: coinpack1.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 600
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 10
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 4.99$
+      priceIAPId: coinpack2.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 1800
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 11
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 9.99$
+      priceIAPId: coinpack3.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 3800
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 12
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 14.99$
+      priceIAPId: coinpack4.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 12000
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 13
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 49.99$
+      priceIAPId: coinpack5.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 30000
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
+    - id: 14
+      displayName: Coin Pack
+      icon: {fileID: 0}
+      currencyType: 2
+      priceCoin: 0
+      priceDiamond: 0
+      priceIAP: 99.99$
+      priceIAPId: coinpack6.com
+      reward:
+        items:
+        - rewardType: 0
+          amount: 72000
+      limit: 0
+      isSpecialOffer: 0
+      discountPercent: 0
