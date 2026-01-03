@@ -5,6 +5,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using Sirenix.Serialization;
 public enum GameStateInGame
 {
     Init,
@@ -16,42 +17,17 @@ public enum GameStateInGame
 
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
-    public int MaxLevel = 1;
-    public int CurrentLevel = 1;
+    [ReadOnly] public int MaxLevel = 1;
+    [ReadOnly] public int CurrentLevel = 1;
     [ReadOnly] public GameStateInGame CurrentGameStateInGame = GameStateInGame.Init;
     [HideInInspector] public Action OnEndLevel;
     [HideInInspector] public Action OnStartLevel;
-
-    [SerializeField] private MeshRenderer _bg;
-    [SerializeField] private List<Material> _materials;
-
     public UserData userData { get; private set; }
-
     private new void Awake()
     {
         base.Awake();
-        Game.Launch();
-
-        userData = Game.Data.Load<UserData>();
-
-        MaxLevel = Mathf.Max(1, userData != null ? userData.maxLevel : 1);
-        CurrentLevel = Mathf.Max(1, userData != null ? userData.currentLevel : 1);
-        if (CurrentLevel > MaxLevel) CurrentLevel = MaxLevel;
-
-        int startLevel = CurrentLevel;
-        startLevel = Mathf.Max(1, startLevel);
-        StartGame(startLevel);
-        SetBackgroundMaterial();
-    }
-    
-    private void SetBackgroundMaterial()
-    {
-        if (_bg == null || _materials == null || _materials.Count == 0)
-            return;
-            
-        // Get material index based on current level (0-based index)
-        int materialIndex = (CurrentLevel - 1) % _materials.Count;
-        _bg.material = _materials[materialIndex];
+        LoadData();
+        StartGame(MaxLevel);
     }
     public void SetWin()
     {
@@ -60,13 +36,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             MaxLevel = CurrentLevel;
         }
-        if (userData != null)
-        {
-            userData.currentLevel = CurrentLevel;
-            userData.maxLevel = MaxLevel;
-            userData.Save();
-        }
-        SetBackgroundMaterial();
         SetState(GameStateInGame.Result);
     }
     public void SetLose()
@@ -86,11 +55,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             case GameStateInGame.Init:
                 {
                     OnStartLevel?.Invoke();
-                    if (CurrentLevel > 1)
-                    {
-                        GameUI.Instance.Get<UIBottomInGame>().Show();
-                    }
-                    GameUI.Instance.Get<UITopInGame>().Show();
                     break;
                 }
             default:
@@ -107,49 +71,38 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             MaxLevel = level;
         }
-        if (userData != null)
-        {
-            userData.currentLevel = Mathf.Max(1, level);
-            userData.maxLevel = Mathf.Max(1, MaxLevel);
-            userData.Save();
-        }
         StartCoroutine(PlayGame(level));
     }
     private IEnumerator PlayGame(int level)
     {
         CurrentLevel = level;
-        if (userData != null)
-        {
-            userData.currentLevel = CurrentLevel;
-        }
-        if (BoardManager.Instance != null)
-        {
-            BoardManager.Instance.LoadLevel(CurrentLevel);
-        }
-        yield return null;
+        ResourceRequest request = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+
+        yield return request;
+
+        LevelConfig config = request.asset as LevelConfig;
+        Board.Instance.SetupLevel(config);
+    }
+    public void SaveData()
+    {
+        PlayerPrefs.SetInt("MaxLevel", MaxLevel);
+    }
+    public void LoadData()
+    {
+        MaxLevel = PlayerPrefs.GetInt("MaxLevel", 1);
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()
     {
         base.OnApplicationQuit();
-        if (userData != null)
-        {
-            userData.maxLevel = Mathf.Max(1, MaxLevel);
-            userData.currentLevel = Mathf.Max(1, CurrentLevel);
-            userData.Save();
-        }
+        SaveData();
     }
 #else
     void OnApplicationPause(bool pause)
     {
         if (pause)
         {
-            if (userData != null)
-            {
-                userData.maxLevel = Mathf.Max(1, MaxLevel);
-                userData.currentLevel = Mathf.Max(1, CurrentLevel);
-                userData.Save();
-            }
+            SaveData();
         }
     }
 #endif

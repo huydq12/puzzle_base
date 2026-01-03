@@ -15,6 +15,7 @@ namespace Dreamteck.Splines.Editor
 
         static PluginInfo()
         {
+            return;
             if (open) return;
             bool showInfo = EditorPrefs.GetString("Dreamteck.Splines.Info.version", "") != version;
 

@@ -26,7 +26,7 @@ public class UISettingInGame : UIPopup
     protected override void Start()
     {
         base.Start();
-        userData = GameManagerInGame.Instance.userData;
+       // userData = GameManagerInGame.Instance.userData;
 
         // Đăng ký sự kiện click cho các button
         btnSFX.onClick.AddListener(ToggleSound);
