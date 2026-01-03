@@ -25,7 +25,9 @@ public class ShooterController : Singleton<ShooterController>
         Gates = new();
         foreach (var data in datas)
         {
-            var gate = Instantiate(_gatePrefab, data.Position, DirectionToRotation(data.Direction), Board.Instance.transform);
+            var gate = Instantiate(_gatePrefab, Board.Instance.transform);
+            gate.transform.localPosition = data.Position;
+            gate.transform.rotation = DirectionToRotation(data.Direction);
             gate.Setup(data.Shooters);
             Gates.Add(gate);
         }

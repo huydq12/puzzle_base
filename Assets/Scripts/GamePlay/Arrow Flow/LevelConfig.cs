@@ -125,6 +125,7 @@ public class GateData
     [Range(0, 4)] public int Direction;
     public List<ShooterData> Shooters;
 }
+[HideReferenceObjectPicker]
 public class ShooterData
 {
     public ObjectColor Color;
