@@ -28,13 +28,8 @@ public class LevelConfig : SerializedScriptableObject
     [HideInInspector]
 #endif
     public GridCellData[,] Cells;
-#if UNITY_EDITOR
-    [HideInInspector]
-#endif
     public List<ColorLine> ColorLines = new List<ColorLine>();
-#if UNITY_EDITOR
-    [HideInInspector]
-#endif
+    [InlineProperty]
     public ConveyorLine ConveyorLine;
 
 #if UNITY_EDITOR
@@ -75,46 +70,6 @@ public class LevelConfig : SerializedScriptableObject
     void OnValidate()
     {
         ResizeGridCells();
-    }
-    [Button]
-    public void ComnvertJsonToLevel(TextAsset text)
-    {
-        if (text == null)
-        {
-            Debug.LogError("JSON TextAsset is null");
-            return;
-        }
-
-        // Clear data cũ
-        ColorLines.Clear();
-
-        // Deserialize phần cần thiết
-        JsonRoot root = JsonConvert.DeserializeObject<JsonRoot>(text.text);
-
-        if (root == null || root.arrows == null)
-        {
-            Debug.LogError("Invalid JSON or no arrows found");
-            return;
-        }
-
-        foreach (var arrow in root.arrows)
-        {
-            if (arrow.unitPositions == null || arrow.unitPositions.Count == 0)
-                continue;
-
-            ColorLine line = new ColorLine();
-            line.Color = (ObjectColor)arrow.color;
-
-            foreach (var pos in arrow.unitPositions)
-            {
-                line.Cells.Add(new Vector2Int(pos.x, pos.y));
-            }
-
-            ColorLines.Add(line);
-        }
-
-        EditorUtility.SetDirty(this);
-        Debug.Log($"Convert JSON → LevelConfig done. ColorLines: {ColorLines.Count}");
     }
 #endif
 }

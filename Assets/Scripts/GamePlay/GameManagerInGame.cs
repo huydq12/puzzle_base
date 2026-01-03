@@ -17,8 +17,8 @@ public enum GameStateInGame
 
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
-    [ReadOnly] public int MaxLevel = 1;
-    [ReadOnly] public int CurrentLevel = 1;
+    public int MaxLevel = 1;
+    public int CurrentLevel = 2;
     [ReadOnly] public GameStateInGame CurrentGameStateInGame = GameStateInGame.Init;
     [HideInInspector] public Action OnEndLevel;
     [HideInInspector] public Action OnStartLevel;
@@ -26,7 +26,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private new void Awake()
     {
         base.Awake();
-        LoadData();
+        // LoadData();
         StartGame(MaxLevel);
     }
     public void SetWin()
