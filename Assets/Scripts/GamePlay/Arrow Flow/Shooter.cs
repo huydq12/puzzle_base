@@ -11,7 +11,7 @@ public class Shooter : MonoBehaviour
     public void SetColor(ObjectColor color)
     {
         Color = color;
-        foreach(var renderer in _renderer)
+        foreach (var renderer in _renderer)
         {
             renderer.sharedMaterial = Board.Instance.ColorConfig.GetShooterByColor(color);
         }
@@ -23,5 +23,10 @@ public class Shooter : MonoBehaviour
         {
             _total.text = value.ToString();
         }
+    }
+    public bool ShowTotal
+    {
+        get => _total.enabled;
+        set => _total.enabled = value;
     }
 }
