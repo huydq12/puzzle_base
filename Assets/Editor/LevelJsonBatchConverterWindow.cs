@@ -18,6 +18,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
     [SerializeField] private Vector2 spacing = Vector2.one;
 
+    [SerializeField] private float shooterLocalXOffset = -3f;
+
     private enum ShooterPositionMode
     {
         RawXZ,
@@ -65,6 +67,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         }
 
         spacing = EditorGUILayout.Vector2Field("Spacing", spacing);
+
+        shooterLocalXOffset = EditorGUILayout.FloatField("Shooter Local X Offset", shooterLocalXOffset);
 
         shooterPositionMode = (ShooterPositionMode)EditorGUILayout.EnumPopup("Shooter Position Mode", shooterPositionMode);
 
@@ -319,7 +323,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                     Vector3 basePos = GridToLocalPosition(gx, gy, columns, rows);
                     Vector2Int dir = DirectionToGridVector(shooter.direction);
                     Vector3 edgeOffset = new Vector3(dir.x * spacing.x * 0.5f, 0f, dir.y * spacing.y * 0.5f);
-                    gate.Position = basePos + edgeOffset;
+                    gate.Position = basePos + edgeOffset + new Vector3(shooterLocalXOffset, 0f, 0f);
                 }
                 else
                 {

@@ -14,9 +14,9 @@ public class ShooterController : Singleton<ShooterController>
     {
         float y = 0f;
         if (direction == 1) y = 90f;
-        else if (direction == 2) y = 180f;
-        else if (direction == 3) y = 270f;
-        else if (direction == 4) y = 0f;
+        else if (direction == 2) y = 0f;
+        else if (direction == 3) y = -90f;
+        else if (direction == 4) y = -180f;
         return Quaternion.Euler(0f, y, 0f);
     }
 
