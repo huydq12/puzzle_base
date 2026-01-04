@@ -56,7 +56,7 @@ public static class Common
             callback?.Invoke();
         }
     }
- 
+
     public static void RefreshRecursive(this RectTransform rect)
     {
         if (rect == null || !rect.gameObject.activeSelf)
@@ -141,6 +141,13 @@ public static class Common
                 return true;
         }
         return false;
+    }
+    public static bool IsPositionVisibleOnScreen(Vector3 worldPos, float offset = 0f)
+    {
+        Vector3 viewportPos = Camera.main.WorldToViewportPoint(worldPos);
+        return viewportPos.z > 0 &&
+               viewportPos.x >= -offset && viewportPos.x <= 1 + offset &&
+               viewportPos.y >= -offset && viewportPos.y <= 1 + offset;
     }
     /*
         public static string ToJson<T>(T obj)

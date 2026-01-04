@@ -9,10 +9,11 @@ public enum GridCellType
 }
 public class GridCell : MonoBehaviour
 {
+    [ReadOnly] public GridCellType CellType;
     [ReadOnly] public Vector2Int Position;
-    [ReadOnly] public Line LineOnCell;
+    [ReadOnly] public CubeLine CubeOnCell;
     [SerializeField] private Renderer _renderer;
-
+    public bool IsOccupied => CubeOnCell != null;
     public void ShowRenderer(bool show)
     {
         if (_renderer != null)

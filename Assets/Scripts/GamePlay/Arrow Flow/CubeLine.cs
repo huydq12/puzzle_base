@@ -1,5 +1,6 @@
 
 using System.Collections.Generic;
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -21,10 +22,10 @@ public class CubeLine : SerializedMonoBehaviour
     [ReadOnly] public Line Line;
     [ReadOnly] public CubeType Type;
     [ReadOnly] public ObjectColor Color;
+    [ReadOnly] public GridCell Cell;
     [OdinSerialize] private Dictionary<CubeType, List<Renderer>> _renderers;
-    public void SetAsNormal() => SetType(CubeType.Normal);
-    public void SetAsCorner() => SetType(CubeType.Corner);
-    public void SetAsHead() => SetType(CubeType.Head);
+    private Quaternion _initRotation;
+
     public void SetColor(ObjectColor color)
     {
         Color = color;
@@ -37,10 +38,30 @@ public class CubeLine : SerializedMonoBehaviour
             }
         }
     }
+    public void RevertType()
+    {
+        transform.rotation = _initRotation;
+        foreach (var pair in _renderers)
+        {
+            bool enable = pair.Key == Type;
+            foreach (var r in pair.Value)
+                r.enabled = enable;
+        }
+    }
+    public void SetTempType(CubeType type)
+    {
+        _initRotation = transform.rotation;
+        transform.rotation = Quaternion.identity;
+        foreach (var pair in _renderers)
+        {
+            bool enable = pair.Key == type;
+            foreach (var r in pair.Value)
+                r.enabled = enable;
+        }
+    }
     public void SetType(CubeType type)
     {
         Type = type;
-
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == type;

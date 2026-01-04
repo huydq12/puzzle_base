@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dreamteck.Splines;
-using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
 
@@ -44,7 +43,6 @@ public class Board : Singleton<Board>
         p.size = 1f;
         return p;
     }
-
 
     private bool IsRightAngle(Vector3 a, Vector3 b, Vector3 c)
     {
@@ -96,12 +94,12 @@ public class Board : Singleton<Board>
                     new Vector2(wp.x, wp.z),
                     conveyorPolygon
                 );
-
-                cell.ShowRenderer(inside && _currentConfig.Cells[col, row].CellType != GridCellType.Conveyor);
+                cell.CellType = _currentConfig.Cells[col, row].CellType;
+                cell.ShowRenderer(inside && cell.CellType != GridCellType.Conveyor);
             }
         }
 
-        List<SplinePoint> points = new();
+        List<Vector3> allPositions = new();
         float cornerOffset = _cellSize * 0.45f;
 
         for (int i = 0; i < orderedCells.Count; i++)
@@ -118,11 +116,42 @@ public class Board : Singleton<Board>
 
             if (IsRightAngle(prev, curr, next))
             {
-                AddCornerPoints(points, prev, curr, next, cornerOffset);
+                Vector3 dirIn = (curr - prev).normalized;
+                Vector3 dirOut = (next - curr).normalized;
+
+                allPositions.Add(curr - dirIn * cornerOffset);
+                allPositions.Add(curr + dirOut * cornerOffset);
             }
             else
             {
-                points.Add(CreatePoint(curr));
+                allPositions.Add(curr);
+            }
+        }
+
+        float totalDistance = 0f;
+        for (int i = 0; i < allPositions.Count; i++)
+        {
+            int nextIdx = (i + 1) % allPositions.Count;
+            totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
+        }
+        float avgSegmentLength = totalDistance / allPositions.Count;
+
+        List<SplinePoint> points = new();
+
+        for (int i = 0; i < allPositions.Count; i++)
+        {
+            Vector3 curr = allPositions[i];
+            Vector3 next = allPositions[(i + 1) % allPositions.Count];
+
+            points.Add(CreatePoint(curr));
+
+            float distance = Vector3.Distance(curr, next);
+            int numMidPoints = Mathf.RoundToInt(distance / avgSegmentLength) - 1;
+
+            for (int j = 1; j <= numMidPoints; j++)
+            {
+                float t = (float)j / (numMidPoints + 1);
+                points.Add(CreatePoint(Vector3.Lerp(curr, next, t)));
             }
         }
 
@@ -264,19 +293,20 @@ public class Board : Singleton<Board>
                 Vector2Int curr = cells[i];
                 Vector2Int? prev = i > 0 ? cells[i - 1] : (Vector2Int?)null;
                 Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
-
+                GridCell cell = GetCellAt(curr);
                 CubeLine cube = Instantiate(
                     _cubePrefab,
-                    GetCellAt(curr).transform.position,
+                    cell.transform.position,
                     Quaternion.identity,
                     lineColor.transform
                 );
 
                 cube.SetColor(line.Color);
-
+                cell.CubeOnCell = cube;
+                cube.Cell = cell;
                 if (i == last)
                 {
-                    cube.SetAsHead();
+                    cube.SetType(CubeType.Head);
 
                     Direction dir = DirFromDelta(curr - prev.Value);
                     float yaw = GetYawFromDirection(dir);
@@ -286,7 +316,7 @@ public class Board : Singleton<Board>
 
                 else if (prev.HasValue && next.HasValue && IsCorner(prev.Value, curr, next.Value))
                 {
-                    cube.SetAsCorner();
+                    cube.SetType(CubeType.Corner);
 
                     Direction inDir = DirFromDelta(curr - prev.Value);
                     Direction outDir = DirFromDelta(next.Value - curr);
@@ -296,11 +326,12 @@ public class Board : Singleton<Board>
                 }
                 else
                 {
-                    cube.SetAsNormal();
+                    cube.SetType(CubeType.Normal);
                 }
                 cube.Line = lineColor;
                 lineColor.Cubes.Add(cube);
             }
+            lineColor.Initialize();
         }
     }
 
@@ -376,7 +407,7 @@ public class Board : Singleton<Board>
         }
     }
 
-    private GridCell GetCellAt(Vector2Int pos)
+    public GridCell GetCellAt(Vector2Int pos)
     {
         bool isValid = pos.x >= 0 && pos.x < Cells.GetLength(0) && pos.y >= 0 && pos.y < Cells.GetLength(1);
         if (!isValid)
