@@ -7,6 +7,7 @@ public class ConveyorController : Singleton<ConveyorController>
 {
     [SerializeField] private SplineComputer _conveyor;
     [SerializeField] private float _speed = 0.15f;
+    public Transform ConveyorTransform => _conveyor.transform;
 
     private class CubeEntry
     {

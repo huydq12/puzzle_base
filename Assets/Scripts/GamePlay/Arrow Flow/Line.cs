@@ -87,7 +87,7 @@ public class Line : MonoBehaviour
             {
                 Cubes[i].SetTempType(CubeType.Normal);
             }
-            Debug.Log($"Line will move {_remainingSteps} steps");   
+            Debug.Log($"Line will move {_remainingSteps} steps");
         }
         else
         {
@@ -125,6 +125,7 @@ public class Line : MonoBehaviour
             StepForward();
         });
     }
+
 
     private void DoStepForward(System.Action onComplete)
     {
@@ -170,8 +171,23 @@ public class Line : MonoBehaviour
                     .OnComplete(() =>
                     {
                         cube.Cell = null;
-                        ConveyorController.Instance.AddCube(cube, to.transform.position, _cellDistance, duration);
+
                         Cubes.Remove(cube);
+
+                        if (cube.front != null)
+                        {
+                            cube.front.Back = null;
+                            cube.front = null;
+                        }
+                        if (cube.Back != null)
+                        {
+                            cube.Back.front = null;
+                            cube.Back = null;
+                        }
+
+                        cube.transform.SetParent(ConveyorController.Instance.ConveyorTransform);
+
+                        ConveyorController.Instance.AddCube(cube, to.transform.position, _cellDistance, duration);
 
                         finished++;
                         if (finished == cubesCount)
