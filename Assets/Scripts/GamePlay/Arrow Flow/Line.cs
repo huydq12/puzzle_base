@@ -185,9 +185,7 @@ public class Line : MonoBehaviour
                             cube.Back = null;
                         }
 
-                        cube.transform.SetParent(ConveyorController.Instance.ConveyorTransform);
-
-                        ConveyorController.Instance.AddCube(cube, to.transform.position, _cellDistance, duration);
+                        ConveyorController.Instance.AddCube(cube, to.transform.position, duration);
 
                         finished++;
                         if (finished == cubesCount)

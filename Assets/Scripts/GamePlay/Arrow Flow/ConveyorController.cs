@@ -7,8 +7,7 @@ public class ConveyorController : Singleton<ConveyorController>
 {
     [SerializeField] private SplineComputer _conveyor;
     [SerializeField] private float _speed = 0.15f;
-    public Transform ConveyorTransform => _conveyor.transform;
-
+    public List<CubeLine> CubeOnConveyor = new();
     private class CubeEntry
     {
         public CubeLine Cube;
@@ -263,10 +262,11 @@ public class ConveyorController : Singleton<ConveyorController>
         }
     }
 
-public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float trainSpacing, float handoffDuration)
+public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDuration)
 {
     if (cube == null || cube.Positioner == null || _conveyor == null) return;
-
+    CubeOnConveyor.Add(cube);
+    cube.transform.SetParent(_conveyor.transform);
     cube.Positioner.spline = _conveyor;
     cube.Positioner.motion.applyRotation = false;
 
