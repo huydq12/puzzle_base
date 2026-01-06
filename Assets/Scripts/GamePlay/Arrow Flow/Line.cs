@@ -2,6 +2,7 @@ using UnityEngine;
 using DG.Tweening;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using System.Linq;
 
 public enum FollowMode
 {
@@ -27,29 +28,6 @@ public class Line : MonoBehaviour
     private Stack<List<GridCell>> _history = new();
     private bool _stopOnConveyor;
 
-    private void SetupConveyorChain()
-    {
-        if (Cubes == null || Cubes.Count == 0) return;
-
-        // Cubes: 0 = tail, last = head
-        for (int i = 0; i < Cubes.Count; i++)
-        {
-            if (Cubes[i] != null) Cubes[i].Line = this;
-        }
-
-        for (int i = Cubes.Count - 1; i >= 0; i--)
-        {
-            CubeLine cube = Cubes[i];
-            if (cube == null) continue;
-
-            bool isHead = i == Cubes.Count - 1;
-            cube.isEngine = isHead;
-            cube.offset = isHead ? 0f : 1f;
-
-            cube.front = isHead ? null : Cubes[i + 1];
-            cube.Back = i > 0 ? Cubes[i - 1] : null;
-        }
-    }
 
     public void Initialize()
     {
@@ -75,7 +53,6 @@ public class Line : MonoBehaviour
             Cubes[^1].Cell.Position
         );
         _stopOnConveyor = blockCell != null && blockCell.CellType == GridCellType.Conveyor;
-        if (_stopOnConveyor) SetupConveyorChain();
         if (blockCell != null)
         {
             Vector2Int head = Cubes[^1].Cell.Position;
@@ -125,6 +102,46 @@ public class Line : MonoBehaviour
             StepForward();
         });
     }
+    private void DebugNearbyCube(CubeLine cube)
+    {
+        float radius = 0.5f;
+        int mask = LayerMask.GetMask("Cube");
+
+        Collider[] hits = Physics.OverlapSphere(cube.transform.position, radius, mask);
+
+        CubeLine closest = null;
+        float minDist = float.MaxValue;
+
+        foreach (var hit in hits)
+        {
+            CubeLine other = hit.GetComponent<CubeLine>();
+            if (other == null || other == cube) continue;
+
+            // chỉ xét cube đã nằm trên conveyor
+            int idx = ConveyorController.Instance.Entries.FindIndex(e => e.Cube == other);
+            if (idx < 0) continue;
+
+            float d = Vector3.Distance(cube.transform.position, other.transform.position);
+            if (d < minDist)
+            {
+                minDist = d;
+                closest = other;
+            }
+        }
+
+        if (closest != null)
+        {
+            int index = ConveyorController.Instance.Entries.FindIndex(e => e.Cube == closest);
+
+            Debug.Log($"Cube gần entry nhất: index = {index}");
+        }
+        else
+        {
+            Debug.Log("Không có cube nào gần entry");
+        }
+    }
+
+
 
 
     private void DoStepForward(System.Action onComplete)
@@ -174,17 +191,11 @@ public class Line : MonoBehaviour
 
                         Cubes.Remove(cube);
 
-                        if (cube.front != null)
+                        if(cube.Type == CubeType.Head)
                         {
-                            cube.front.Back = null;
-                            cube.front = null;
+                            DebugNearbyCube(cube);
                         }
-                        if (cube.Back != null)
-                        {
-                            cube.Back.front = null;
-                            cube.Back = null;
-                        }
-
+                        
                         ConveyorController.Instance.AddCube(cube, to.transform.position, duration);
 
                         finished++;
