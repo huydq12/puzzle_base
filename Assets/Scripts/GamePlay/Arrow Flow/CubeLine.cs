@@ -1,6 +1,7 @@
 
 using System.Collections.Generic;
 using DG.Tweening;
+using Dreamteck.Splines;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -24,6 +25,11 @@ public class CubeLine : SerializedMonoBehaviour
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public GridCell Cell;
     [OdinSerialize] private Dictionary<CubeType, List<Renderer>> _renderers;
+    public bool isEngine = false;
+    public CubeLine Back;
+    public float offset = 0f;
+    public CubeLine front;
+    public SplinePositioner Positioner;
     private Quaternion _initRotation;
 
     public void SetColor(ObjectColor color)
