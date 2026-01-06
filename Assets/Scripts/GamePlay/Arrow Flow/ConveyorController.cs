@@ -1,22 +1,22 @@
+using System;
 using System.Collections.Generic;
 using Dreamteck.Splines;
 using Sirenix.OdinInspector;
 using UnityEngine;
+[Serializable]
+public class CubeEntry
+{
+    public CubeLine Cube;
+    public float DistanceUnwrapped;
+    public bool IsHandingOff;
+    public float HandoffTimeRemaining;
+}
 
 public class ConveyorController : Singleton<ConveyorController>
 {
     [SerializeField] private SplineComputer _conveyor;
     [SerializeField] private float _speed = 0.15f;
-    public List<CubeLine> CubeOnConveyor = new();
-    private class CubeEntry
-    {
-        public CubeLine Cube;
-        public float DistanceUnwrapped;
-        public bool IsHandingOff; // Đang trong quá trình handoff
-        public float HandoffTimeRemaining;
-    }
-
-    private readonly List<CubeEntry> _entries = new();
+    public List<CubeEntry> Entries = new();
     private float _headDistanceUnwrapped;
     private bool _hasHead;
 
@@ -43,7 +43,7 @@ public class ConveyorController : Singleton<ConveyorController>
     private float GetDesiredOffsetForEntry(int entryIndex)
     {
         if (entryIndex <= 0) return 0f;
-        CubeLine cube = _entries[entryIndex].Cube;
+        CubeLine cube = Entries[entryIndex].Cube;
         if (cube == null) return 0f;
         if (cube.isEngine) return 0f;
         return cube.offset;
@@ -52,9 +52,9 @@ public class ConveyorController : Singleton<ConveyorController>
     private int FindEntryIndex(CubeLine cube)
     {
         if (cube == null) return -1;
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            if (_entries[i].Cube == cube) return i;
+            if (Entries[i].Cube == cube) return i;
         }
         return -1;
     }
@@ -62,7 +62,7 @@ public class ConveyorController : Singleton<ConveyorController>
     private int FindInsertIndexByDistance(float distanceUnwrapped)
     {
         int insertIndex = 0;
-        while (insertIndex < _entries.Count && _entries[insertIndex].DistanceUnwrapped > distanceUnwrapped)
+        while (insertIndex < Entries.Count && Entries[insertIndex].DistanceUnwrapped > distanceUnwrapped)
             insertIndex++;
         return insertIndex;
     }
@@ -71,9 +71,9 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         int bestIndex = -1;
         float bestGap = float.PositiveInfinity;
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            float gap = _entries[i].DistanceUnwrapped - entryUnwrapped;
+            float gap = Entries[i].DistanceUnwrapped - entryUnwrapped;
             if (gap < 0f) continue; // behind entry point
             if (gap < bestGap)
             {
@@ -86,15 +86,15 @@ public class ConveyorController : Singleton<ConveyorController>
 
     private void SortEntriesByDistanceDesc()
     {
-        _entries.Sort((a, b) => b.DistanceUnwrapped.CompareTo(a.DistanceUnwrapped));
+        Entries.Sort((a, b) => b.DistanceUnwrapped.CompareTo(a.DistanceUnwrapped));
     }
 
     private float GetMaxDistanceUnwrapped()
     {
         float max = float.NegativeInfinity;
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            if (_entries[i].DistanceUnwrapped > max) max = _entries[i].DistanceUnwrapped;
+            if (Entries[i].DistanceUnwrapped > max) max = Entries[i].DistanceUnwrapped;
         }
         return max;
     }
@@ -117,9 +117,9 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         // Find any head that is about to touch a cube in a different train.
         // When it does, splice the whole train right after the touched cube.
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeLine head2 = _entries[i].Cube;
+            CubeLine head2 = Entries[i].Cube;
             if (head2 == null) continue;
             if (head2.front != null) continue;
             if (!entryByCube.TryGetValue(head2, out CubeEntry head2Entry)) continue;
@@ -128,9 +128,9 @@ public class ConveyorController : Singleton<ConveyorController>
             float bestAbsGap = float.PositiveInfinity;
             float bestSignedGap = 0f;
 
-            for (int j = 0; j < _entries.Count; j++)
+            for (int j = 0; j < Entries.Count; j++)
             {
-                CubeLine candidate = _entries[j].Cube;
+                CubeLine candidate = Entries[j].Cube;
                 if (candidate == null) continue;
                 if (candidate == head2) continue;
                 if (GetHeadCube(candidate) == head2) continue; // same train
@@ -182,45 +182,21 @@ public class ConveyorController : Singleton<ConveyorController>
         return false;
     }
 
-    private int FindNearestEntryIndexByWrapped(float entryWrapped, float splineLength)
-    {
-        if (_entries.Count == 0 || splineLength <= 0f) return -1;
-        int bestIndex = 0;
-        float best = float.PositiveInfinity;
-        for (int i = 0; i < _entries.Count; i++)
-        {
-            float wrapped = NormalizeDistance(_entries[i].DistanceUnwrapped, splineLength);
-            float diff = Mathf.Abs(wrapped - entryWrapped);
-            diff = Mathf.Min(diff, splineLength - diff);
-            if (diff < best)
-            {
-                best = diff;
-                bestIndex = i;
-            }
-        }
-        return bestIndex;
-    }
-
-    private static float WrappedDelta(float aWrapped, float bWrapped, float splineLength)
-    {
-        float diff = Mathf.Abs(aWrapped - bWrapped);
-        return splineLength > 0f ? Mathf.Min(diff, splineLength - diff) : diff;
-    }
 
     private void SnapChainToOffsets()
     {
-        if (_entries.Count == 0) return;
+        if (Entries.Count == 0) return;
 
-        Dictionary<CubeLine, CubeEntry> entryByCube = new Dictionary<CubeLine, CubeEntry>(_entries.Count);
-        for (int i = 0; i < _entries.Count; i++)
+        Dictionary<CubeLine, CubeEntry> entryByCube = new Dictionary<CubeLine, CubeEntry>(Entries.Count);
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeEntry e = _entries[i];
+            CubeEntry e = Entries[i];
             if (e.Cube != null) entryByCube[e.Cube] = e;
         }
 
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeLine headCube = _entries[i].Cube;
+            CubeLine headCube = Entries[i].Cube;
             if (headCube == null) continue;
             if (headCube.front != null) continue;
 
@@ -253,236 +229,143 @@ public class ConveyorController : Singleton<ConveyorController>
 
     private void EnforceSpacingFromIndex(int startIndex)
     {
-        for (int i = Mathf.Max(startIndex, 0) + 1; i < _entries.Count; i++)
+        for (int i = Mathf.Max(startIndex, 0) + 1; i < Entries.Count; i++)
         {
             float desiredOffset = GetDesiredOffsetForEntry(i);
-            float allowed = desiredOffset >= 0f ? _entries[i - 1].DistanceUnwrapped - desiredOffset : float.PositiveInfinity;
-            if (_entries[i].DistanceUnwrapped > allowed)
-                _entries[i].DistanceUnwrapped = allowed;
+            float allowed = desiredOffset >= 0f ? Entries[i - 1].DistanceUnwrapped - desiredOffset : float.PositiveInfinity;
+            if (Entries[i].DistanceUnwrapped > allowed)
+                Entries[i].DistanceUnwrapped = allowed;
         }
     }
 
-public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDuration)
-{
-    if (cube == null || cube.Positioner == null || _conveyor == null) return;
-    CubeOnConveyor.Add(cube);
-    cube.transform.SetParent(_conveyor.transform);
-    cube.Positioner.spline = _conveyor;
-    cube.Positioner.motion.applyRotation = false;
-
-    float splineLength = _conveyor.CalculateLength();
-    if (splineLength <= 0f) return;
-
-    SplineSample entrySample = _conveyor.Project(entryWorldPosition);
-    float entryWrapped = NormalizeDistance(_conveyor.CalculateLength(0.0, entrySample.percent), splineLength);
-
-    // Tránh add trùng
-    for (int i = 0; i < _entries.Count; i++)
+    public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDuration)
     {
-        if (_entries[i].Cube == cube) return;
-    }
+        if (cube == null || cube.Positioner == null || _conveyor == null) return;
+        cube.transform.SetParent(_conveyor.transform);
+        cube.Positioner.spline = _conveyor;
+        cube.Positioner.motion.applyRotation = false;
 
-    // Lần đầu tiên có cube
-    if (!_hasHead)
-    {
-        _hasHead = true;
-        _headDistanceUnwrapped = entryWrapped;
-        _entries.Clear();
-    }
+        float splineLength = _conveyor.CalculateLength();
+        if (splineLength <= 0f) return;
 
-    // Keep entries sorted so selection/insert is stable
-    if (_entries.Count > 1) SortEntriesByDistanceDesc();
+        SplineSample entrySample = _conveyor.Project(entryWorldPosition);
+        float entryWrapped = NormalizeDistance(_conveyor.CalculateLength(0.0, entrySample.percent), splineLength);
 
-    // Determine desired unwrapped distance for this cube based on its front and offset.
-    float reference = _entries.Count > 0 ? GetMaxDistanceUnwrapped() : 0f;
-    float entryUnwrapped = _entries.Count > 0 ? ClosestUnwrappedToReference(entryWrapped, reference, splineLength) : entryWrapped;
-
-    bool doSplice = false;
-    int frontIndexForSplice = -1;
-    CubeLine frontCubeForSplice = null;
-    CubeLine reconnectA = null;
-
-    if (cube.isEngine && cube.Line != null && !_pendingReconnect.ContainsKey(cube.Line) && _entries.Count > 0)
-    {
-        frontIndexForSplice = FindFrontEntryIndexByUnwrapped(entryUnwrapped);
-        frontCubeForSplice = frontIndexForSplice >= 0 ? _entries[frontIndexForSplice].Cube : null;
-        reconnectA = frontCubeForSplice != null ? frontCubeForSplice.Back : null;
-
-        if (frontIndexForSplice >= 0 && frontCubeForSplice != null)
+        // Tránh add trùng
+        for (int i = 0; i < Entries.Count; i++)
         {
-            float gapAhead = _entries[frontIndexForSplice].DistanceUnwrapped - entryUnwrapped;
-            float threshold = cube.offset;
-            if (threshold < 0f) threshold = 0f;
-            doSplice = gapAhead <= threshold;
+            if (Entries[i].Cube == cube) return;
         }
-    }
 
-    if (doSplice && frontCubeForSplice != null)
-    {
-        // Cut
-        frontCubeForSplice.Back = null;
-        if (reconnectA != null) reconnectA.front = null;
-
-        // Splice start: nearest -> cube
-        cube.front = frontCubeForSplice;
-        frontCubeForSplice.Back = cube;
-
-        // This cube now has a front, so it must have a meaningful offset
-        if (cube.offset < 0f) cube.offset = 0f;
-
-        _pendingReconnect[cube.Line] = reconnectA;
-
-        float frontDist = _entries[frontIndexForSplice].DistanceUnwrapped;
-        entryUnwrapped = frontDist - cube.offset;
-    }
-    else if (cube.front != null)
-    {
-        int frontIndex = FindEntryIndex(cube.front);
-        if (frontIndex >= 0)
+        // Lần đầu tiên có cube
+        if (!_hasHead)
         {
-            float frontDist = _entries[frontIndex].DistanceUnwrapped;
+            _hasHead = true;
+            _headDistanceUnwrapped = entryWrapped;
+            Entries.Clear();
+        }
+
+        // Keep entries sorted so selection/insert is stable
+        if (Entries.Count > 1) SortEntriesByDistanceDesc();
+
+        // Determine desired unwrapped distance for this cube based on its front and offset.
+        float reference = Entries.Count > 0 ? GetMaxDistanceUnwrapped() : 0f;
+        float entryUnwrapped = Entries.Count > 0 ? ClosestUnwrappedToReference(entryWrapped, reference, splineLength) : entryWrapped;
+
+        bool doSplice = false;
+        int frontIndexForSplice = -1;
+        CubeLine frontCubeForSplice = null;
+        CubeLine reconnectA = null;
+
+        if (cube.isEngine && cube.Line != null && !_pendingReconnect.ContainsKey(cube.Line) && Entries.Count > 0)
+        {
+            frontIndexForSplice = FindFrontEntryIndexByUnwrapped(entryUnwrapped);
+            frontCubeForSplice = frontIndexForSplice >= 0 ? Entries[frontIndexForSplice].Cube : null;
+            reconnectA = frontCubeForSplice != null ? frontCubeForSplice.Back : null;
+
+            if (frontIndexForSplice >= 0 && frontCubeForSplice != null)
+            {
+                float gapAhead = Entries[frontIndexForSplice].DistanceUnwrapped - entryUnwrapped;
+                float threshold = cube.offset;
+                if (threshold < 0f) threshold = 0f;
+                doSplice = gapAhead <= threshold;
+            }
+        }
+
+        if (doSplice && frontCubeForSplice != null)
+        {
+            // Cut
+            frontCubeForSplice.Back = null;
+            if (reconnectA != null) reconnectA.front = null;
+
+            // Splice start: nearest -> cube
+            cube.front = frontCubeForSplice;
+            frontCubeForSplice.Back = cube;
+
+            // This cube now has a front, so it must have a meaningful offset
+            if (cube.offset < 0f) cube.offset = 0f;
+
+            _pendingReconnect[cube.Line] = reconnectA;
+
+            float frontDist = Entries[frontIndexForSplice].DistanceUnwrapped;
             entryUnwrapped = frontDist - cube.offset;
         }
-        else
+        else if (cube.front != null)
         {
-            float referenceUnwrapped = _entries.Count > 0 ? _entries[^1].DistanceUnwrapped : _headDistanceUnwrapped;
-            entryUnwrapped = ClosestUnwrappedToReference(entryWrapped, referenceUnwrapped, splineLength);
-        }
-    }
-    // else: independent head -> keep entryUnwrapped = entryWrapped
-
-    // ============ COLLISION CHECK ============
-    // Tìm tất cả cube CÙNG LINE với cube mới
-    List<CubeEntry> sameLineEntries = new List<CubeEntry>();
-    if (cube.Line != null)
-    {
-        for (int i = 0; i < _entries.Count; i++)
-        {
-            if (_entries[i].Cube != null && _entries[i].Cube.Line == cube.Line)
+            int frontIndex = FindEntryIndex(cube.front);
+            if (frontIndex >= 0)
             {
-                sameLineEntries.Add(_entries[i]);
+                float frontDist = Entries[frontIndex].DistanceUnwrapped;
+                entryUnwrapped = frontDist - cube.offset;
+            }
+            else
+            {
+                float referenceUnwrapped = Entries.Count > 0 ? Entries[^1].DistanceUnwrapped : _headDistanceUnwrapped;
+                entryUnwrapped = ClosestUnwrappedToReference(entryWrapped, referenceUnwrapped, splineLength);
             }
         }
-    }
-    
-    float safeDistance = entryUnwrapped;
-    
-    if (cube.front != null)
-    {
-        // Cube có front - phải đi sau front với đúng offset
-        int frontIndex = FindEntryIndex(cube.front);
-        if (frontIndex >= 0)
+
+        int insertIndex = FindInsertIndexByDistance(entryUnwrapped);
+
+        CubeEntry newEntry = new CubeEntry
         {
-            float frontDist = _entries[frontIndex].DistanceUnwrapped;
-            float desiredOffset = cube.offset > 0f ? cube.offset : 1f;
-            safeDistance = frontDist - desiredOffset;
-        }
-    }
-    else if (cube.Line != null && sameLineEntries.Count > 0)
-    {
-        // Cube là head của line, nhưng line đã có cube khác trên conveyor
-        // Tìm cube xa nhất (head hiện tại) của line
-        float maxDist = float.NegativeInfinity;
-        foreach (var entry in sameLineEntries)
+            Cube = cube,
+            DistanceUnwrapped = entryUnwrapped,
+            IsHandingOff = handoffDuration > 0f,
+            HandoffTimeRemaining = handoffDuration
+        };
+
+        // Respect offset vs cube in front (if any)
+        if (insertIndex > 0)
         {
-            if (entry.DistanceUnwrapped > maxDist)
-                maxDist = entry.DistanceUnwrapped;
+            float maxAllowed = Entries[insertIndex - 1].DistanceUnwrapped - cube.offset;
+            if (newEntry.DistanceUnwrapped > maxAllowed)
+                newEntry.DistanceUnwrapped = maxAllowed;
         }
-        
-        // Head mới phải đi trước tất cả cube cùng line
-        // Nhưng cũng phải tránh đụng các line khác
-        float minGapToOtherLines = 0.4f;
-        safeDistance = Mathf.Max(entryUnwrapped, maxDist + 0.1f);
-        
-        // Check collision với cube của line KHÁC
-        for (int i = 0; i < _entries.Count; i++)
+
+        Entries.Insert(insertIndex, newEntry);
+
+        SortEntriesByDistanceDesc();
+
+        // If this is the tail of a spliced line, reconnect to the detached part (A).
+        if (cube.Line != null && cube.Back == null && _pendingReconnect.TryGetValue(cube.Line, out CubeLine reconnectB))
         {
-            if (_entries[i].Cube == null) continue;
-            if (_entries[i].Cube.Line == cube.Line) continue; // Skip cùng line
-            
-            float existingDist = _entries[i].DistanceUnwrapped;
-            float gap = Mathf.Abs(existingDist - safeDistance);
-            
-            if (gap < minGapToOtherLines)
-            {
-                // Đẩy ra xa
-                if (existingDist > safeDistance)
-                    safeDistance = existingDist - minGapToOtherLines;
-                else
-                    safeDistance = existingDist + minGapToOtherLines;
-            }
+            cube.Back = reconnectB;
+            if (reconnectB != null) reconnectB.front = cube;
+            _pendingReconnect.Remove(cube.Line);
         }
+
+        SnapChainToOffsets();
+
+        // Set vị trí ban đầu trên spline
+        float currentWrapped = NormalizeDistance(entryUnwrapped, splineLength);
+        double percent = _conveyor.Travel(0.0, currentWrapped, out _, Spline.Direction.Forward);
+        cube.Positioner.SetPercent(percent);
     }
-    else
-    {
-        // Line hoàn toàn mới - chỉ cần tránh đụng line khác
-        float minGapToOtherLines = 0.4f;
-        
-        for (int i = 0; i < _entries.Count; i++)
-        {
-            if (_entries[i].Cube == null) continue;
-            
-            float existingDist = _entries[i].DistanceUnwrapped;
-            float gap = Mathf.Abs(existingDist - entryUnwrapped);
-            
-            if (gap < minGapToOtherLines)
-            {
-                if (existingDist > entryUnwrapped)
-                    safeDistance = Mathf.Min(safeDistance, existingDist - minGapToOtherLines);
-                else
-                    safeDistance = Mathf.Max(safeDistance, existingDist + minGapToOtherLines);
-            }
-        }
-    }
-    
-    entryUnwrapped = safeDistance;
-    // ============ END COLLISION CHECK ============
-
-    int insertIndex = FindInsertIndexByDistance(entryUnwrapped);
-
-    CubeEntry newEntry = new CubeEntry
-    {
-        Cube = cube,
-        DistanceUnwrapped = entryUnwrapped,
-        IsHandingOff = handoffDuration > 0f,
-        HandoffTimeRemaining = handoffDuration
-    };
-
-    // Respect offset vs cube in front (if any)
-    if (insertIndex > 0)
-    {
-        float maxAllowed = _entries[insertIndex - 1].DistanceUnwrapped - cube.offset;
-        if (newEntry.DistanceUnwrapped > maxAllowed)
-            newEntry.DistanceUnwrapped = maxAllowed;
-    }
-
-    // Không vượt head
-    // no global head clamp (multi-train)
-
-    _entries.Insert(insertIndex, newEntry);
-
-    SortEntriesByDistanceDesc();
-
-    // If this is the tail of a spliced line, reconnect to the detached part (A).
-    if (cube.Line != null && cube.Back == null && _pendingReconnect.TryGetValue(cube.Line, out CubeLine reconnectB))
-    {
-        cube.Back = reconnectB;
-        if (reconnectB != null) reconnectB.front = cube;
-        _pendingReconnect.Remove(cube.Line);
-    }
-
-    SnapChainToOffsets();
-
-    // KHÔNG snap ngay - để cube giữ nguyên vị trí hiện tại
-    // Positioner sẽ được update trong frame tiếp theo qua Update()
-    float currentWrapped = NormalizeDistance(entryUnwrapped, splineLength);
-    double percent = _conveyor.Travel(0.0, currentWrapped, out _, Spline.Direction.Forward);
-    cube.Positioner.SetPercent(percent);
-}
 
     void Update()
     {
-        if (_entries.Count == 0 || _conveyor == null) return;
+        if (Entries.Count == 0 || _conveyor == null) return;
 
         float splineLength = _conveyor.CalculateLength();
         if (splineLength <= 0f) return;
@@ -490,19 +373,19 @@ public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDura
         float forwardDelta = _speed * Time.deltaTime;
 
         // Dọn null
-        for (int i = _entries.Count - 1; i >= 0; i--)
+        for (int i = Entries.Count - 1; i >= 0; i--)
         {
-            if (_entries[i].Cube == null || _entries[i].Cube.Positioner == null) 
-                _entries.RemoveAt(i);
+            if (Entries[i].Cube == null || Entries[i].Cube.Positioner == null)
+                Entries.RemoveAt(i);
         }
-        if (_entries.Count == 0) return;
+        if (Entries.Count == 0) return;
 
 
         // Chỉ di chuyển khi chuỗi kết nối đúng
         bool stopMoving = false;
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            var cube = _entries[i].Cube;
+            var cube = Entries[i].Cube;
             if (stopMoving)
                 continue;
             // Nếu cube bị mất kết nối (front/back không đúng), dừng di chuyển các cube sau
@@ -514,23 +397,23 @@ public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDura
                     continue;
                 }
             }
-            _entries[i].DistanceUnwrapped += forwardDelta;
+            Entries[i].DistanceUnwrapped += forwardDelta;
         }
 
         SortEntriesByDistanceDesc();
 
         // Build quick lookup
-        Dictionary<CubeLine, CubeEntry> entryByCube = new Dictionary<CubeLine, CubeEntry>(_entries.Count);
-        for (int i = 0; i < _entries.Count; i++)
+        Dictionary<CubeLine, CubeEntry> entryByCube = new Dictionary<CubeLine, CubeEntry>(Entries.Count);
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeEntry e = _entries[i];
+            CubeEntry e = Entries[i];
             if (e.Cube != null) entryByCube[e.Cube] = e;
         }
 
         // Enforce offsets along each independent chain
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeLine headCube = _entries[i].Cube;
+            CubeLine headCube = Entries[i].Cube;
             if (headCube == null) continue;
             if (headCube.front != null) continue;
 
@@ -562,9 +445,9 @@ public void AddCube(CubeLine cube, Vector3 entryWorldPosition, float handoffDura
         }
 
         // Apply to spline
-        for (int i = 0; i < _entries.Count; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
-            CubeEntry entry = _entries[i];
+            CubeEntry entry = Entries[i];
             if (entry.Cube == null || entry.Cube.Positioner == null) continue;
 
             float targetWrapped = NormalizeDistance(entry.DistanceUnwrapped, splineLength);
