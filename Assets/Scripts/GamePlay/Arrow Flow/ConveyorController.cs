@@ -15,7 +15,7 @@ public class ConveyorController : Singleton<ConveyorController>
     public float BaseOffsetAmount => _baseOffsetAmount;
     
     private List<PathSlot> _lstPaths = new(); // Giống _lstPaths trong ArrowGameManager
-    private Queue<CubeLine> _waitingToEnterQueue = new(); // Giống _waitingToEnterPathQueue
+    private Queue<EnterRequest> _waitingToEnterQueue = new(); // Giống _waitingToEnterPathQueue
     private int _totalPathSlotTaken; // Giống ArrowGameManager
     
     private Coroutine _cycleRoutine;
@@ -25,6 +25,13 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         public Vector3 Position;
         public CubeLine CubeSlot;
+    }
+
+    private class EnterRequest
+    {
+        public CubeLine Cube;
+        public int PreferredIndex;
+        public System.Action OnInserted;
     }
 
     public int GetInsertIndexForWorldPosition(Vector3 worldPos)
@@ -109,11 +116,21 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public bool TryEnqueueInsertAtIndex(int index, CubeLine cube)
     {
+        return TryRequestEnter(cube, index, null);
+    }
+
+    public bool TryRequestEnter(CubeLine cube, int preferredIndex, System.Action onInserted)
+    {
         if (cube == null) return false;
         if (_lstPaths.Count == 0) return false;
         if (_totalPathSlotTaken >= _lstPaths.Count) return false;
 
-        _waitingToEnterQueue.Enqueue(cube);
+        _waitingToEnterQueue.Enqueue(new EnterRequest
+        {
+            Cube = cube,
+            PreferredIndex = preferredIndex,
+            OnInserted = onInserted
+        });
         return true;
     }
 
@@ -150,11 +167,24 @@ public class ConveyorController : Singleton<ConveyorController>
             
             bool cubeEnter = _waitingToEnterQueue.Count > 0 && _totalPathSlotTaken < _lstPaths.Count;
             int indexClosestPath = 0;
+            EnterRequest enteringRequest = null;
 
             if (cubeEnter)
             {
+                enteringRequest = _waitingToEnterQueue.Peek();
+
+                if (enteringRequest != null && enteringRequest.PreferredIndex >= 0 && enteringRequest.PreferredIndex < _lstPaths.Count)
+                {
+                    indexClosestPath = enteringRequest.PreferredIndex;
+                    if (indexClosestPath == _lstPaths.Count - 1)
+                        indexClosestPath = 0;
+                }
+                else
+                {
                 // Tìm slot gần nhất để insert
-                var cubeWaitingPos = _waitingToEnterQueue.Peek().transform.position;
+                var cubeWaitingPos = _waitingToEnterQueue.Peek().Cube != null
+                    ? _waitingToEnterQueue.Peek().Cube.transform.position
+                    : Vector3.zero;
                 float closestDistance = float.MaxValue;
                 for (int i = 0; i < _lstPaths.Count - 1; i++)
                 {
@@ -168,6 +198,7 @@ public class ConveyorController : Singleton<ConveyorController>
                 indexClosestPath = (indexClosestPath + 1) % _lstPaths.Count;
                 if (indexClosestPath == _lstPaths.Count - 1)
                     indexClosestPath = 0;
+                }
             }
 
             CubeLine tempCubeSlot = null;
@@ -184,10 +215,13 @@ public class ConveyorController : Singleton<ConveyorController>
                 {
                     if (i == indexClosestPath)
                     {
-                        _lstPaths[curIndex].CubeSlot = _waitingToEnterQueue.Dequeue();
+                        enteringRequest = _waitingToEnterQueue.Dequeue();
+                        _lstPaths[curIndex].CubeSlot = enteringRequest != null ? enteringRequest.Cube : null;
                         var cube = _lstPaths[curIndex].CubeSlot;
                         if (cube != null)
                         {
+                            enteringRequest?.OnInserted?.Invoke();
+
                             // Apply offset ngay khi insert
                             Vector3 pos = _lstPaths[curIndex].Position;
                             Vector3 dir;
