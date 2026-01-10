@@ -30,7 +30,6 @@ public class GameUI : Singleton<GameUI>
         var canvasRect = canvas.GetComponent<RectTransform>();
         CanvasWidth  = canvasRect.rect.width;
         CanvasHeight = canvasRect.rect.height;
-        Debug.Log($"Canvas size: {CanvasWidth} x {CanvasHeight}");
     }
     public void HideAll()
     {

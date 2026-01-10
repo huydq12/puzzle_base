@@ -14,7 +14,6 @@ public class Board : Singleton<Board>
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
     [SerializeField] private Vector2 _spacing;
-    [SerializeField] private SplineComputer _conveyorBelt;
     [HideInInspector] public GridCell[,] Cells;
     public Vector2 Spacing => _spacing;
     public GameColorConfig ColorConfig => _colorConfig;
@@ -49,19 +48,6 @@ public class Board : Singleton<Board>
         Vector3 d1 = (b - a).normalized;
         Vector3 d2 = (c - b).normalized;
         return Mathf.Abs(Vector3.Dot(d1, d2)) < 0.01f;
-    }
-    private void AddCornerPoints(
-        List<SplinePoint> points,
-        Vector3 prev,
-        Vector3 curr,
-        Vector3 next,
-        float offset)
-    {
-        Vector3 dirIn = (curr - prev).normalized;
-        Vector3 dirOut = (next - curr).normalized;
-
-        points.Add(CreatePoint(curr - dirIn * offset));
-        points.Add(CreatePoint(curr + dirOut * offset));
     }
     private void SetupShooter()
     {
@@ -155,9 +141,10 @@ public class Board : Singleton<Board>
             }
         }
 
-        _conveyorBelt.SetPoints(points.ToArray());
-        _conveyorBelt.Close();
-        _conveyorBelt.Rebuild();
+        ConveyorController.Instance.SplineComputer.SetPoints(points.ToArray());
+        ConveyorController.Instance.SplineComputer.Close();
+        ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
+        ConveyorController.Instance.SetupFromSpline();
     }
 
 
