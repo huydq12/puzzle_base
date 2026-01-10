@@ -2,23 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using Dreamteck.Splines;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class ConveyorController : Singleton<ConveyorController>
 {
     [SerializeField] private SplineComputer _splineComputer;
-    [SerializeField] private Base _basePrefab;
     [SerializeField] private float _cubeSize = 1f;
     [SerializeField] private int _walkAroundSpeed = 15;
     [SerializeField] private float _baseOffsetAmount = 0.25f;
     
-    [ReadOnly] public List<Base> Bases = new();
-    
     public SplineComputer SplineComputer => _splineComputer;
     public float BaseOffsetAmount => _baseOffsetAmount;
     
-    private List<Vector3> _slotPositions = new();
     private List<PathSlot> _lstPaths = new(); // Giống _lstPaths trong ArrowGameManager
     private Queue<CubeLine> _waitingToEnterQueue = new(); // Giống _waitingToEnterPathQueue
     private int _totalPathSlotTaken; // Giống ArrowGameManager
@@ -29,13 +24,12 @@ public class ConveyorController : Singleton<ConveyorController>
     private class PathSlot
     {
         public Vector3 Position;
-        public Base BaseSlot;
         public CubeLine CubeSlot;
     }
 
     public int GetInsertIndexForWorldPosition(Vector3 worldPos)
     {
-        if (_lstPaths.Count == 0) return -1;
+        if (_lstPaths == null || _lstPaths.Count == 0) return -1;
 
         int nearest = 0;
         float bestSqr = float.PositiveInfinity;
@@ -58,7 +52,6 @@ public class ConveyorController : Singleton<ConveyorController>
     public void SetupFromSpline()
     {
         Clear();
-        _slotPositions.Clear();
         _lstPaths.Clear();
 
         float length = _splineComputer.CalculateLength();
@@ -72,7 +65,6 @@ public class ConveyorController : Singleton<ConveyorController>
         int slotCount = Mathf.FloorToInt(length / distancePerCube);
         slotCount = Mathf.Max(2, slotCount);
 
-        float offsetAmount = _baseOffsetAmount;
         SplineSample sample = new SplineSample();
 
         for (int i = 0; i < slotCount; i++)
@@ -80,28 +72,9 @@ public class ConveyorController : Singleton<ConveyorController>
             float percent = i / (float)slotCount;
             _splineComputer.Evaluate(percent, ref sample);
 
-            Vector3 pos = sample.position;
-            Vector3 dir = sample.forward;
-            if (dir.sqrMagnitude < 0.0001f)
-                dir = Vector3.forward;
-            dir.Normalize();
-
-            Vector3 normal = new Vector3(-dir.z, 0f, dir.x);
-            if (normal.sqrMagnitude < 0.0001f)
-                normal = Vector3.right;
-            normal.Normalize();
-
-            _slotPositions.Add(pos);
-
-            Base b = Instantiate(_basePrefab, transform);
-            b.transform.position = pos + normal * offsetAmount;
-            Bases.Add(b);
-
-            // Tạo PathSlot giống ArrowGameManager
             _lstPaths.Add(new PathSlot
             {
-                Position = pos,
-                BaseSlot = b,
+                Position = sample.position,
                 CubeSlot = null
             });
         }
@@ -112,34 +85,21 @@ public class ConveyorController : Singleton<ConveyorController>
     public void SetupFromLoop(List<Vector3> loopPoints)
     {
         Clear();
-        _slotPositions.Clear();
         _lstPaths.Clear();
 
         if (loopPoints == null || loopPoints.Count < 2)
             return;
 
         float distancePerCube = Mathf.Max(0.01f, _cubeSize);
-        BuildSlotPositions(loopPoints, distancePerCube, _slotPositions);
-        float offsetAmount = _baseOffsetAmount;
+        
+        List<Vector3> slotPositions = new();
+        BuildSlotPositions(loopPoints, distancePerCube, slotPositions);
 
-        for (int i = 0; i < _slotPositions.Count; i++)
+        for (int i = 0; i < slotPositions.Count; i++)
         {
-            Vector3 dir;
-            if (i < _slotPositions.Count - 1)
-                dir = (_slotPositions[i + 1] - _slotPositions[i]).normalized;
-            else
-                dir = (_slotPositions[i] - _slotPositions[i - 1]).normalized;
-
-            Vector3 normal = new Vector3(-dir.z, 0f, dir.x);
-
-            Base b = Instantiate(_basePrefab, transform);
-            b.transform.position = _slotPositions[i] + normal * offsetAmount;
-            Bases.Add(b);
-
             _lstPaths.Add(new PathSlot
             {
-                Position = _slotPositions[i],
-                BaseSlot = b,
+                Position = slotPositions[i],
                 CubeSlot = null
             });
         }
@@ -336,8 +296,6 @@ public class ConveyorController : Singleton<ConveyorController>
         _lstPaths[idx].CubeSlot.transform.DOMove(targetPos, time);
     }
 
-
-
     private static void BuildSlotPositions(List<Vector3> loop, float step, List<Vector3> result)
     {
         result.Clear();
@@ -391,12 +349,6 @@ public class ConveyorController : Singleton<ConveyorController>
         
         _waitingToEnterQueue.Clear();
         _totalPathSlotTaken = 0;
-
-        foreach (var c in Bases)
-        {
-            if (c != null) DestroyImmediate(c.gameObject);
-        }
-        Bases.Clear();
         _lstPaths.Clear();
     }
 }

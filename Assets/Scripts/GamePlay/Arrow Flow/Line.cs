@@ -28,7 +28,6 @@ public class Line : MonoBehaviour
     private int _remainingSteps;
     private Stack<List<GridCell>> _history = new();
     private readonly List<CubeLine> _pendingDetach = new();
-    private int _nextConveyorBaseIndex = -1;
     private int _reservedConveyorBaseIndex = -1;
     private bool _enqueueFailedThisStep;
     private bool _forceRevertAfterSegment;
@@ -53,7 +52,6 @@ public class Line : MonoBehaviour
         _isMoving = true;
         _history.Clear();
         _loggedNoSpace = false;
-        _nextConveyorBaseIndex = -1;
         _reservedConveyorBaseIndex = -1;
         _enqueueFailedThisStep = false;
         _forceRevertAfterSegment = false;
@@ -71,7 +69,6 @@ public class Line : MonoBehaviour
         if (Cubes == null || Cubes.Count == 0)
         {
             _isMoving = false;
-            _nextConveyorBaseIndex = -1;
             _reservedConveyorBaseIndex = -1;
             OnLineReverted();
             return false;
@@ -293,7 +290,7 @@ public class Line : MonoBehaviour
     {
         if (_reservedConveyorBaseIndex >= 0) return true;
         if (Cubes == null || Cubes.Count == 0) return true;
-        if (ConveyorController.Instance == null || ConveyorController.Instance.Bases == null) return true;
+        if (ConveyorController.Instance == null) return true;
 
         CubeLine head = Cubes[^1];
         if (head == null || head.Cell == null) return true;
@@ -312,32 +309,10 @@ public class Line : MonoBehaviour
     private void TryAssignToConveyorBase(CubeLine cube)
     {
         if (cube == null) return;
+        if (ConveyorController.Instance == null) return;
 
-        if (ConveyorController.Instance == null || ConveyorController.Instance.Bases == null)
-            return;
-
-        List<Base> bases = ConveyorController.Instance.Bases;
-        if (bases.Count == 0) return;
-
-        int targetIndex = -1;
-        if (_reservedConveyorBaseIndex >= 0)
-        {
-            targetIndex = _reservedConveyorBaseIndex;
-            _nextConveyorBaseIndex = (_reservedConveyorBaseIndex - 1 + bases.Count) % bases.Count;
-            _reservedConveyorBaseIndex = -1;
-        }
-        else if (_nextConveyorBaseIndex >= 0)
-        {
-            targetIndex = _nextConveyorBaseIndex;
-            _nextConveyorBaseIndex = (_nextConveyorBaseIndex - 1 + bases.Count) % bases.Count;
-        }
-        else
-        {
-            return;
-        }
-
-        if (targetIndex < 0)
-            return;
+        int targetIndex = _reservedConveyorBaseIndex;
+        if (targetIndex < 0) return;
 
         if (!ConveyorController.Instance.TryEnqueueInsertAtIndex(targetIndex, cube))
         {
@@ -345,10 +320,7 @@ public class Line : MonoBehaviour
             return;
         }
 
-        Vector3 dir = new Vector3(_gridDir.x, 0f, _gridDir.y);
-        if (dir.sqrMagnitude < 0.0001f)
-            dir = Vector3.forward;
-        dir.Normalize();
+        _reservedConveyorBaseIndex = -1;
 
         if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
             cube.Cell.CubeOnCell = null;
@@ -442,6 +414,7 @@ public class Line : MonoBehaviour
         Vector2Int d = b - a;
         return Mathf.Abs(d.x) + Mathf.Abs(d.y);
     }
+    
     private GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
     {
         Vector2Int dir = curr - prev;
