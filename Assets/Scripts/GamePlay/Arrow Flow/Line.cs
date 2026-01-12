@@ -109,10 +109,9 @@ public class Line : MonoBehaviour
         Vector2Int prev = curr - _gridDir;
 
         // Tìm kiếm mục tiêu
-        GridCell occupiedCell = FindOccupiedCell(prev, curr);
-        GridCell conveyorCell = FindConveyorCell(prev, curr);
+        GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, curr);
+        GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, curr);
 
-        // LOGIC DỰ ĐOÁN KẾT QUẢ
         if (occupiedCell != null)
         {
             int distToObstacle = GetManhattanDistance(curr, occupiedCell.Position) - 1;
@@ -211,20 +210,17 @@ public class Line : MonoBehaviour
         int finished = 0;
         int expected = Cubes.Count;
 
-        // target cell cho từng cube
         GridCell[] targets = new GridCell[Cubes.Count];
 
         for (int i = 0; i < Cubes.Count; i++)
         {
             if (i == Cubes.Count - 1)
             {
-                // head → cell tiếp theo
                 Vector2Int next = Cubes[i].Cell.Position + _gridDir;
                 targets[i] = Board.Instance.GetCellAt(next);
             }
             else
             {
-                // cube → cell của cube trước
                 targets[i] = Cubes[i + 1].Cell;
             }
         }
@@ -430,48 +426,12 @@ public class Line : MonoBehaviour
         _history.Push(snap);
     }
 
-    private GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
-    {
-        Vector2Int dir = curr - prev;
-        Vector2Int p = curr + dir;
 
-        int w = Board.Instance.Cells.GetLength(0);
-        int h = Board.Instance.Cells.GetLength(1);
-
-        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
-        {
-            GridCell c = Board.Instance.GetCellAt(p);
-            if (c != null && c.CellType == GridCellType.Conveyor)
-                return c;
-
-            p += dir;
-        }
-        return null;
-    }
 
     private static int GetManhattanDistance(Vector2Int a, Vector2Int b)
     {
         Vector2Int d = b - a;
         return Mathf.Abs(d.x) + Mathf.Abs(d.y);
-    }
-
-    private GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
-    {
-        Vector2Int dir = curr - prev;
-        Vector2Int p = curr + dir;
-
-        int w = Board.Instance.Cells.GetLength(0);
-        int h = Board.Instance.Cells.GetLength(1);
-
-        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
-        {
-            GridCell c = Board.Instance.GetCellAt(p);
-            if (c != null && c.IsOccupied)
-                return c;
-
-            p += dir;
-        }
-        return null;
     }
 
     private void OnLineReverted()

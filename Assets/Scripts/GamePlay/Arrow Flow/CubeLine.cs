@@ -23,9 +23,16 @@ public class CubeLine : SerializedMonoBehaviour
     [ReadOnly] public CubeType Type;
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public GridCell Cell;
+    [SerializeField] private ParticleSystem _hitEffect;
     [OdinSerialize] private Dictionary<CubeType, List<Renderer>> _renderers;
     private Quaternion _initRotation;
 
+    public void OnHit()
+    {
+        ConveyorController.Instance.RemoveCubeFromPath(this);
+        Instantiate(_hitEffect, transform.position, Quaternion.identity);
+        transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
+    }
     public void SetColor(ObjectColor color)
     {
         Color = color;

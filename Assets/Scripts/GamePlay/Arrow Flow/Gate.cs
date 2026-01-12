@@ -13,6 +13,7 @@ public class Gate : MonoBehaviour
     [SerializeField] private Transform _currentShooterHolder;
     [SerializeField] private Transform _nextShooterHolder;
     [SerializeField] private Transform _queueShooterHolder;
+    [SerializeField] private ParticleSystem _collectEffect;
     [ReadOnly] public List<ShooterData> Shooters;
     private List<Shooter> _shooterInstances = new List<Shooter>();
     public Shooter CurrentShooter { get; private set; }
@@ -28,6 +29,18 @@ public class Gate : MonoBehaviour
             _total.text = value.ToString();
         }
     }
+    private void UpdateShooterRoles()
+    {
+        if (CurrentShooter != null)
+            CurrentShooter.SetRole(ShooterRole.Current);
+
+        if (NextShooter != null)
+            NextShooter.SetRole(ShooterRole.Next);
+
+        if (QueueShooter != null)
+            QueueShooter.SetRole(ShooterRole.Queue);
+    }
+
     public void Setup(List<ShooterData> datas)
     {
         OpenGate();
@@ -41,10 +54,11 @@ public class Gate : MonoBehaviour
             Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
             shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
             shoot.transform.rotation = Quaternion.Euler(0, -90, 0);
-            shoot.transform.localScale = (i == 0 ? 0.75f : 0.65f) * Vector3.one;
+            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(datas[i].Color);
             shoot.Total = datas[i].Counter;
+            shoot.Gate = this;
             _shooterInstances.Add(shoot);
         }
 
@@ -59,6 +73,7 @@ public class Gate : MonoBehaviour
         {
             _shooterInstances[i].ShowTotal = i == 0;
         }
+        UpdateShooterRoles();
     }
 
     [Button]
@@ -86,9 +101,10 @@ public class Gate : MonoBehaviour
         if (index == 0) return _currentShooterHolder;
         if (index == 1) return _nextShooterHolder;
         if (index == 2) return _queueShooterHolder;
-        
+
         return _queueShooterHolder;
     }
+
 
     [Button]
     public void CollectCurrentShooter()
@@ -97,7 +113,8 @@ public class Gate : MonoBehaviour
         {
             return;
         }
-
+        _collectEffect.Stop();
+        _collectEffect.Play();
         var prevCurrent = CurrentShooter;
         var prevNext = NextShooter;
         var prevQueue = QueueShooter;
@@ -106,6 +123,17 @@ public class Gate : MonoBehaviour
             prevCurrent.ShowTotal = false;
 
         bool isLastShooter = _currentShooterIndex >= _shooterInstances.Count - 1;
+
+        if (isLastShooter)
+        {
+            if (prevCurrent != null)
+                prevCurrent.CanShoot = false;
+            if (prevNext != null)
+                prevNext.CanShoot = false;
+            if (prevQueue != null)
+                prevQueue.CanShoot = false;
+        }
+
         Total = Mathf.Max(0, Shooters.Count - (_currentShooterIndex + 1));
         Sequence seq = DOTween.Sequence();
         if (prevCurrent != null)
@@ -113,7 +141,6 @@ public class Gate : MonoBehaviour
             seq.Append(prevCurrent.transform.DOScale(Vector3.zero, 0.25f));
             if (isLastShooter)
             {
-                seq.AppendInterval(0.25f);
                 seq.Join(prevCurrent.transform.DORotate(new Vector3(0, 180, 0), 0.25f, RotateMode.LocalAxisAdd));
             }
             seq.AppendCallback(() =>
@@ -121,6 +148,9 @@ public class Gate : MonoBehaviour
                 if (isLastShooter)
                 {
                     CloseGate();
+                    CurrentShooter = null;
+                    NextShooter = null;
+                    QueueShooter = null;
                 }
                 else
                 {
@@ -170,13 +200,14 @@ public class Gate : MonoBehaviour
                     QueueShooter = _shooterInstances[_currentShooterIndex + 2];
                 else
                     QueueShooter = null;
-
-                if (CurrentShooter != null)
-                    CurrentShooter.ShowTotal = true;
-                if (NextShooter != null)
-                    NextShooter.ShowTotal = false;
-                if (QueueShooter != null)
-                    QueueShooter.ShowTotal = false;
+                UpdateShooterRoles();
+            });
+        }
+        else
+        {
+            seq.AppendCallback(() =>
+            {
+                UpdateShooterRoles();
             });
         }
     }

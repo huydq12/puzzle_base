@@ -322,7 +322,42 @@ public class Board : Singleton<Board>
         }
     }
 
+    public GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
+    {
+        Vector2Int dir = curr - prev;
+        Vector2Int p = curr + dir;
 
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+
+        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
+        {
+            GridCell c = GetCellAt(p);
+            if (c != null && c.CellType == GridCellType.Conveyor)
+                return c;
+
+            p += dir;
+        }
+        return null;
+    }
+    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
+    {
+        Vector2Int dir = curr - prev;
+        Vector2Int p = curr + dir;
+
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+
+        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
+        {
+            GridCell c = GetCellAt(p);
+            if (c != null && c.IsOccupied)
+                return c;
+
+            p += dir;
+        }
+        return null;
+    }
 
     private void SetupGrid()
     {
