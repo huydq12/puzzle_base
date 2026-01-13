@@ -33,6 +33,9 @@ public class Line : MonoBehaviour
     private bool _waitingForConveyorEnter;
     private Coroutine _waitConveyorRoutine;
 
+    private CubeLine _blockingCube;
+    private Tween _blockingCubeTiltTween;
+
     public void MoveLine()
     {
         if (_isMoving || _isReverting) return;
@@ -43,6 +46,7 @@ public class Line : MonoBehaviour
         _willDefinitelyRevert = false;
         _targetConveyorCell = null;
         _waitingForConveyorEnter = false;
+        _blockingCube = null;
 
         if (_waitConveyorRoutine != null)
         {
@@ -85,6 +89,8 @@ public class Line : MonoBehaviour
                 if (distToObstacle <= 0)
                 {
                     // Chạm vật cản ngay lập tức
+                    _blockingCube = occupiedCell != null ? occupiedCell.CubeOnCell : null;
+                    TriggerBlockingCubeTilt();
                     foreach (var cube in Cubes)
                     {
                         cube.ShowWarning();
@@ -98,6 +104,7 @@ public class Line : MonoBehaviour
                 }
 
                 // Di chuyển đến trước vật cản rồi revert
+                _blockingCube = occupiedCell != null ? occupiedCell.CubeOnCell : null;
                 for (int i = 0; i < Cubes.Count - 1; i++)
                 {
                     Cubes[i].SetTempType(CubeType.Normal);
@@ -131,6 +138,8 @@ public class Line : MonoBehaviour
                     if (distToObstacle <= 0)
                     {
                         // Chạm vật cản ngay lập tức
+                        _blockingCube = occupiedCell != null ? occupiedCell.CubeOnCell : null;
+                        TriggerBlockingCubeTilt();
                         foreach (var cube in Cubes)
                         {
                             cube.ShowWarning();
@@ -144,6 +153,7 @@ public class Line : MonoBehaviour
                     }
 
                     // Di chuyển đến trước vật cản rồi revert
+                    _blockingCube = occupiedCell != null ? occupiedCell.CubeOnCell : null;
                     for (int i = 0; i < Cubes.Count - 1; i++)
                     {
                         Cubes[i].SetTempType(CubeType.Normal);
@@ -193,6 +203,7 @@ public class Line : MonoBehaviour
             {
                 // Kế hoạch là revert
                 _isMoving = false;
+                TriggerBlockingCubeTilt();
                 foreach (var cube in Cubes)
                 {
                     cube.ShowWarning();
@@ -226,6 +237,33 @@ public class Line : MonoBehaviour
         {
             _remainingSteps--;
             StepForward();
+        });
+    }
+
+    private void TriggerBlockingCubeTilt()
+    {
+        if (_blockingCube == null)
+            return;
+
+        if (_blockingCubeTiltTween != null && _blockingCubeTiltTween.IsActive())
+            _blockingCubeTiltTween.Kill();
+
+        Vector3 pushDirWorld = new Vector3(_gridDir.x, 0f, _gridDir.y);
+        if (pushDirWorld == Vector3.zero)
+            return;
+
+        Vector3 axis = Vector3.Cross(Vector3.up, pushDirWorld);
+        if (axis == Vector3.zero)
+            return;
+
+        axis.Normalize();
+
+        Quaternion startRot = _blockingCube.transform.rotation;
+        Quaternion targetRot = Quaternion.AngleAxis(10f, axis) * startRot;
+
+        _blockingCubeTiltTween = _blockingCube.transform.DORotateQuaternion(targetRot, 0.08f).SetEase(Ease.OutQuad).SetLoops(2, LoopType.Yoyo).OnKill(() =>
+        {
+            _blockingCube.transform.rotation = startRot;
         });
     }
 
