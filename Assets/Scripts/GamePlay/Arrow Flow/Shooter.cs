@@ -177,7 +177,7 @@ public class Shooter : MonoBehaviour
         Color = color;
         foreach (var renderer in _renderer)
         {
-            renderer.sharedMaterial = Board.Instance.ColorConfig.GetShooterByColor(color);
+            renderer.sharedMaterial = Board.Instance.ColorConfig.GetShooterColor(color);
         }
     }
 

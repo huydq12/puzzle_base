@@ -2,10 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using Dreamteck.Splines;
+using TMPro;
 using UnityEngine;
 
 public class ConveyorController : Singleton<ConveyorController>
 {
+    [SerializeField] private TextMeshProUGUI _percent;
+    [SerializeField] private Color _warningColor;
+    [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
     [SerializeField] private float _cubeSize;
     [SerializeField] private int _walkAroundSpeed;
@@ -20,6 +24,8 @@ public class ConveyorController : Singleton<ConveyorController>
     private Coroutine _cycleRoutine;
     private bool _isPaused = false;
     private bool _isRunning = true;
+    private bool _isBlinking;
+    private Tween _blinkTween;
 
     private void LoseGame()
     {
@@ -44,6 +50,31 @@ public class ConveyorController : Singleton<ConveyorController>
         public Line Line;
         public int PreferredIndex;
         public System.Action OnInserted;
+    }
+    private void UpdatePercent()
+    {
+        if (_percent == null) return;
+
+        if (_lstPaths == null || _lstPaths.Count == 0)
+        {
+            _percent.text = "0%";
+            return;
+        }
+
+        float percent = (_totalPathSlotTaken / (float)_lstPaths.Count) * 100f;
+        percent = Mathf.Clamp(percent, 0f, 100f);
+
+        _percent.text = Mathf.RoundToInt(percent) + "%";
+        bool shouldBlink = percent >= 70f;
+
+        if (shouldBlink && !_isBlinking)
+        {
+            StartBlink();
+        }
+        else if (!shouldBlink && _isBlinking)
+        {
+            StopBlink();
+        }
     }
 
     public int GetInsertIndexForWorldPosition(Vector3 worldPos)
@@ -99,6 +130,7 @@ public class ConveyorController : Singleton<ConveyorController>
         }
 
         EnsureCycleRunning();
+        UpdatePercent();
     }
 
     public void StopConveyor()
@@ -193,7 +225,7 @@ public class ConveyorController : Singleton<ConveyorController>
                 _totalPathSlotTaken--;
 
                 cube.transform.DOKill();
-
+                UpdatePercent();
                 return true;
             }
         }
@@ -233,6 +265,7 @@ public class ConveyorController : Singleton<ConveyorController>
     private void OnAddToPath()
     {
         _totalPathSlotTaken++;
+        UpdatePercent();
     }
 
     private float GetCycleTime()
@@ -407,48 +440,28 @@ public class ConveyorController : Singleton<ConveyorController>
         slot.CubeSlot.transform.DOMove(targetPos, time).SetEase(Ease.Linear);
         slot.CubeSlot.transform.LookAt(targetPos + dir);
     }
-
-    private static void BuildSlotPositions(List<Vector3> loop, float step, List<Vector3> result)
+    private void StartBlink()
     {
-        result.Clear();
-        if (loop == null || loop.Count < 2) return;
-        step = Mathf.Max(0.01f, step);
+        _isBlinking = true;
 
-        float totalLen = 0f;
-        for (int i = 0; i < loop.Count; i++)
-        {
-            Vector3 a = loop[i];
-            Vector3 b = loop[(i + 1) % loop.Count];
-            totalLen += Vector3.Distance(a, b);
-        }
-        if (totalLen <= 0.0001f) return;
+        _blinkTween?.Kill();
 
-        int slotCount = Mathf.Max(1, Mathf.FloorToInt(totalLen / step));
+        _renderer.material.color = Color.white;
 
-        Vector3 SampleAt(float d)
-        {
-            float acc = 0f;
-            for (int i = 0; i < loop.Count; i++)
-            {
-                Vector3 a = loop[i];
-                Vector3 b = loop[(i + 1) % loop.Count];
-                float seg = Vector3.Distance(a, b);
-                if (seg <= 0.0001f) continue;
-                if (acc + seg >= d)
-                {
-                    float t = (d - acc) / seg;
-                    return Vector3.Lerp(a, b, t);
-                }
-                acc += seg;
-            }
-            return loop[0];
-        }
+        _blinkTween = _renderer.material
+            .DOColor(_warningColor, 0.3f)
+            .SetLoops(-1, LoopType.Yoyo)
+            .SetEase(Ease.InOutSine);
+    }
 
-        for (int i = 0; i < slotCount; i++)
-        {
-            float dist = i * step;
-            result.Add(SampleAt(dist));
-        }
+    private void StopBlink()
+    {
+        _isBlinking = false;
+
+        _blinkTween?.Kill();
+        _blinkTween = null;
+
+        _renderer.material.color = Color.white;
     }
 
     private void Clear()
@@ -462,5 +475,6 @@ public class ConveyorController : Singleton<ConveyorController>
         _waitingToEnterQueue.Clear();
         _totalPathSlotTaken = 0;
         _lstPaths.Clear();
+        UpdatePercent();
     }
 }

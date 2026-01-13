@@ -148,7 +148,7 @@ public class BoardManager : Singleton<BoardManager>
     {
         if (colorConfig == null) return;
 
-        Material mat = isCube ? colorConfig.GetCubeByColor(color) : colorConfig.GetShooterByColor(color);
+        Material mat = isCube ? colorConfig.GetCubeColor(color) : colorConfig.GetShooterColor(color);
         if (mat == null) return;
 
         var meshRenderers = go.GetComponentsInChildren<MeshRenderer>(true);

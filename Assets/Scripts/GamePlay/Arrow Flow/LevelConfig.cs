@@ -28,6 +28,7 @@ public class LevelConfig : SerializedScriptableObject
     [HideInInspector]
 #endif
     public GridCellData[,] Cells;
+    [HideInInspector]
     public List<ColorLine> ColorLines = new List<ColorLine>();
     [InlineProperty]
     public ConveyorLine ConveyorLine;

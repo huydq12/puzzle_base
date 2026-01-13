@@ -49,6 +49,77 @@ public class Board : Singleton<Board>
         Vector3 d2 = (c - b).normalized;
         return Mathf.Abs(Vector3.Dot(d1, d2)) < 0.01f;
     }
+    public void RefreshAllHeadHighlights()
+    {
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                GridCell cell = Cells[x, y];
+                if (cell == null || !cell.IsOccupied) continue;
+
+                CubeLine cube = cell.CubeOnCell;
+                if (cube == null || cube.Type != CubeType.Head) continue;
+
+                cube.HighlightHead = CanHeadReachConveyor(cube);
+            }
+        }
+    }
+    private bool CanHeadReachConveyor(CubeLine head)
+    {
+        if (head == null) return false;
+        if (head.Type != CubeType.Head) return false;
+        if (head.Line == null) return false;
+        if (head.Cell == null) return false;
+
+        List<CubeLine> cubes = head.Line.Cubes;
+        if (cubes == null || cubes.Count < 2) return false;
+
+        CubeLine tailMinus1 = cubes[^2];
+        CubeLine tail = cubes[^1];
+        if (tail == null || tailMinus1 == null) return false;
+        if (tail.Cell == null || tailMinus1.Cell == null) return false;
+        if (tail != head) return false;
+
+        Vector2Int p0 = tailMinus1.Cell.Position;
+        Vector2Int p1 = tail.Cell.Position;
+        Vector2Int dir = NormalizeGridDir(p1 - p0);
+        if (dir == Vector2Int.zero) return false;
+
+        Vector2Int curr = p1;
+        Vector2Int prev = curr - dir;
+
+        GridCell conveyorCell = FindConveyorCell(prev, curr);
+        if (conveyorCell == null) return false;
+
+        GridCell occupiedCell = FindOccupiedCell(prev, curr);
+        if (occupiedCell == null) return true;
+
+        int distToConveyor = GetManhattanDistance(curr, conveyorCell.Position) - 1;
+        int distToObstacle = GetManhattanDistance(curr, occupiedCell.Position) - 1;
+
+        return distToObstacle >= distToConveyor;
+    }
+    public int GetManhattanDistance(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int d = b - a;
+        return Mathf.Abs(d.x) + Mathf.Abs(d.y);
+    }
+    public Vector2Int NormalizeGridDir(Vector2Int d)
+    {
+        if (d == Vector2Int.zero)
+            return d;
+
+        int ax = Mathf.Abs(d.x);
+        int ay = Mathf.Abs(d.y);
+
+        if (ax >= ay)
+            return new Vector2Int(d.x > 0 ? 1 : -1, 0);
+        return new Vector2Int(0, d.y > 0 ? 1 : -1);
+    }
     private void SetupShooter()
     {
         ShooterController.Instance.Setup(_currentConfig.Shooters);
@@ -318,7 +389,6 @@ public class Board : Singleton<Board>
                 cube.Line = lineColor;
                 lineColor.Cubes.Add(cube);
             }
-            lineColor.Initialize();
         }
     }
 
@@ -457,6 +527,7 @@ public class Board : Singleton<Board>
         SetupLine();
         SetupConveyor();
         SetupShooter();
+        RefreshAllHeadHighlights();
         // SetupCamera();
         GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
     }

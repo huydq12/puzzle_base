@@ -3,11 +3,6 @@ using DG.Tweening;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 
-public enum FollowMode
-{
-    Forward,
-    Backward
-}
 
 public class Line : MonoBehaviour
 {
@@ -24,51 +19,29 @@ public class Line : MonoBehaviour
     private bool _isReverting;
 
     private Vector2Int _gridDir;
+    private int _totalSteps;
     private int _remainingSteps;
     private Stack<List<GridCell>> _history = new();
-    private readonly List<CubeLine> _pendingDetach = new();
+    private List<CubeLine> _pendingDetach = new();
     private int _reservedConveyorBaseIndex = -1;
     private bool _enqueueFailedThisStep;
-    private bool _forceRevertAfterSegment;
+    private bool _willDefinitelyRevert;
+    private GridCell _targetConveyorCell;
+
+    private bool _reuseGridDirNextMove;
 
     private bool _waitingForConveyorEnter;
     private Coroutine _waitConveyorRoutine;
-
-    private static Vector2Int NormalizeGridDir(Vector2Int d)
-    {
-        if (d == Vector2Int.zero)
-            return d;
-
-        int ax = Mathf.Abs(d.x);
-        int ay = Mathf.Abs(d.y);
-
-        if (ax >= ay)
-            return new Vector2Int(d.x > 0 ? 1 : -1, 0);
-        return new Vector2Int(0, d.y > 0 ? 1 : -1);
-    }
-
-
-    public void Initialize()
-    {
-        _cellDistance = Vector3.Distance(
-            Cubes[0].transform.position,
-            Cubes[1].transform.position
-        );
-
-        Vector2Int p0 = Cubes[^2].Cell.Position;
-        Vector2Int p1 = Cubes[^1].Cell.Position;
-        _gridDir = NormalizeGridDir(p1 - p0);
-    }
 
     public void MoveLine()
     {
         if (_isMoving || _isReverting) return;
 
-        _isMoving = true;
         _history.Clear();
         _reservedConveyorBaseIndex = -1;
         _enqueueFailedThisStep = false;
-        _forceRevertAfterSegment = false;
+        _willDefinitelyRevert = false;
+        _targetConveyorCell = null;
         _waitingForConveyorEnter = false;
 
         if (_waitConveyorRoutine != null)
@@ -77,92 +50,135 @@ public class Line : MonoBehaviour
             _waitConveyorRoutine = null;
         }
 
-        if (!PrepareNextSegment())
+        if (Cubes == null || Cubes.Count == 0)
             return;
 
-        StepForward();
-    }
-
-    private bool PrepareNextSegment()
-    {
-        FlushPendingDetach();
-        _forceRevertAfterSegment = false;
-
-        if (Cubes == null || Cubes.Count == 0)
-        {
-            _isMoving = false;
-            OnLineReverted();
-            return false;
-        }
-
         // Xác định hướng
-        if (Cubes.Count >= 2)
+        if (!_reuseGridDirNextMove || _gridDir == Vector2Int.zero)
         {
+            if (Cubes.Count < 2)
+                return;
+
+            _cellDistance = Vector3.Distance(Cubes[0].transform.position, Cubes[1].transform.position);
             Vector2Int p0 = Cubes[^2].Cell.Position;
             Vector2Int p1 = Cubes[^1].Cell.Position;
-            _gridDir = NormalizeGridDir(p1 - p0);
+            _gridDir = Board.Instance.NormalizeGridDir(p1 - p0);
         }
+        _reuseGridDirNextMove = false;
 
         Vector2Int curr = Cubes[^1].Cell.Position;
         Vector2Int prev = curr - _gridDir;
 
-        // Tìm kiếm mục tiêu
-        GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, curr);
         GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, curr);
+        GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, curr);
 
-        if (occupiedCell != null)
+        if (conveyorCell == null)
         {
-            int distToObstacle = GetManhattanDistance(curr, occupiedCell.Position) - 1;
+            // Không có conveyor -> chắc chắn revert
+            _willDefinitelyRevert = true;
+            _targetConveyorCell = null;
 
-            if (conveyorCell != null)
+            if (occupiedCell != null)
             {
-                int distToConveyor = GetManhattanDistance(curr, conveyorCell.Position) - 1;
-                // Nếu băng chuyền nằm TRƯỚC vật cản
-                if (distToConveyor <= distToObstacle)
+                int distToObstacle = Board.Instance.GetManhattanDistance(curr, occupiedCell.Position) - 1;
+
+                if (distToObstacle <= 0)
                 {
-                    _remainingSteps = distToConveyor;
-                    return true;
+                    // Chạm vật cản ngay lập tức
+                    foreach (var cube in Cubes)
+                    {
+                        cube.ShowWarning();
+                    }
+                    for (int i = 0; i < Cubes.Count - 1; i++)
+                    {
+                        Cubes[i].SetTempType(CubeType.Normal);
+                    }
+                    StartRevert();
+                    return;
                 }
+
+                // Di chuyển đến trước vật cản rồi revert
+                for (int i = 0; i < Cubes.Count - 1; i++)
+                {
+                    Cubes[i].SetTempType(CubeType.Normal);
+                }
+                _totalSteps = distToObstacle;
+                _remainingSteps = _totalSteps;
             }
-
-            // Nếu chạm vật cản trước hoặc không có băng chuyền
-            if (distToObstacle <= 0)
+            else
             {
-                foreach (var cube in Cubes)
-                {
-                    cube.ShowWarning();
-                }
-
-                _isMoving = false;
+                // Không có conveyor và không có vật cản (đi ra ngoài biên)
                 StartRevert();
-                return false;
+                return;
             }
-
-            for (int i = 0; i < Cubes.Count - 1; i++)
-            {
-                Cubes[i].SetTempType(CubeType.Normal);
-            }
-            _remainingSteps = distToObstacle;
-            _forceRevertAfterSegment = true;
-            return true;
-        }
-        else if (conveyorCell != null)
-        {
-            // Đường đi trống trải tới tận băng chuyền
-            for (int i = 0; i < Cubes.Count; i++)
-            {
-                Cubes[i].SetTempType(CubeType.Normal);
-            }
-            _remainingSteps = GetManhattanDistance(curr, conveyorCell.Position) - 1;
-            return true;
         }
         else
         {
-            // Không có vật cản nhưng cũng không có băng chuyền (đi ra ngoài biên hoặc ô trống vô tận)
-            _isMoving = false;
-            StartRevert();
-            return false;
+            // Có conveyor
+            int distToConveyor = Board.Instance.GetManhattanDistance(curr, conveyorCell.Position) - 1;
+            _targetConveyorCell = conveyorCell;
+
+            if (occupiedCell != null)
+            {
+                int distToObstacle = Board.Instance.GetManhattanDistance(curr, occupiedCell.Position) - 1;
+
+                // Vật cản nằm TRƯỚC conveyor -> chắc chắn bị chặn
+                if (distToObstacle < distToConveyor)
+                {
+                    _willDefinitelyRevert = true;
+                    _targetConveyorCell = null;
+
+                    if (distToObstacle <= 0)
+                    {
+                        // Chạm vật cản ngay lập tức
+                        foreach (var cube in Cubes)
+                        {
+                            cube.ShowWarning();
+                        }
+                        for (int i = 0; i < Cubes.Count - 1; i++)
+                        {
+                            Cubes[i].SetTempType(CubeType.Normal);
+                        }
+                        StartRevert();
+                        return;
+                    }
+
+                    // Di chuyển đến trước vật cản rồi revert
+                    for (int i = 0; i < Cubes.Count - 1; i++)
+                    {
+                        Cubes[i].SetTempType(CubeType.Normal);
+                    }
+                    _totalSteps = distToObstacle;
+                    _remainingSteps = _totalSteps;
+                }
+                else
+                {
+                    // Conveyor nằm trước vật cản -> sẽ lên conveyor
+                    _willDefinitelyRevert = false;
+                    for (int i = 0; i < Cubes.Count; i++)
+                    {
+                        Cubes[i].SetTempType(CubeType.Normal);
+                    }
+                    _totalSteps = distToConveyor;
+                    _remainingSteps = _totalSteps;
+                }
+            }
+            else
+            {
+                // Không có vật cản, đường thông đến conveyor
+                _willDefinitelyRevert = false;
+                for (int i = 0; i < Cubes.Count; i++)
+                {
+                    Cubes[i].SetTempType(CubeType.Normal);
+                }
+                _totalSteps = distToConveyor;
+                _remainingSteps = _totalSteps;
+            }
         }
+
+        // Bắt đầu di chuyển theo kế hoạch
+        _isMoving = true;
+        StepForward();
     }
 
     private void StepForward()
@@ -172,34 +188,34 @@ public class Line : MonoBehaviour
 
         if (_remainingSteps <= 0)
         {
-            if (_forceRevertAfterSegment)
+            // Đã đến đích
+            if (_willDefinitelyRevert)
             {
+                // Kế hoạch là revert
                 _isMoving = false;
-                _forceRevertAfterSegment = false;
-
                 foreach (var cube in Cubes)
                 {
                     cube.ShowWarning();
                 }
-
                 StartRevert();
                 return;
             }
-
-            if (TryStartWaitingForConveyorEnter())
-                return;
-
-            if (PrepareNextSegment())
+            else
             {
-                StepForward();
+                // Kế hoạch là lên conveyor
+                if (TryStartWaitingForConveyorEnter())
+                    return;
+
+                _isMoving = false;
                 return;
             }
-            return;
         }
 
-        if (!TryReserveConveyorBaseIfNeeded())
+        if (!_willDefinitelyRevert && !TryReserveConveyorBaseIfNeeded())
         {
+            // Không reserve được conveyor -> chuyển sang revert
             _isMoving = false;
+            _willDefinitelyRevert = true;
             StartRevert();
             return;
         }
@@ -246,13 +262,16 @@ public class Line : MonoBehaviour
                 .SetEase(Ease.Linear)
                 .OnStart(() =>
                 {
-                    if (from != null && from.CubeOnCell == cube)
-                        from.CubeOnCell = null;
+                    // Giữ trạng thái board ổn định khi tween: forward chỉ clear cell của tail.
+                    if (!_willDefinitelyRevert && cube == Cubes[0])
+                    {
+                        if (from != null && from.CubeOnCell == cube)
+                            from.CubeOnCell = null;
+                    }
                 })
                 .OnComplete(() =>
                 {
                     cube.Cell = to;
-                    to.CubeOnCell = cube;
 
                     finished++;
                     if (finished == expected)
@@ -260,8 +279,21 @@ public class Line : MonoBehaviour
                         if (_enqueueFailedThisStep)
                         {
                             _isMoving = false;
+                            _willDefinitelyRevert = true;
                             StartRevert();
                             return;
+                        }
+
+                        // Chỉ commit occupancy nếu không chắc chắn sẽ revert
+                        if (!_willDefinitelyRevert)
+                        {
+                            for (int j = 0; j < Cubes.Count; j++)
+                            {
+                                CubeLine c = Cubes[j];
+                                if (c != null && c.Cell != null)
+                                    c.Cell.CubeOnCell = c;
+                            }
+                            Board.Instance.RefreshAllHeadHighlights();
                         }
 
                         FlushPendingDetach();
@@ -277,6 +309,7 @@ public class Line : MonoBehaviour
         for (int i = 0; i < _pendingDetach.Count; i++)
         {
             Cubes.Remove(_pendingDetach[i]);
+            _pendingDetach[i].transform.SetParent(Board.Instance.transform, true);
         }
         _pendingDetach.Clear();
     }
@@ -284,18 +317,11 @@ public class Line : MonoBehaviour
     private bool TryReserveConveyorBaseIfNeeded()
     {
         if (_reservedConveyorBaseIndex >= 0) return true;
-        if (Cubes == null || Cubes.Count == 0) return true;
-        if (ConveyorController.Instance == null) return true;
+        if (_targetConveyorCell == null) return true;
+        if (ConveyorController.Instance == null) return false;
 
-        CubeLine head = Cubes[^1];
-        if (head == null || head.Cell == null) return true;
-
-        Vector2Int nextPos = head.Cell.Position + _gridDir;
-        GridCell nextCell = Board.Instance.GetCellAt(nextPos);
-        if (nextCell == null || nextCell.CellType != GridCellType.Conveyor) return true;
-
-        int startIndex = ConveyorController.Instance.GetInsertIndexForWorldPosition(nextCell.transform.position);
-        if (startIndex < 0) return true;
+        int startIndex = ConveyorController.Instance.GetInsertIndexForWorldPosition(_targetConveyorCell.transform.position);
+        if (startIndex < 0) return false;
 
         _reservedConveyorBaseIndex = startIndex;
         return true;
@@ -304,20 +330,17 @@ public class Line : MonoBehaviour
     private bool TryStartWaitingForConveyorEnter()
     {
         if (_waitingForConveyorEnter) return true;
+        if (_targetConveyorCell == null) return false;
         if (Cubes == null || Cubes.Count == 0) return false;
         if (ConveyorController.Instance == null) return false;
 
         CubeLine head = Cubes[^1];
         if (head == null || head.Cell == null) return false;
 
-        Vector2Int nextPos = head.Cell.Position + _gridDir;
-        GridCell nextCell = Board.Instance.GetCellAt(nextPos);
-        if (nextCell == null || nextCell.CellType != GridCellType.Conveyor) return false;
-
         int insertIndex = _reservedConveyorBaseIndex;
         if (insertIndex < 0)
         {
-            insertIndex = ConveyorController.Instance.GetInsertIndexForWorldPosition(nextCell.transform.position);
+            insertIndex = ConveyorController.Instance.GetInsertIndexForWorldPosition(_targetConveyorCell.transform.position);
             if (insertIndex < 0) return false;
         }
 
@@ -355,8 +378,12 @@ public class Line : MonoBehaviour
 
     private void OnHeadInsertedToConveyor(CubeLine head)
     {
+        head.transform.DOKill();
+
         if (head != null && head.Cell != null && head.Cell.CubeOnCell == head)
+        {
             head.Cell.CubeOnCell = null;
+        }
 
         if (head != null)
             head.Cell = null;
@@ -367,13 +394,18 @@ public class Line : MonoBehaviour
 
         FlushPendingDetach();
 
-        if (_isReverting) return;
-        if (!_isMoving) _isMoving = true;
-
-        if (PrepareNextSegment())
-            StepForward();
-        else
+        // Sau khi head lên conveyor, kiểm tra còn cubes không
+        if (Cubes == null || Cubes.Count == 0)
+        {
             _isMoving = false;
+            Board.Instance.RefreshAllHeadHighlights();
+            return;
+        }
+
+        // Còn cubes thì tiếp tục MoveLine cho phần còn lại
+        _isMoving = false;
+        _reuseGridDirNextMove = true;
+        MoveLine();
     }
 
     private void StartRevert()
@@ -393,6 +425,7 @@ public class Line : MonoBehaviour
         if (_history.Count == 0)
         {
             _isReverting = false;
+            _willDefinitelyRevert = false;
             OnLineReverted();
             return;
         }
@@ -411,17 +444,29 @@ public class Line : MonoBehaviour
                 .SetEase(Ease.Linear)
                 .OnStart(() =>
                 {
-                    if (from != null && from.CubeOnCell == cube)
-                        from.CubeOnCell = null;
+                    // Giữ trạng thái board ổn định khi tween: revert chỉ clear cell của head.
+                    if (cube == Cubes[^1])
+                    {
+                        if (from != null && from.CubeOnCell == cube)
+                            from.CubeOnCell = null;
+                    }
                 })
                 .OnComplete(() =>
                 {
                     cube.Cell = to;
-                    to.CubeOnCell = cube;
 
                     finished++;
                     if (finished == Cubes.Count)
+                    {
+                        for (int j = 0; j < Cubes.Count; j++)
+                        {
+                            CubeLine c = Cubes[j];
+                            if (c != null && c.Cell != null)
+                                c.Cell.CubeOnCell = c;
+                        }
+                        Board.Instance.RefreshAllHeadHighlights();
                         StepBackward();
+                    }
                 });
         }
     }
@@ -433,14 +478,6 @@ public class Line : MonoBehaviour
             snap.Add(c.Cell);
 
         _history.Push(snap);
-    }
-
-
-
-    private static int GetManhattanDistance(Vector2Int a, Vector2Int b)
-    {
-        Vector2Int d = b - a;
-        return Mathf.Abs(d.x) + Mathf.Abs(d.y);
     }
 
     private void OnLineReverted()

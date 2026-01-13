@@ -26,8 +26,15 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private ParticleSystem _hitEffect;
     [SerializeField] private ParticleSystem _wariningEffect;
     [SerializeField] private ParticleSystem _warningHeadEffect;
-    [OdinSerialize] private Dictionary<CubeType, List<Renderer>> _renderers;
+    [OdinSerialize] private Dictionary<CubeType, Renderer> _renderers;
+    [SerializeField] private Renderer _head;
+    [SerializeField] private Outline _outline;
     private Quaternion _initRotation;
+    public bool HighlightHead
+    {
+        get => _outline.enabled;
+        set => _outline.enabled = value;
+    }
     public void ShowWarning()
     {
         _warningHeadEffect.Stop();
@@ -50,13 +57,10 @@ public class CubeLine : SerializedMonoBehaviour
     public void SetColor(ObjectColor color)
     {
         Color = color;
-        var mat = Board.Instance.ColorConfig.GetCubeByColor(color);
-        foreach (var listRenderer in _renderers.Values)
+        var mat = Board.Instance.ColorConfig.GetCubeColor(color);
+        foreach (var renderer in _renderers.Values)
         {
-            foreach (var renderer in listRenderer)
-            {
-                renderer.sharedMaterial = mat;
-            }
+            renderer.sharedMaterial = mat;
         }
     }
     public void RevertType()
@@ -65,29 +69,36 @@ public class CubeLine : SerializedMonoBehaviour
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == Type;
-            foreach (var r in pair.Value)
-                r.enabled = enable;
+            pair.Value.enabled = enable;
         }
     }
     public void SetTempType(CubeType type)
     {
         _initRotation = transform.rotation;
         transform.rotation = Quaternion.identity;
+        _head.enabled = type == CubeType.Head;
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == type;
-            foreach (var r in pair.Value)
-                r.enabled = enable;
+            pair.Value.enabled = enable;
         }
     }
     public void SetType(CubeType type)
     {
         Type = type;
+        if (type == CubeType.Head)
+        {
+            _head.enabled = true;
+            _head.material = Board.Instance.ColorConfig.GetCubeHeadColor(Color);
+        }
+        else
+        {
+            _head.enabled = false;
+        }
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == type;
-            foreach (var r in pair.Value)
-                r.enabled = enable;
+            pair.Value.enabled = enable;
         }
     }
 }

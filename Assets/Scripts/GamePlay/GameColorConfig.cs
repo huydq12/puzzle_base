@@ -8,11 +8,15 @@ public class GameColorConfig : SerializedScriptableObject
 {
     [DictionaryDrawerSettings(KeyLabel = "Color", ValueLabel = "Materials")]
     public Dictionary<ObjectColor, ColorMaterial> ColorList;
-    public Material GetCubeByColor(ObjectColor color)
+    public Material GetCubeColor(ObjectColor color)
     {
         return ColorList[color].Cube;
     }
-    public Material GetShooterByColor(ObjectColor color)
+    public Material GetCubeHeadColor(ObjectColor color)
+    {
+        return ColorList[color].Head;
+    }
+    public Material GetShooterColor(ObjectColor color)
     {
         return ColorList[color].Shooter;
     }
@@ -23,6 +27,8 @@ public class ColorMaterial
 {
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
     public Material Cube;
+     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
+    public Material Head;
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
     public Material Shooter;
 }
