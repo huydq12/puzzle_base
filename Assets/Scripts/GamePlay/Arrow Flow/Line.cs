@@ -22,7 +22,6 @@ public class Line : MonoBehaviour
     private float _cellDistance;
     private bool _isMoving;
     private bool _isReverting;
-    private bool _loggedNoSpace;
 
     private Vector2Int _gridDir;
     private int _remainingSteps;
@@ -67,7 +66,6 @@ public class Line : MonoBehaviour
 
         _isMoving = true;
         _history.Clear();
-        _loggedNoSpace = false;
         _reservedConveyorBaseIndex = -1;
         _enqueueFailedThisStep = false;
         _forceRevertAfterSegment = false;
@@ -130,6 +128,11 @@ public class Line : MonoBehaviour
             // Nếu chạm vật cản trước hoặc không có băng chuyền
             if (distToObstacle <= 0)
             {
+                foreach (var cube in Cubes)
+                {
+                    cube.ShowWarning();
+                }
+
                 _isMoving = false;
                 StartRevert();
                 return false;
@@ -173,6 +176,12 @@ public class Line : MonoBehaviour
             {
                 _isMoving = false;
                 _forceRevertAfterSegment = false;
+
+                foreach (var cube in Cubes)
+                {
+                    cube.ShowWarning();
+                }
+
                 StartRevert();
                 return;
             }

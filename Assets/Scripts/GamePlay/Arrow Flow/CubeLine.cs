@@ -24,9 +24,23 @@ public class CubeLine : SerializedMonoBehaviour
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public GridCell Cell;
     [SerializeField] private ParticleSystem _hitEffect;
+    [SerializeField] private ParticleSystem _wariningEffect;
+    [SerializeField] private ParticleSystem _warningHeadEffect;
     [OdinSerialize] private Dictionary<CubeType, List<Renderer>> _renderers;
     private Quaternion _initRotation;
-
+    public void ShowWarning()
+    {
+        _warningHeadEffect.Stop();
+        _wariningEffect.Stop();
+        if (Type == CubeType.Head)
+        {
+            _warningHeadEffect.Play();
+        }
+        else
+        {
+            _wariningEffect.Play();
+        }
+    }
     public void OnHit()
     {
         ConveyorController.Instance.RemoveCubeFromPath(this);
