@@ -33,10 +33,17 @@ public class Shooter : MonoBehaviour
 
     private Queue<Transform> _bulletPool;
 
+    private int _totalValue;
+
     public int Total
     {
-        get => int.Parse(_total.text);
-        set => _total.text = value.ToString();
+        get => _totalValue;
+        set
+        {
+            _totalValue = value;
+            if (_total != null)
+                _total.text = _totalValue.ToString();
+        }
     }
 
     public bool ShowTotal

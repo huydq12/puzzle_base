@@ -20,13 +20,16 @@ public class Gate : MonoBehaviour
     private Shooter NextShooter { get; set; }
     private Shooter QueueShooter { get; set; }
     private int _currentShooterIndex = 0;
+    private int _totalValue;
 
     public int Total
     {
-        get => int.Parse(_total.text);
+        get => _totalValue;
         set
         {
-            _total.text = value.ToString();
+            _totalValue = value;
+            if (_total != null)
+                _total.text = _totalValue.ToString();
         }
     }
     private void UpdateShooterRoles()

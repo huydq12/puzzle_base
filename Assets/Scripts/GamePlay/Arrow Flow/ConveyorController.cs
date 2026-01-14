@@ -19,6 +19,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
     private List<PathSlot> _lstPaths = new();
     private Queue<EnterRequest> _waitingToEnterQueue = new();
+    private readonly Dictionary<int, EnterRequest> _insertsByIndex = new();
     private int _totalPathSlotTaken;
 
     private Coroutine _cycleRoutine;
@@ -26,6 +27,8 @@ public class ConveyorController : Singleton<ConveyorController>
     private bool _isRunning = true;
     private bool _isBlinking;
     private Tween _blinkTween;
+    private WaitForSeconds _cycleWait;
+    private float _cycleWaitSeconds = -1f;
 
     private void LoseGame()
     {
@@ -236,7 +239,8 @@ public class ConveyorController : Singleton<ConveyorController>
 
     private bool TryCollectInsertRequests(out Dictionary<int, EnterRequest> insertsByIndex)
     {
-        insertsByIndex = new Dictionary<int, EnterRequest>();
+        insertsByIndex = _insertsByIndex;
+        insertsByIndex.Clear();
 
         if (_waitingToEnterQueue.Count == 0 || _lstPaths == null || _lstPaths.Count == 0)
             return false;
@@ -287,6 +291,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
         while (_isRunning)
         {
+            timePerCycle = GetCycleTime();
             if (_isPaused)
             {
                 yield return null;
@@ -415,8 +420,18 @@ public class ConveyorController : Singleton<ConveyorController>
                 }
             }
 
-            yield return new WaitForSeconds(timePerCycle);
+            yield return GetCycleWait(timePerCycle);
         }
+    }
+
+    private WaitForSeconds GetCycleWait(float seconds)
+    {
+        if (_cycleWait == null || Mathf.Abs(_cycleWaitSeconds - seconds) > 0.0001f)
+        {
+            _cycleWaitSeconds = seconds;
+            _cycleWait = new WaitForSeconds(seconds);
+        }
+        return _cycleWait;
     }
 
     private void CubeMoving(int idx, float time)
@@ -473,6 +488,7 @@ public class ConveyorController : Singleton<ConveyorController>
         }
 
         _waitingToEnterQueue.Clear();
+        _insertsByIndex.Clear();
         _totalPathSlotTaken = 0;
         _lstPaths.Clear();
         UpdatePercent();
