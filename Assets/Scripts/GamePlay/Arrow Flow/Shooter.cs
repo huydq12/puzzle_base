@@ -119,7 +119,10 @@ public class Shooter : MonoBehaviour
     {
         if (Physics.Raycast(transform.position + _offsetRay, -transform.right, out _hit, _rayDistance, _cubeLayer))
         {
-            if (_hit.transform.TryGetComponent(out CubeLine cube) && cube != _lastHit && cube.Color == Color)
+            if (_hit.transform.TryGetComponent(out CubeLine cube) &&
+                cube != _lastHit &&
+                cube.Color == Color &&
+                cube.Cell == null)
             {
                 _lastHit = cube;
                 Shoot(cube);
