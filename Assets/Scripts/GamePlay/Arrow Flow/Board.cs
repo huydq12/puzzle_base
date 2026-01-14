@@ -129,7 +129,19 @@ public class Board : Singleton<Board>
         if (_currentConfig.ConveyorLine == null || _currentConfig.ConveyorLine.Cells.IsNullOrEmpty()) return;
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
-        var orderedCells = BuildOrderedBoundaryCells(_currentConfig.ConveyorLine.Cells);
+        var conveyorCells = FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows);
+        if (conveyorCells.Count < 3)
+        {
+            Debug.LogWarning("ConveyorLine has too few valid cells; skipping conveyor setup.");
+            return;
+        }
+
+        var orderedCells = IsClosedNeighborLoop(conveyorCells) ? conveyorCells : BuildOrderedBoundaryCells(conveyorCells);
+        if (orderedCells == null || orderedCells.Count < 3)
+        {
+            Debug.LogWarning("ConveyorLine cannot be ordered into a valid loop; skipping conveyor setup.");
+            return;
+        }
 
         List<Vector2> conveyorPolygon = new();
         foreach (var c in orderedCells)
@@ -149,8 +161,8 @@ public class Board : Singleton<Board>
 
                 bool inside = IsPointInsidePolygon(
                     new Vector2(wp.x, wp.z),
-                    conveyorPolygon
-                );
+            conveyorPolygon
+        );
                 cell.CellType = _currentConfig.Cells[col, row].CellType;
                 cell.ShowRenderer(inside && cell.CellType != GridCellType.Conveyor);
             }
@@ -161,15 +173,19 @@ public class Board : Singleton<Board>
 
         for (int i = 0; i < orderedCells.Count; i++)
         {
-            Vector3 prev = GetCellAt(
-                orderedCells[(i - 1 + orderedCells.Count) % orderedCells.Count]
-            ).transform.position;
+            GridCell prevCell = GetCellAt(orderedCells[(i - 1 + orderedCells.Count) % orderedCells.Count]);
+            GridCell currCell = GetCellAt(orderedCells[i]);
+            GridCell nextCell = GetCellAt(orderedCells[(i + 1) % orderedCells.Count]);
 
-            Vector3 curr = GetCellAt(orderedCells[i]).transform.position;
+            if (prevCell == null || currCell == null || nextCell == null)
+            {
+                Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
+                return;
+            }
 
-            Vector3 next = GetCellAt(
-                orderedCells[(i + 1) % orderedCells.Count]
-            ).transform.position;
+            Vector3 prev = prevCell.transform.position;
+            Vector3 curr = currCell.transform.position;
+            Vector3 next = nextCell.transform.position;
 
             if (IsRightAngle(prev, curr, next))
             {
@@ -191,6 +207,12 @@ public class Board : Singleton<Board>
             int nextIdx = (i + 1) % allPositions.Count;
             totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
         }
+        if (allPositions.Count < 2)
+        {
+            Debug.LogWarning("ConveyorLine produced too few spline points; skipping conveyor setup.");
+            return;
+        }
+
         float avgSegmentLength = totalDistance / allPositions.Count;
 
         List<SplinePoint> points = new();
@@ -216,6 +238,41 @@ public class Board : Singleton<Board>
         ConveyorController.Instance.SplineComputer.Close();
         ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
+    }
+
+    private static List<Vector2Int> FilterInBoundsDistinct(List<Vector2Int> cells, int columns, int rows)
+    {
+        List<Vector2Int> result = new();
+        HashSet<Vector2Int> seen = new();
+
+        if (cells == null) return result;
+
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Vector2Int cell = cells[i];
+            if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows) continue;
+            if (!seen.Add(cell)) continue;
+            result.Add(cell);
+        }
+
+        return result;
+    }
+
+    private static bool IsClosedNeighborLoop(List<Vector2Int> cells)
+    {
+        if (cells == null || cells.Count < 3) return false;
+
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Vector2Int a = cells[i];
+            Vector2Int b = cells[(i + 1) % cells.Count];
+            Vector2Int d = b - a;
+            int ax = Mathf.Abs(d.x);
+            int ay = Mathf.Abs(d.y);
+            if (Mathf.Max(ax, ay) != 1) return false;
+        }
+
+        return true;
     }
 
 
