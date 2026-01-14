@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using Dreamteck.Splines;
+using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ public class ConveyorController : Singleton<ConveyorController>
     [SerializeField] private Color _warningColor;
     [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
+    [SerializeField] private GameObject _arrow;
     [SerializeField] private float _cubeSize;
     [SerializeField] private int _walkAroundSpeed;
     [SerializeField] private float _baseOffsetAmount;
@@ -41,6 +43,23 @@ public class ConveyorController : Singleton<ConveyorController>
         DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
     }
 
+    void SpawnArrowAlongSpline()
+    {
+        float splineLength = _splineComputer.CalculateLength();
+
+        int total = Mathf.Max(2, Mathf.RoundToInt(splineLength * 0.35f));
+
+        SplineSample sample = new SplineSample();
+
+        for (int i = 0; i < total; i++)
+        {
+            double percent = i / (double)(total - 1);
+
+            _splineComputer.Evaluate(percent, ref sample);
+
+            Instantiate(_arrow, sample.position, Quaternion.LookRotation(sample.forward, sample.up), _splineComputer.transform);
+        }
+    }
     public void WinGame()
     {
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
@@ -114,7 +133,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public void SetupFromSpline()
     {
-        // Reset running state so next level starts conveyor after a win/lose stop.
+        SpawnArrowAlongSpline();
         _isRunning = true;
         _isPaused = false;
 
