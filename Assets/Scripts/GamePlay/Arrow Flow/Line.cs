@@ -384,6 +384,11 @@ public class Line : MonoBehaviour
             _pendingDetach[i].transform.SetParent(Board.Instance.transform, true);
         }
         _pendingDetach.Clear();
+        if (Cubes.Count == 0)
+        {
+            ConveyorController.Instance.OnLineMoved();
+            Destroy(gameObject);
+        }
     }
 
     private bool TryReserveConveyorBaseIfNeeded()

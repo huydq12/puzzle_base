@@ -16,6 +16,7 @@ public class Board : Singleton<Board>
     [SerializeField] private Vector2 _spacing;
     [HideInInspector] public GridCell[,] Cells;
     public Vector2 Spacing => _spacing;
+    public int InitLine => _currentConfig.ColorLines.Count;
     public GameColorConfig ColorConfig => _colorConfig;
     private LevelConfig _currentConfig;
 

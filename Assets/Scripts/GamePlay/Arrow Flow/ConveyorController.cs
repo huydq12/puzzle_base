@@ -16,6 +16,7 @@ public class ConveyorController : Singleton<ConveyorController>
     [SerializeField] private float _cubeSize;
     [SerializeField] private int _walkAroundSpeed;
     [SerializeField] private float _baseOffsetAmount;
+    private int _totalLineMoved;
 
     public SplineComputer SplineComputer => _splineComputer;
 
@@ -32,6 +33,14 @@ public class ConveyorController : Singleton<ConveyorController>
     private WaitForSeconds _cycleWait;
     private float _cycleWaitSeconds = -1f;
 
+    void Start()
+    {
+        GameManagerInGame.Instance.OnEndLevel += () =>
+        {
+            Time.timeScale = 1;
+            _totalLineMoved = 0;
+        };
+    }
     private void LoseGame()
     {
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
@@ -41,6 +50,14 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetState(GameStateInGame.Result);
         GameManagerInGame.Instance.SetLose();
         DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
+    }
+    public void OnLineMoved()
+    {
+        _totalLineMoved++;
+        if (_totalLineMoved >= Board.Instance.InitLine)
+        {
+            Time.timeScale = 2;
+        }
     }
 
     void SpawnArrowAlongSpline()
