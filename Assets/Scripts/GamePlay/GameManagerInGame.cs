@@ -1,11 +1,11 @@
 using System;
 using System.Collections;
-using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
-using Sirenix.Serialization;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public enum GameStateInGame
 {
     Init,
@@ -18,24 +18,40 @@ public enum GameStateInGame
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
     public int MaxLevel = 1;
-    public int CurrentLevel = 2;
+    public int CurrentLevel = 1;
     [ReadOnly] public GameStateInGame CurrentGameStateInGame = GameStateInGame.Init;
     [HideInInspector] public Action OnEndLevel;
     [HideInInspector] public Action OnStartLevel;
     public UserData userData { get; private set; }
+    public bool InitLevel = true;
+    private Coroutine _playRoutine;
+
     private new void Awake()
     {
         base.Awake();
-        // LoadData();
-        StartGame(MaxLevel);
+
+        if (!Game.IsLaunched)
+            Game.Launch();
+
+        userData = Game.Data.Load<UserData>();
+        if (userData != null && !userData.isDefaultData)
+        {
+            userData.SetDefaultData();
+            userData.Save();
+        }
+        if (!InitLevel)
+        {
+            LoadData();
+        }
+        StartGame(CurrentLevel);
+
+        // SetUpNotification();
     }
     public void SetWin()
     {
-        CurrentLevel++;
-        if (CurrentLevel > MaxLevel)
-        {
-            MaxLevel = CurrentLevel;
-        }
+        CurrentLevel = Mathf.Max(1, CurrentLevel + 1);
+        MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
+        SaveData();
         SetState(GameStateInGame.Result);
     }
     public void SetLose()
@@ -63,33 +79,84 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
     public void StartGame()
     {
-        StartCoroutine(PlayGame(CurrentLevel));
+        StartGame(CurrentLevel);
     }
     public void StartGame(int level)
     {
-        if (level > MaxLevel)
+        level = Mathf.Max(1, level);
+        CurrentLevel = level;
+        MaxLevel = Mathf.Max(MaxLevel, level);
+        SaveData();
+
+        if (_playRoutine != null)
         {
-            MaxLevel = level;
+            StopCoroutine(_playRoutine);
+            _playRoutine = null;
         }
-        StartCoroutine(PlayGame(level));
+        _playRoutine = StartCoroutine(PlayGame(level));
     }
+
+    public void RestartLevel()
+    {
+        StartGame(CurrentLevel);
+    }
+
+    public void StartNextLevel()
+    {
+        StartGame(CurrentLevel);
+    }
+
     private IEnumerator PlayGame(int level)
     {
         CurrentLevel = level;
-        ResourceRequest request = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+        ResourceRequest soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+        yield return soRequest;
 
-        yield return request;
+        LevelConfig config = soRequest.asset as LevelConfig;
 
-        LevelConfig config = request.asset as LevelConfig;
+#if UNITY_EDITOR
+        if (config == null)
+        {
+            soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+            yield return soRequest;
+            config = soRequest.asset as LevelConfig;
+        }
+#endif
+
+        if (config == null)
+        {
+            Debug.LogError($"Failed to load level {level}. Missing `Resources/Levels/SO/Level {level}.asset`.");
+            _playRoutine = null;
+            yield break;
+        }
+        if (Board.Instance == null)
+        {
+            Debug.LogError("Board.Instance is null; cannot setup level.");
+            _playRoutine = null;
+            yield break;
+        }
+
         Board.Instance.SetupLevel(config);
+        _playRoutine = null;
     }
     public void SaveData()
     {
-        PlayerPrefs.SetInt("MaxLevel", MaxLevel);
+        if (userData == null) return;
+        userData.maxLevel = Mathf.Max(1, MaxLevel);
+        userData.currentLevel = Mathf.Max(1, CurrentLevel);
+        userData.Save();
     }
     public void LoadData()
     {
-        MaxLevel = PlayerPrefs.GetInt("MaxLevel", 1);
+        if (userData == null)
+        {
+            MaxLevel = 1;
+            CurrentLevel = 1;
+            return;
+        }
+
+        MaxLevel = Mathf.Max(1, userData.maxLevel);
+        CurrentLevel = Mathf.Clamp(userData.currentLevel, 1, MaxLevel);
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()
@@ -106,4 +173,13 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
     }
 #endif
+
+    // private void SetUpNotification()
+    // {
+    //     API.Initialize();
+    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(1, 0, 0, 0), "icon_1", "icon_0");
+    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(3, 0, 0, 0), "icon_1", "icon_0");
+    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(6, 0, 0, 0), "icon_1", "icon_0");
+    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(9, 0, 0, 0), "icon_1", "icon_0");
+    // }
 }
