@@ -157,14 +157,8 @@ public class Board : Singleton<Board>
             for (int col = 0; col < columns; col++)
             {
                 GridCell cell = Cells[col, row];
-                Vector3 wp = cell.transform.position;
-
-                bool inside = IsPointInsidePolygon(
-                    new Vector2(wp.x, wp.z),
-            conveyorPolygon
-        );
                 cell.CellType = _currentConfig.Cells[col, row].CellType;
-                cell.ShowRenderer(inside && cell.CellType != GridCellType.Conveyor);
+                cell.ShowRenderer(cell.IsOccupied);
             }
         }
 
@@ -323,22 +317,7 @@ public class Board : Singleton<Board>
 
         return result;
     }
-    bool IsPointInsidePolygon(Vector2 p, List<Vector2> poly)
-    {
-        bool inside = false;
 
-        for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
-        {
-            if (((poly[i].y > p.y) != (poly[j].y > p.y)) &&
-                (p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) /
-                 (poly[j].y - poly[i].y) + poly[i].x))
-            {
-                inside = !inside;
-            }
-        }
-
-        return inside;
-    }
     bool IsCorner(Vector2Int prev, Vector2Int curr, Vector2Int next)
     {
         Vector2Int d1 = curr - prev;
