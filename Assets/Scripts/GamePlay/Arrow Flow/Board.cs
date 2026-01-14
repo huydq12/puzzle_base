@@ -495,12 +495,12 @@ public class Board : Singleton<Board>
         Cells = new GridCell[columns, rows];
 
         int expectedChildCount = rows * columns;
+        GridCell[] gridCells = new GridCell[expectedChildCount];
         for (int i = 0; i < expectedChildCount; i++)
-            Instantiate(_cellPrefab, transform);
-
-        Transform[] children = new Transform[transform.childCount];
-        for (int i = 0; i < transform.childCount; i++)
-            children[i] = transform.GetChild(i);
+        {
+            GridCell cell = Instantiate(_cellPrefab, transform);
+            gridCells[i] = cell;
+        }
 
         Vector2 offset = new Vector2(
             (columns - 1) * spacing.x / 2f,
@@ -513,7 +513,8 @@ public class Board : Singleton<Board>
         {
             for (int col = 0; col < columns; col++)
             {
-                Transform child = children[index++];
+                GridCell cell = gridCells[index++];
+                Transform child = cell.transform;
 
                 Vector3 pos = new Vector3(
                     col * spacing.x - offset.x,
@@ -522,7 +523,6 @@ public class Board : Singleton<Board>
                 );
                 child.localPosition = pos;
 
-                GridCell cell = child.GetComponent<GridCell>();
                 cell.Position = new Vector2Int(col, row);
                 cell.name = $"Cell_{col}_{row}";
                 Cells[col, row] = cell;

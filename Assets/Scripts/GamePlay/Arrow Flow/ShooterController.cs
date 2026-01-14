@@ -32,4 +32,22 @@ public class ShooterController : Singleton<ShooterController>
             Gates.Add(gate);
         }
     }
+
+    public void NotifyGateClosed(Gate gate)
+    {
+        if (gate == null) return;
+        if (GameManagerInGame.Instance == null) return;
+        if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result) return;
+        if (Gates == null || Gates.Count == 0) return;
+
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            Gate g = Gates[i];
+            if (g == null || !g.IsClosed)
+                return;
+        }
+
+        if (ConveyorController.Instance != null)
+            ConveyorController.Instance.WinGame();
+    }
 }

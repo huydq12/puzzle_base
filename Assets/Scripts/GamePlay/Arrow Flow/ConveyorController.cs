@@ -41,6 +41,16 @@ public class ConveyorController : Singleton<ConveyorController>
         DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
     }
 
+    public void WinGame()
+    {
+        if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
+            return;
+
+        StopConveyor();
+        GameManagerInGame.Instance.SetWin();
+        DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UIWin>().Show());
+    }
+
     private class PathSlot
     {
         public Vector3 Position;
@@ -104,6 +114,10 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public void SetupFromSpline()
     {
+        // Reset running state so next level starts conveyor after a win/lose stop.
+        _isRunning = true;
+        _isPaused = false;
+
         Clear();
         _lstPaths.Clear();
 

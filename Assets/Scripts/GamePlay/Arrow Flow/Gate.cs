@@ -21,6 +21,7 @@ public class Gate : MonoBehaviour
     private Shooter QueueShooter { get; set; }
     private int _currentShooterIndex = 0;
     private int _totalValue;
+    [ReadOnly] public bool IsClosed { get; private set; }
 
     public int Total
     {
@@ -82,16 +83,19 @@ public class Gate : MonoBehaviour
     [Button]
     public void CloseGate()
     {
+        IsClosed = true;
         _total.enabled = false;
         _door.gameObject.SetActive(true);
         _maskDoor.gameObject.SetActive(true);
         Sequence sq = DOTween.Sequence();
         sq.Append(_belt.DOScaleX(0.3f, 0.25f));
         sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
+        sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
     }
     [Button]
     public void OpenGate()
     {
+        IsClosed = false;
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
