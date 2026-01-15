@@ -57,7 +57,7 @@ public class Gate : MonoBehaviour
         {
             Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
             shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
-            shoot.transform.rotation = Quaternion.Euler(0, -90, 0);
+            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
             shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(datas[i].Color);

@@ -13,10 +13,14 @@ public class ShooterController : Singleton<ShooterController>
     private Quaternion DirectionToRotation(int direction)
     {
         float y = 0f;
-        if (direction == 1) y = 90f;
-        else if (direction == 2) y = 0f;
-        else if (direction == 3) y = -90f;
-        else if (direction == 4) y = -180f;
+        if (direction == 1) y = 45f;
+        else if (direction == 2) y = 90f;
+        else if (direction == 3) y = 135f;
+        else if (direction == 4) y = 180f;
+        else if (direction == 5) y = 225f;
+        else if (direction == 6) y = 270f;
+        else if (direction == 7) y = 315f;
+        else if (direction == 8) y = 360f;
         return Quaternion.Euler(0f, y, 0f);
     }
 
