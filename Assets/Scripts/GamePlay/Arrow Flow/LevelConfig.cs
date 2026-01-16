@@ -86,6 +86,7 @@ public class ShooterData
 {
     public ObjectColor Color;
     public int Counter;
+    public int Type;
 }
 public class GridCellData
 {

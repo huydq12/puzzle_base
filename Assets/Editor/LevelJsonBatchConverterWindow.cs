@@ -343,6 +343,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                         ShooterData data = new ShooterData();
                         data.Color = (ObjectColor)unit.color;
                         data.Counter = unit.counter;
+                        data.Type = unit.type;
                         gate.Shooters.Add(data);
                     }
                 }

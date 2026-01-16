@@ -15,6 +15,8 @@ public class Shooter : MonoBehaviour
 {
     [SerializeField] private Renderer[] _renderer;
     [SerializeField] private TextMeshPro _total;
+    [SerializeField] private Material _materialType1;
+    [SerializeField] private Material _materialType6;
     [SerializeField] private Vector3 _offsetRay;
     [SerializeField] private float _rayDistance;
     [SerializeField] private LayerMask _cubeLayer;
@@ -23,12 +25,13 @@ public class Shooter : MonoBehaviour
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
     [ReadOnly] public ObjectColor Color;
+    [ReadOnly] public int Type;
     [ReadOnly] public bool CanShoot;
     [ReadOnly] public Gate Gate;
     private RaycastHit _hit;
     private Vector3 _originalScale;
     private CubeLine _lastHit;
-
+    
     private bool _collectRequested;
 
     private Queue<Transform> _bulletPool;
@@ -108,6 +111,11 @@ public class Shooter : MonoBehaviour
                 SetSize(0.65f);
                 break;
         }
+
+        if (Type == 1 && role == ShooterRole.Current)
+            ApplyMaterial(forceColorMaterial: true);
+        else
+            ApplyMaterial();
     }
 
     public void SetSize(float size)
@@ -185,9 +193,35 @@ public class Shooter : MonoBehaviour
     public void SetColor(ObjectColor color)
     {
         Color = color;
-        foreach (var renderer in _renderer)
+        ApplyMaterial();
+    }
+
+    public void SetType(int type)
+    {
+        Type = type;
+        ApplyMaterial();
+    }
+
+    private void ApplyMaterial(bool forceColorMaterial = false)
+    {
+        if (_renderer == null || _renderer.Length == 0) return;
+
+        Material material = null;
+        if (!forceColorMaterial && Type == 1) material = _materialType1;
+        else if (Type == 6) material = _materialType6;
+
+        if (material == null)
         {
-            renderer.sharedMaterial = Board.Instance.ColorConfig.GetShooterColor(color);
+            if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
+            material = Board.Instance.ColorConfig.GetShooterColor(Color);
+        }
+
+        if (material == null) return;
+
+        for (int i = 0; i < _renderer.Length; i++)
+        {
+            if (_renderer[i] == null) continue;
+            _renderer[i].sharedMaterial = material;
         }
     }
 

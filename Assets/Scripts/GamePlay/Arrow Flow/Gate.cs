@@ -61,6 +61,7 @@ public class Gate : MonoBehaviour
             shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(datas[i].Color);
+            shoot.SetType(datas[i].Type);
             shoot.Total = datas[i].Counter;
             shoot.Gate = this;
             _shooterInstances.Add(shoot);
@@ -168,6 +169,7 @@ public class Gate : MonoBehaviour
                     if (dataIdx < Shooters.Count)
                     {
                         prevCurrent.SetColor(Shooters[dataIdx].Color);
+                        prevCurrent.SetType(Shooters[dataIdx].Type);
                         prevCurrent.Total = Shooters[dataIdx].Counter;
                     }
                 }
