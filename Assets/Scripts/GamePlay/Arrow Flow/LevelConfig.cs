@@ -78,7 +78,7 @@ public class LevelConfig : SerializedScriptableObject
 public class GateData
 {
     public Vector3 Position;
-    [Range(0, 4)] public int Direction;
+    [Range(0, 7)] public int Direction;
     public List<ShooterData> Shooters;
 }
 [HideReferenceObjectPicker]
