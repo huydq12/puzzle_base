@@ -253,11 +253,14 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 ColorLine line = new ColorLine();
                 line.Color = (ObjectColor)arrow.color;
                 line.Cells = new List<Vector2Int>();
+                line.ElementTypes = new List<int>();
 
                 for (int p = arrow.unitPositions.Count - 1; p >= 0; p--)
                 {
                     LevelJsonUnitPos pos = arrow.unitPositions[p];
                     line.Cells.Add(new Vector2Int(pos.x - originOffset.x, pos.y - originOffset.y));
+                    int elementType = pos.elementType != 0 ? pos.elementType : arrow.elementType;
+                    line.ElementTypes.Add(elementType);
                 }
 
                 config.ColorLines.Add(line);
@@ -498,6 +501,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
     {
         public int x;
         public int y;
+        public int elementType;
     }
 
     [Serializable]
