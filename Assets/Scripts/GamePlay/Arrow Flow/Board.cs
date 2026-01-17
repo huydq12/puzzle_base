@@ -20,6 +20,19 @@ public class Board : Singleton<Board>
     public GameColorConfig ColorConfig => _colorConfig;
     private LevelConfig _currentConfig;
 
+    private readonly List<Line> _iceLines = new();
+    public void NotifyAnyLineEnteredConveyor()
+    {
+        if (_iceLines.Count == 0) return;
+
+        for (int i = 0; i < _iceLines.Count; i++)
+        {
+            Line line = _iceLines[i];
+            if (line == null) continue;
+            line.ConsumeIceStep(1);
+        }
+    }
+
     void SetupCamera()
     {
         float limit = 12f;
@@ -368,8 +381,12 @@ public class Board : Singleton<Board>
 
     private void SetupLine()
     {
+        _iceLines.Clear();
+
         foreach (var line in _currentConfig.ColorLines)
         {
+            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
+
             Line lineColor = Instantiate(
                 _linePrefab,
                 Vector3.zero,
@@ -379,6 +396,7 @@ public class Board : Singleton<Board>
 
             lineColor.Color = line.Color;
             lineColor.InitializeCounter(line.Counter);
+            lineColor.SetIsIceLine(lineHasIce);
             lineColor.Cubes = new List<CubeLine>();
 
             var cells = line.Cells;
@@ -428,6 +446,11 @@ public class Board : Singleton<Board>
                 }
                 cube.Line = lineColor;
                 lineColor.Cubes.Add(cube);
+            }
+
+            if (lineHasIce)
+            {
+                _iceLines.Add(lineColor);
             }
         }
     }

@@ -54,6 +54,9 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public void OnHit()
     {
+        if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
+            return;
+
         ConveyorController.Instance.RemoveCubeFromPath(this);
         Instantiate(_hitEffect, transform.position, Quaternion.identity);
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));

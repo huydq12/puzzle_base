@@ -388,6 +388,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
                             if (cube != null)
                             {
+                                enteringRequest.Line?.NotifyEnteredConveyor();
                                 enteringRequest.OnInserted?.Invoke();
 
                                 Vector3 pos = _lstPaths[curIndex].Position;

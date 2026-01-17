@@ -10,6 +10,7 @@ public class Line : MonoBehaviour
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public int Counter;
     [ReadOnly] public int RemainingCounter;
+    [ReadOnly] public bool IsIceLine;
 
     [Header("Cubes (0 = tail, last = head)")]
     [ReadOnly] public List<CubeLine> Cubes;
@@ -41,6 +42,14 @@ public class Line : MonoBehaviour
     private Tween _blockingCubeTiltTween;
 
     private GridCell[] _targetsBuffer;
+    private bool _hasNotifiedConveyorEnter;
+
+    private void Awake()
+    {
+        if (_counterText == null)
+            _counterText = GetComponentInChildren<TextMeshPro>(true);
+        UpdateCounterText();
+    }
 
     public void InitializeCounter(int counter)
     {
@@ -49,10 +58,45 @@ public class Line : MonoBehaviour
         UpdateCounterText();
     }
 
+    public void SetIsIceLine(bool isIceLine)
+    {
+        IsIceLine = isIceLine;
+    }
+
+    public void SetRemainingCounter(int remaining)
+    {
+        RemainingCounter = Mathf.Max(0, remaining);
+        UpdateCounterText();
+    }
+
+    public void ConsumeIceStep(int amount)
+    {
+        if (!IsIceLine) return;
+        if (Counter <= 0) return;
+        if (RemainingCounter <= 0) return;
+
+        RemainingCounter = Mathf.Max(0, RemainingCounter - Mathf.Max(0, amount));
+        UpdateCounterText();
+
+        if (RemainingCounter <= 0)
+        {
+            MeltIce();
+        }
+    }
+
+    public void NotifyEnteredConveyor()
+    {
+        if (_hasNotifiedConveyorEnter) return;
+        _hasNotifiedConveyorEnter = true;
+
+        if (Board.Instance != null)
+            Board.Instance.NotifyAnyLineEnteredConveyor();
+    }
+
     public void MoveLine()
     {
         if (_isMoving || _isReverting) return;
-        if (Counter > 0 && RemainingCounter <= 0) return;
+        if (IsIceLine && RemainingCounter > 0) return;
 
         ResetMoveState();
 
@@ -70,12 +114,6 @@ public class Line : MonoBehaviour
         if (!TryBuildMovePlan(board, headPos, conveyorCell, occupiedCell))
             return;
 
-        if (Counter > 0)
-        {
-            RemainingCounter = Mathf.Max(0, RemainingCounter - 1);
-            UpdateCounterText();
-        }
-
         _isMoving = true;
         StepForward();
     }
@@ -89,9 +127,27 @@ public class Line : MonoBehaviour
     {
         if (_counterText == null) return;
         bool show = Counter > 0;
+        if (show && IsIceLine && RemainingCounter <= 0)
+            show = false;
         _counterText.enabled = show;
         if (show)
             _counterText.text = RemainingCounter.ToString();
+    }
+
+    private void MeltIce()
+    {
+        Board board = Board.Instance;
+        if (board == null) return;
+
+        CubeLine[] cubes = board.GetComponentsInChildren<CubeLine>(true);
+        for (int i = 0; i < cubes.Length; i++)
+        {
+            CubeLine cube = cubes[i];
+            if (cube == null) continue;
+            if (cube.Line != this) continue;
+            if (cube.ElementType == 2)
+                cube.SetElementType(0);
+        }
     }
 
     private void UpdateCounterTextPosition()
