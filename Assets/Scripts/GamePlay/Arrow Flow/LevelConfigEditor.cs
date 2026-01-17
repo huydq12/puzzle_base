@@ -49,9 +49,11 @@ public class LevelConfigEditor : OdinEditor
     private gridViewState _gridViewState;
     private bool _isColorDragging;
     private ColorLine _currentDrawingLine;
+    private ColorLine _selectedLine;
 
     private bool _showElementTypes = true;
     private bool _showElementTypeZero = false;
+    private bool _showLineCounters = true;
 
     // Cached GUIStyles
     private static GUIStyle _cellLabelStyle;
@@ -93,6 +95,7 @@ public class LevelConfigEditor : OdinEditor
     // Cache for occupied cells to avoid repeated LINQ queries
     private HashSet<Vector2Int> _occupiedCellsCache = new HashSet<Vector2Int>();
     private readonly Dictionary<Vector2Int, int> _elementTypeByCellCache = new Dictionary<Vector2Int, int>();
+    private readonly Dictionary<Vector2Int, int> _lineCounterByHeadCellCache = new Dictionary<Vector2Int, int>();
     private int _lastRowsCount;
     private int _lastColumnsCount;
 
@@ -100,6 +103,7 @@ public class LevelConfigEditor : OdinEditor
     {
         _occupiedCellsCache.Clear();
         _elementTypeByCellCache.Clear();
+        _lineCounterByHeadCellCache.Clear();
         if (_levelconfig == null || _levelconfig.ColorLines == null) return;
         foreach (var line in _levelconfig.ColorLines)
         {
@@ -118,6 +122,12 @@ public class LevelConfigEditor : OdinEditor
                 Vector2Int cell = line.Cells[i];
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
                 _elementTypeByCellCache[cell] = elementType;
+            }
+
+            if (count > 0)
+            {
+                Vector2Int headCell = line.Cells[count - 1];
+                _lineCounterByHeadCellCache[headCell] = line.Counter;
             }
         }
     }
@@ -161,6 +171,11 @@ public class LevelConfigEditor : OdinEditor
     private bool TryGetElementType(Vector2Int cellPos, out int elementType)
     {
         return _elementTypeByCellCache.TryGetValue(cellPos, out elementType);
+    }
+
+    private bool TryGetLineCounterAtHead(Vector2Int cellPos, out int counter)
+    {
+        return _lineCounterByHeadCellCache.TryGetValue(cellPos, out counter);
     }
 
     private Vector2 GetCellCenter(Rect gridRect, int x, int y, int rows)
@@ -225,6 +240,7 @@ public class LevelConfigEditor : OdinEditor
         GUILayout.FlexibleSpace();
         _showElementTypes = EditorGUILayout.ToggleLeft("Show Element Types", _showElementTypes, GUILayout.Width(160));
         _showElementTypeZero = EditorGUILayout.ToggleLeft("Show Zero", _showElementTypeZero, GUILayout.Width(100));
+        _showLineCounters = EditorGUILayout.ToggleLeft("Show Counters", _showLineCounters, GUILayout.Width(120));
         GUILayout.FlexibleSpace();
         EditorGUILayout.EndHorizontal();
 
@@ -239,6 +255,21 @@ public class LevelConfigEditor : OdinEditor
 
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
+
+            if (_selectedLine != null)
+            {
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                EditorGUI.BeginChangeCheck();
+                int newCounter = EditorGUILayout.IntField("Counter", _selectedLine.Counter, GUILayout.Width(240));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _selectedLine.Counter = Mathf.Max(0, newCounter);
+                    EditorUtility.SetDirty(_levelconfig);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+            }
         }
 
         GUILayout.Space(10);
@@ -500,6 +531,7 @@ public class LevelConfigEditor : OdinEditor
                 {
                     line.ElementTypes.Add(0);
                 }
+                line.Counter = 0;
                 _levelconfig.ColorLines.Add(line);
             }
             else
@@ -629,6 +661,11 @@ public class LevelConfigEditor : OdinEditor
                 {
                     if (_showElementTypeZero || elementType != 0)
                         DrawElementTypeLabel(cellRect, elementType);
+                }
+
+                if (_showLineCounters && TryGetLineCounterAtHead(new Vector2Int(x, y), out int counter) && counter > 0)
+                {
+                    DrawCounterLabel(cellRect, counter);
                 }
 
                 if (cellRect.Contains(mousePos))
@@ -888,6 +925,18 @@ public class LevelConfigEditor : OdinEditor
         GUI.Label(new Rect(rect.x + 2f, rect.y, rect.width, rect.height), content, ElementTypeLabelStyle);
     }
 
+    private void DrawCounterLabel(Rect cellRect, int counter)
+    {
+        string text = $"C{counter}";
+        GUIContent content = new GUIContent(text);
+
+        ElementTypeLabelStyle.normal.textColor = LabelColor;
+        Vector2 size = ElementTypeLabelStyle.CalcSize(content);
+        Rect rect = new Rect(cellRect.xMax - (size.x + 8f), cellRect.yMin + 1f, size.x + 6f, size.y);
+        EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, 0.4f));
+        GUI.Label(new Rect(rect.x + 2f, rect.y, rect.width, rect.height), content, ElementTypeLabelStyle);
+    }
+
 
     private void HandleColorLineInput(int x, int y, ObjectColor color, bool isStartClick)
     {
@@ -905,6 +954,7 @@ public class LevelConfigEditor : OdinEditor
                 _levelconfig.ColorLines.Add(line);
                 _occupiedCellsCache.Add(cellPos);
                 _currentDrawingLine = line;
+                _selectedLine = line;
             }
             else
             {
@@ -912,6 +962,7 @@ public class LevelConfigEditor : OdinEditor
                 if (_currentDrawingLine != null)
                 {
                     _currentColorEdit = _currentDrawingLine.Color;
+                    _selectedLine = _currentDrawingLine;
                 }
             }
             EditorUtility.SetDirty(_levelconfig);

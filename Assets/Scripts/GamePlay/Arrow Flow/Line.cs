@@ -2,16 +2,21 @@ using UnityEngine;
 using DG.Tweening;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using TMPro;
 
 
 public class Line : MonoBehaviour
 {
     [ReadOnly] public ObjectColor Color;
+    [ReadOnly] public int Counter;
+    [ReadOnly] public int RemainingCounter;
 
     [Header("Cubes (0 = tail, last = head)")]
     [ReadOnly] public List<CubeLine> Cubes;
 
     [SerializeField] private float _moveSpeed;
+    [SerializeField] private TextMeshPro _counterText;
+    [SerializeField] private Vector3 _counterTextOffset = new Vector3(0f, 0.4f, 0f);
 
 
     private float _cellDistance;
@@ -37,9 +42,17 @@ public class Line : MonoBehaviour
 
     private GridCell[] _targetsBuffer;
 
+    public void InitializeCounter(int counter)
+    {
+        Counter = Mathf.Max(0, counter);
+        RemainingCounter = Counter;
+        UpdateCounterText();
+    }
+
     public void MoveLine()
     {
         if (_isMoving || _isReverting) return;
+        if (Counter > 0 && RemainingCounter <= 0) return;
 
         ResetMoveState();
 
@@ -57,8 +70,39 @@ public class Line : MonoBehaviour
         if (!TryBuildMovePlan(board, headPos, conveyorCell, occupiedCell))
             return;
 
+        if (Counter > 0)
+        {
+            RemainingCounter = Mathf.Max(0, RemainingCounter - 1);
+            UpdateCounterText();
+        }
+
         _isMoving = true;
         StepForward();
+    }
+
+    private void LateUpdate()
+    {
+        UpdateCounterTextPosition();
+    }
+
+    private void UpdateCounterText()
+    {
+        if (_counterText == null) return;
+        bool show = Counter > 0;
+        _counterText.enabled = show;
+        if (show)
+            _counterText.text = RemainingCounter.ToString();
+    }
+
+    private void UpdateCounterTextPosition()
+    {
+        if (_counterText == null) return;
+        if (Cubes == null || Cubes.Count == 0) return;
+
+        int midIndex = Cubes.Count / 2;
+        CubeLine anchor = Cubes[midIndex];
+        if (anchor == null) return;
+        _counterText.transform.position = anchor.transform.position + _counterTextOffset;
     }
 
     private void ResetMoveState()

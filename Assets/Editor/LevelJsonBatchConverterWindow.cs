@@ -254,6 +254,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 line.Color = (ObjectColor)arrow.color;
                 line.Cells = new List<Vector2Int>();
                 line.ElementTypes = new List<int>();
+                line.Counter = arrow.counter;
 
                 for (int p = arrow.unitPositions.Count - 1; p >= 0; p--)
                 {

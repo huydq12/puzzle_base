@@ -378,6 +378,7 @@ public class Board : Singleton<Board>
             );
 
             lineColor.Color = line.Color;
+            lineColor.InitializeCounter(line.Counter);
             lineColor.Cubes = new List<CubeLine>();
 
             var cells = line.Cells;
@@ -397,6 +398,8 @@ public class Board : Singleton<Board>
                 );
 
                 cube.SetColor(line.Color);
+                int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
+                cube.SetElementType(elementType);
                 cell.CubeOnCell = cube;
                 cube.Cell = cell;
                 if (i == last)

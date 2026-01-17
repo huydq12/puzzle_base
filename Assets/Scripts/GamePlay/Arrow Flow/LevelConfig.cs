@@ -98,6 +98,7 @@ public class ColorLine
     public ObjectColor Color;
     public List<Vector2Int> Cells = new List<Vector2Int>();
     public List<int> ElementTypes = new List<int>();
+    public int Counter;
 }
 
 [Serializable]
