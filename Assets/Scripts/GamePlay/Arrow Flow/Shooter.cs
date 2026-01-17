@@ -1,3 +1,4 @@
+using System;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -21,7 +22,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private float _rayDistance;
     [SerializeField] private LayerMask _cubeLayer;
     [SerializeField] private Transform _bulletPrefab;
-    [SerializeField] private float _bulletSpeed;
+    private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
     [ReadOnly] public ObjectColor Color;
@@ -31,10 +32,14 @@ public class Shooter : MonoBehaviour
     private RaycastHit _hit;
     private Vector3 _originalScale;
     private CubeLine _lastHit;
-    
+
     private bool _collectRequested;
 
     private Queue<Transform> _bulletPool;
+
+    //Fire cooldown (seconds) — controls max fire rate while preserving existing logic
+    private float _fireCooldown = 0.07f; // was 0.15f
+    private float _nextFireTime = 0f;
 
     private int _totalValue;
 
@@ -46,6 +51,10 @@ public class Shooter : MonoBehaviour
             _totalValue = value;
             if (_total != null)
                 _total.text = _totalValue.ToString();
+            if (_totalValue <= 0)
+            {
+                CanShoot = false;
+            }
         }
     }
 
@@ -126,31 +135,56 @@ public class Shooter : MonoBehaviour
 
     private void Update()
     {
-        if (!CanShoot) return;
+        // Prevent firing while cooldown active or other conditions block shooting
+        if (!CanShoot || _collectRequested || Total <= 0 || (Gate != null && Gate.IsClosed) || Time.time < _nextFireTime) return;
         AimCube();
     }
 
     private void AimCube()
     {
-        if (Physics.Raycast(transform.position + _offsetRay, -transform.right, out _hit, _rayDistance, _cubeLayer))
-        {
-            if (_hit.transform.TryGetComponent(out CubeLine cube) &&
-                cube != _lastHit &&
-                cube.Color == Color &&
-                cube.Cell == null)
-            {
-                _lastHit = cube;
-                Shoot(cube);
-            }
-        }
-        else
+        Vector3 origin = transform.position + _offsetRay;
+        Vector3 dir = -transform.right;
+
+        int mask = _cubeLayer != 0 ? _cubeLayer : Physics.DefaultRaycastLayers;
+
+        RaycastHit[] hits = Physics.RaycastAll(origin, dir, _rayDistance, mask);
+        if (hits == null || hits.Length == 0)
         {
             _lastHit = null;
+            return;
         }
+
+        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (var hit in hits)
+        {
+            if (hit.transform == null) continue;
+
+            if (hit.transform.TryGetComponent(out CubeLine cube))
+            {
+                // choose first cube that matches color and is not placed on a cell
+                if (cube != _lastHit && cube.Color == Color && cube.Cell == null)
+                {
+                    // record the exact hit so the visual bullet travels to the raycast hit point
+                    _hit = hit;
+                    _lastHit = cube;
+                    Shoot(cube);
+                    return;
+                }
+
+                // if this collider is a CubeLine but doesn't match, stop at first CubeLine to avoid hitting behind it
+                break;
+            }
+        }
+
+        _lastHit = null;
     }
 
     private void Shoot(CubeLine cube)
     {
+        // Rate control: set next allowed fire time immediately to enforce cooldown
+        _nextFireTime = Time.time + _fireCooldown;
+
         transform.DOKill();
         transform.localScale = _originalScale;
 
@@ -160,8 +194,24 @@ public class Shooter : MonoBehaviour
             transform.localScale = _originalScale;
         });
 
+        // game logic removal happens immediately; bullet is visual
         cube.OnHit();
 
+        // Immediately decrement shooter ammo and handle collect — keeps logic atomic with hit
+        Total = Mathf.Max(0, Total - 1);
+
+        if (Total <= 0)
+        {
+            CanShoot = false;
+        }
+
+        if (Total <= 0 && !_collectRequested)
+        {
+            _collectRequested = true;
+            Gate?.CollectCurrentShooter();
+        }
+
+        // Visual bullet
         FireBullet();
     }
 
@@ -181,12 +231,6 @@ public class Shooter : MonoBehaviour
         .OnComplete(() =>
         {
             ReturnBullet(bullet);
-            Total = Mathf.Max(0, Total - 1);
-            if (Total <= 0 && !_collectRequested)
-            {
-                _collectRequested = true;
-                Gate.CollectCurrentShooter();
-            }
         });
     }
 
