@@ -49,6 +49,7 @@ public class ConveyorController : Singleton<ConveyorController>
         StopConveyor();
         GameManagerInGame.Instance.SetState(GameStateInGame.Result);
         GameManagerInGame.Instance.SetLose();
+        AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
         DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
     }
     public void OnLineMoved()
@@ -68,13 +69,13 @@ public class ConveyorController : Singleton<ConveyorController>
 
         SplineSample sample = new SplineSample();
 
-        for (int i = 0; i < total; i++)
+        for (int i = 0; i < total - 1; i++)
         {
             double percent = i / (double)(total - 1);
 
             _splineComputer.Evaluate(percent, ref sample);
 
-            Instantiate(_arrow, sample.position, Quaternion.LookRotation(sample.forward, sample.up), _splineComputer.transform);
+            Instantiate(_arrow, sample.position, Quaternion.LookRotation(sample.forward, sample.up), Board.Instance.transform);
         }
     }
     public void WinGame()
@@ -132,6 +133,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
         int nearest = 0;
         float bestSqr = float.PositiveInfinity;
+
         for (int i = 0; i < _lstPaths.Count; i++)
         {
             float sqr = (_lstPaths[i].Position - worldPos).sqrMagnitude;
@@ -142,9 +144,29 @@ public class ConveyorController : Singleton<ConveyorController>
             }
         }
 
-        int idx = (nearest + 1) % _lstPaths.Count;
+        Vector3 conveyorDir;
+        if (nearest < _lstPaths.Count - 1)
+            conveyorDir = (_lstPaths[nearest + 1].Position - _lstPaths[nearest].Position).normalized;
+        else
+            conveyorDir = (_lstPaths[nearest].Position - _lstPaths[nearest - 1].Position).normalized;
+
+        Vector3 toWorldPos = (worldPos - _lstPaths[nearest].Position).normalized;
+
+        float dot = Vector3.Dot(toWorldPos, conveyorDir);
+
+        int idx;
+        if (dot > 0)
+        {
+            idx = (nearest + 1) % _lstPaths.Count;
+        }
+        else
+        {
+            idx = nearest;
+        }
+
         if (idx == _lstPaths.Count - 1)
             idx = 0;
+
         return idx;
     }
 

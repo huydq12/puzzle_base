@@ -121,6 +121,7 @@ public class Gate : MonoBehaviour
         {
             return;
         }
+        AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
         _collectEffect.Stop();
         _collectEffect.Play();
         var prevCurrent = CurrentShooter;

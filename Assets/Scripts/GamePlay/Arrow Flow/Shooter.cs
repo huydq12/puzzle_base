@@ -21,6 +21,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private Vector3 _offsetRay;
     [SerializeField] private float _rayDistance;
     [SerializeField] private LayerMask _cubeLayer;
+    [SerializeField] private ParticleSystem _hiddenEffect;
     [SerializeField] private Transform _bulletPrefab;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
@@ -37,7 +38,7 @@ public class Shooter : MonoBehaviour
 
     private Queue<Transform> _bulletPool;
 
-    //Fire cooldown (seconds) — controls max fire rate while preserving existing logic
+    //Fire cooldown (seconds) ï¿½ controls max fire rate while preserving existing logic
     private float _fireCooldown = 0.07f; // was 0.15f
     private float _nextFireTime = 0f;
 
@@ -182,6 +183,7 @@ public class Shooter : MonoBehaviour
 
     private void Shoot(CubeLine cube)
     {
+        AudioManager.Instance.PlaySFX(SFXType.Shoot);
         // Rate control: set next allowed fire time immediately to enforce cooldown
         _nextFireTime = Time.time + _fireCooldown;
 
@@ -197,7 +199,7 @@ public class Shooter : MonoBehaviour
         // game logic removal happens immediately; bullet is visual
         cube.OnHit();
 
-        // Immediately decrement shooter ammo and handle collect — keeps logic atomic with hit
+        // Immediately decrement shooter ammo and handle collect ï¿½ keeps logic atomic with hit
         Total = Mathf.Max(0, Total - 1);
 
         if (Total <= 0)
@@ -256,8 +258,12 @@ public class Shooter : MonoBehaviour
 
         if (material == null)
         {
-            if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
             material = Board.Instance.ColorConfig.GetShooterColor(Color);
+            if(Type == 1)
+            {
+                Type = 0;
+                _hiddenEffect.Play();
+            }
         }
 
         if (material == null) return;

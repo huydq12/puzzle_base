@@ -27,6 +27,7 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private ParticleSystem _hitEffect;
     [SerializeField] private ParticleSystem _wariningEffect;
     [SerializeField] private ParticleSystem _warningHeadEffect;
+    [SerializeField] private ParticleSystem _meltEffect;
     [OdinSerialize] private Dictionary<CubeType, Renderer> _renderers;
     [SerializeField] private Renderer _head;
     [SerializeField] private Renderer _doubleCube;
@@ -93,6 +94,10 @@ public class CubeLine : SerializedMonoBehaviour
         _elementType3Revealed = false;
         ElementType = elementType;
         RefreshColorAndMaterials(Type);
+    }
+    public void PlayEffectMelt()
+    {
+        _meltEffect.Play();
     }
 
     private Material GetElementTypeMaterial()

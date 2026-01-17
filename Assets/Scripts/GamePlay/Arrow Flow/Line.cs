@@ -43,7 +43,6 @@ public class Line : MonoBehaviour
 
     private GridCell[] _targetsBuffer;
     private bool _hasNotifiedConveyorEnter;
-
     private void Awake()
     {
         if (_counterText == null)
@@ -114,7 +113,16 @@ public class Line : MonoBehaviour
         if (!TryBuildMovePlan(board, headPos, conveyorCell, occupiedCell))
             return;
 
+
+        if (!_isMoving)
+        {
+            if (!_willDefinitelyRevert)
+            {
+                AudioManager.Instance.PlaySFX(SFXType.Select);
+            }
+        }
         _isMoving = true;
+
         StepForward();
     }
 
@@ -152,18 +160,19 @@ public class Line : MonoBehaviour
 
     private void MeltIce()
     {
-        Board board = Board.Instance;
-        if (board == null) return;
-
-        CubeLine[] cubes = board.GetComponentsInChildren<CubeLine>(true);
+        CubeLine[] cubes = Board.Instance.GetComponentsInChildren<CubeLine>(true);
         for (int i = 0; i < cubes.Length; i++)
         {
             CubeLine cube = cubes[i];
             if (cube == null) continue;
             if (cube.Line != this) continue;
             if (cube.ElementType == 2)
+            {
+                cube.PlayEffectMelt();
                 cube.SetElementType(0);
+            }
         }
+        AudioManager.Instance.PlaySFX(SFXType.Ice);
     }
 
     private void UpdateCounterTextPosition()
@@ -568,6 +577,7 @@ public class Line : MonoBehaviour
         }
     }
 
+
     private void OnHeadInsertedToConveyor(CubeLine head)
     {
         head.transform.DOKill();
@@ -594,20 +604,66 @@ public class Line : MonoBehaviour
             return;
         }
 
-        // Còn cubes thì tiếp tục MoveLine cho phần còn lại
-        _isMoving = false;
+        _isMoving = true;
         _reuseGridDirNextMove = true;
-        MoveLine();
+
+        _waitingForConveyorEnter = false;
+        _reservedConveyorBaseIndex = -1;
+        _targetConveyorCell = null;
+
+        if (Cubes.Count > 0)
+        {
+            CubeLine newHead = Cubes[^1];
+            if (newHead != null && newHead.Cell != null)
+            {
+                Vector2Int newHeadPos = newHead.Cell.Position;
+                Vector2Int prev = newHeadPos - _gridDir;
+
+                GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, newHeadPos);
+                GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, newHeadPos);
+
+                if (conveyorCell != null)
+                {
+                    _targetConveyorCell = conveyorCell;
+                    int distToConveyor = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position) - 1;
+
+                    if (occupiedCell != null)
+                    {
+                        int distToObstacle = Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position) - 1;
+                        if (distToObstacle < distToConveyor)
+                        {
+                            _willDefinitelyRevert = true;
+                            _targetConveyorCell = null;
+                            _totalSteps = distToObstacle;
+                            _remainingSteps = _totalSteps;
+                            SetTempTypeOnBodyOnly(CubeType.Normal);
+                        }
+                        else
+                        {
+                            _totalSteps = distToConveyor;
+                            _remainingSteps = _totalSteps;
+                        }
+                    }
+                    else
+                    {
+                        _totalSteps = distToConveyor;
+                        _remainingSteps = _totalSteps;
+                    }
+                }
+            }
+        }
+
+        StepForward();
     }
 
     private void StartRevert()
     {
+        AudioManager.Instance.PlaySFX(SFXType.SelectWrong);
         if (_history.Count == 0)
         {
             OnLineReverted();
             return;
         }
-
         _isReverting = true;
         StepBackward();
     }

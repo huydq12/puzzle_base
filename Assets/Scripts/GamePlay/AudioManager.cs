@@ -7,14 +7,14 @@ public enum BGType
 public enum SFXType
 {
 	None,
-	BeginDrag,
-	EndDrag,
+	CollectShooter,
+	ConveyorFull,
+	Ice,
+	Select,
+	SelectWrong,
+	Shoot,
 	Win,
 	Lose,
-	BreakIce,
-	Merge,
-	CollectStack,
-	ContainerMove
 }
 public class AudioManager : Singleton<AudioManager>
 {
