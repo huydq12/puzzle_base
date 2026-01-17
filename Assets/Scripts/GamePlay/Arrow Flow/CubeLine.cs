@@ -29,11 +29,16 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private ParticleSystem _warningHeadEffect;
     [OdinSerialize] private Dictionary<CubeType, Renderer> _renderers;
     [SerializeField] private Renderer _head;
+    [SerializeField] private Renderer _doubleCube;
+    [SerializeField] private Renderer _doubleHeadCube;
     [SerializeField] private Outline _outline;
     [SerializeField] private Material _materialElementType2;
-    [SerializeField] private Material _materialElementType3;
-    [SerializeField] private Material _materialElementType8;
+
     private Quaternion _initRotation;
+    private ObjectColor _baseColor;
+    private ObjectColor _originalColor;
+    private bool _elementType3Revealed;
+
     public bool HighlightHead
     {
         get => _outline.enabled;
@@ -57,32 +62,98 @@ public class CubeLine : SerializedMonoBehaviour
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
             return;
 
+        if (ElementType == 3 && !_elementType3Revealed)
+        {
+            _elementType3Revealed = true;
+            if (!TryGetElementType3ShiftedColorFromOriginal(offset: 3, out ObjectColor shifted))
+                shifted = _originalColor;
+            _baseColor = shifted;
+            RefreshColorAndMaterials(Type);
+
+            if (_hitEffect != null)
+                Instantiate(_hitEffect, transform.position, Quaternion.identity);
+
+            return;
+        }
+
         ConveyorController.Instance.RemoveCubeFromPath(this);
-        Instantiate(_hitEffect, transform.position, Quaternion.identity);
+        if (_hitEffect != null)
+            Instantiate(_hitEffect, transform.position, Quaternion.identity);
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
     }
     public void SetColor(ObjectColor color)
     {
-        Color = color;
-        ApplyMaterials(Type);
+        _originalColor = color;
+        _baseColor = color;
+        RefreshColorAndMaterials(Type);
     }
 
     public void SetElementType(int elementType)
     {
+        _elementType3Revealed = false;
         ElementType = elementType;
-        ApplyMaterials(Type);
+        RefreshColorAndMaterials(Type);
     }
 
     private Material GetElementTypeMaterial()
     {
         if (ElementType == 2) return _materialElementType2;
-        if (ElementType == 3) return _materialElementType3;
-        if (ElementType == 8) return _materialElementType8;
         return null;
+    }
+
+    private static int GetObjectColorCount()
+    {
+        return System.Enum.GetValues(typeof(ObjectColor)).Length;
+    }
+
+    private static readonly ObjectColor[] ElementType3ColorIndexOrder =
+    {
+        ObjectColor.Green,
+        ObjectColor.Blue,
+        ObjectColor.Red,
+        ObjectColor.Purple,
+        ObjectColor.Pink,
+        ObjectColor.Yellow,
+        ObjectColor.Orange,
+        ObjectColor.Cyan,
+        ObjectColor.Brown,
+        ObjectColor.Teal,
+    };
+
+    private bool TryGetElementType3ShiftedColorFromOriginal(int offset, out ObjectColor shiftedColor)
+    {
+        int baseIdx = System.Array.IndexOf(ElementType3ColorIndexOrder, _originalColor);
+        if (baseIdx < 0)
+        {
+            shiftedColor = _originalColor;
+            return false;
+        }
+
+        int idx = baseIdx - offset;
+        if (idx < 0 || idx >= ElementType3ColorIndexOrder.Length)
+        {
+            shiftedColor = _originalColor;
+            return false;
+        }
+
+        shiftedColor = ElementType3ColorIndexOrder[idx];
+        return true;
+    }
+
+    private void RefreshColorAndMaterials(CubeType targetType)
+    {
+        Color = _baseColor;
+        ApplyMaterials(targetType);
     }
 
     private void ApplyMaterials(CubeType targetType)
     {
+        if (ElementType == 3)
+        {
+            ApplyElementType3Materials(targetType);
+            return;
+        }
+
         Material overrideMat = GetElementTypeMaterial();
 
         Material cubeMat = overrideMat;
@@ -108,11 +179,64 @@ public class CubeLine : SerializedMonoBehaviour
         {
             _head.sharedMaterial = headMat;
         }
+
+        if (_doubleCube != null) _doubleCube.gameObject.SetActive(false);
+        if (_doubleHeadCube != null) _doubleHeadCube.gameObject.SetActive(false);
+    }
+
+    private void ApplyElementType3Materials(CubeType targetType)
+    {
+        if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
+
+        Material outerCubeMat = Board.Instance.ColorConfig.GetCubeColor(_baseColor);
+        Material outerHeadMat = Board.Instance.ColorConfig.GetCubeHeadColor(_baseColor);
+
+        ObjectColor overlayColor = _originalColor;
+        if (!TryGetElementType3ShiftedColorFromOriginal(offset: 3, out overlayColor))
+            overlayColor = _originalColor;
+
+        Material overlayCubeMat = Board.Instance.ColorConfig.GetCubeColor(overlayColor);
+        Material overlayHeadMat = Board.Instance.ColorConfig.GetCubeHeadColor(overlayColor);
+
+        if (_renderers != null && outerCubeMat != null)
+        {
+            foreach (var renderer in _renderers.Values)
+            {
+                if (renderer == null) continue;
+                renderer.sharedMaterial = outerCubeMat;
+            }
+        }
+
+        if (_head != null && targetType == CubeType.Head && outerHeadMat != null)
+        {
+            _head.sharedMaterial = outerHeadMat;
+        }
+
+        if (_doubleCube != null)
+        {
+            if (!_elementType3Revealed && overlayCubeMat != null)
+                _doubleCube.sharedMaterial = overlayCubeMat;
+            _doubleCube.gameObject.SetActive(!_elementType3Revealed && targetType != CubeType.Head);
+        }
+
+        if (_doubleHeadCube != null)
+        {
+            if (!_elementType3Revealed && targetType == CubeType.Head)
+            {
+                if (overlayHeadMat != null)
+                    _doubleHeadCube.sharedMaterial = overlayHeadMat;
+                _doubleHeadCube.gameObject.SetActive(true);
+            }
+            else
+            {
+                _doubleHeadCube.gameObject.SetActive(false);
+            }
+        }
     }
     public void RevertType()
     {
         transform.rotation = _initRotation;
-        ApplyMaterials(Type);
+        RefreshColorAndMaterials(Type);
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == Type;
@@ -124,7 +248,7 @@ public class CubeLine : SerializedMonoBehaviour
         _initRotation = transform.rotation;
         transform.rotation = Quaternion.identity;
         _head.enabled = type == CubeType.Head;
-        ApplyMaterials(type);
+        RefreshColorAndMaterials(type);
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == type;
@@ -142,7 +266,7 @@ public class CubeLine : SerializedMonoBehaviour
         {
             _head.enabled = false;
         }
-        ApplyMaterials(type);
+        RefreshColorAndMaterials(type);
         foreach (var pair in _renderers)
         {
             bool enable = pair.Key == type;

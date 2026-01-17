@@ -126,10 +126,24 @@ public class Line : MonoBehaviour
     private void UpdateCounterText()
     {
         if (_counterText == null) return;
-        bool show = Counter > 0;
+        bool hasElementType3 = false;
+        if (Cubes != null)
+        {
+            for (int i = 0; i < Cubes.Count; i++)
+            {
+                CubeLine cube = Cubes[i];
+                if (cube == null) continue;
+                if (cube.ElementType == 3)
+                {
+                    hasElementType3 = true;
+                    break;
+                }
+            }
+        }
+        bool show = Counter > 0 && hasElementType3;
         if (show && IsIceLine && RemainingCounter <= 0)
             show = false;
-        _counterText.enabled = show;
+        _counterText.gameObject.SetActive(show);
         if (show)
             _counterText.text = RemainingCounter.ToString();
     }
