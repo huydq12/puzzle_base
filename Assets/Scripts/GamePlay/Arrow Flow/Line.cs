@@ -120,6 +120,7 @@ public class Line : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateCounterText();
         UpdateCounterTextPosition();
     }
 
@@ -140,7 +141,8 @@ public class Line : MonoBehaviour
                 }
             }
         }
-        bool show = Counter > 0 && hasElementType3;
+        // Hide counter when this line contains ElementType == 3; show for ElementType == 2 (and normal lines).
+        bool show = Counter > 0 && !hasElementType3;
         if (show && IsIceLine && RemainingCounter <= 0)
             show = false;
         _counterText.gameObject.SetActive(show);
