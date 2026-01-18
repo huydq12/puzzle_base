@@ -29,7 +29,9 @@ public class ShooterController : Singleton<ShooterController>
         Gates = new();
         foreach (var data in datas)
         {
-            var gate = Instantiate(_gatePrefab, Board.Instance.transform);
+            if (PoolManager.Instance == null) return;
+            var gate = PoolManager.Instance.Get(_gatePrefab);
+            gate.transform.SetParent(Board.Instance.transform, false);
             gate.transform.localPosition = data.Position;
             gate.transform.rotation = DirectionToRotation(data.Direction);
             gate.Setup(data.Shooters);

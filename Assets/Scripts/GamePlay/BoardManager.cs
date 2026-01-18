@@ -84,7 +84,11 @@ public class BoardManager : Singleton<BoardManager>
                 UnitPosition u = arrow.unitPositions[0];
                 pos = new Vector3(u.x, 0f, u.y);
             }
-            GameObject go = Instantiate(arrowPrefab, pos, Quaternion.identity, root);
+            if (PoolManager.Instance == null) return;
+            GameObject go = PoolManager.Instance.Get(arrowPrefab);
+            if (go == null) continue;
+            go.transform.SetParent(root, false);
+            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
             spawned.Add(go);
 
             ApplyMaterial(go, (ObjectColor)arrow.color, true);
@@ -104,7 +108,11 @@ public class BoardManager : Singleton<BoardManager>
             Vector3 pos = new Vector3(shooter.position.x, 0f, shooter.position.y);
             Quaternion rot = DirectionToRotation(shooter.direction);
 
-            GameObject shooterGo = Instantiate(shooterPrefab, pos, rot, root);
+            if (PoolManager.Instance == null) return;
+            GameObject shooterGo = PoolManager.Instance.Get(shooterPrefab);
+            if (shooterGo == null) continue;
+            shooterGo.transform.SetParent(root, false);
+            shooterGo.transform.SetPositionAndRotation(pos, rot);
             spawned.Add(shooterGo);
 
             if (shooter.shooterUnits == null || shooter.shooterUnits.Count == 0) continue;
@@ -120,7 +128,11 @@ public class BoardManager : Singleton<BoardManager>
                 Transform holder = u == 0 ? currentHolder : (u == 1 ? nextHolder : nextNextHolder);
                 if (holder == null) holder = shooterGo.transform;
 
-                GameObject unitGo = Instantiate(shooterUnitPrefab, holder.position, holder.rotation, holder);
+                if (PoolManager.Instance == null) return;
+                GameObject unitGo = PoolManager.Instance.Get(shooterUnitPrefab);
+                if (unitGo == null) continue;
+                unitGo.transform.SetParent(holder, false);
+                unitGo.transform.SetPositionAndRotation(holder.position, holder.rotation);
                 spawned.Add(unitGo);
                 ApplyMaterial(unitGo, (ObjectColor)unit.color, false);
             }
@@ -139,7 +151,11 @@ public class BoardManager : Singleton<BoardManager>
             ConveyorData conveyor = data.conveyors[i];
             if (conveyor.conveyorNodes == null || conveyor.conveyorNodes.Count == 0) continue;
             Vector3 pos = conveyor.conveyorNodes[0].position.ToVector3();
-            GameObject go = Instantiate(conveyorPrefab, pos, Quaternion.identity, root);
+            if (PoolManager.Instance == null) return;
+            GameObject go = PoolManager.Instance.Get(conveyorPrefab);
+            if (go == null) continue;
+            go.transform.SetParent(root, false);
+            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
             spawned.Add(go);
         }
     }

@@ -75,7 +75,11 @@ public class ConveyorController : Singleton<ConveyorController>
 
             _splineComputer.Evaluate(percent, ref sample);
 
-            Instantiate(_arrow, sample.position, Quaternion.LookRotation(sample.forward, sample.up), Board.Instance.transform);
+            if (PoolManager.Instance == null) continue;
+            GameObject arrow = PoolManager.Instance.Get(_arrow);
+            if (arrow == null) continue;
+            arrow.transform.SetParent(Board.Instance.transform, false);
+            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
         }
     }
     public void WinGame()

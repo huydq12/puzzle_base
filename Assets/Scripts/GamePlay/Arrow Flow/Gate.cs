@@ -55,7 +55,8 @@ public class Gate : MonoBehaviour
 
         for (int i = 0; i < datas.Count; i++)
         {
-            Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
+            if (PoolManager.Instance == null) return;
+            Shooter shoot = PoolManager.Instance.Get(ShooterController.Instance.ShooterPrefab);
             shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
             shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
             shoot.SetSize(i == 0 ? 0.75f : 0.65f);

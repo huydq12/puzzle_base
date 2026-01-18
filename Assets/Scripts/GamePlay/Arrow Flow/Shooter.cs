@@ -36,8 +36,6 @@ public class Shooter : MonoBehaviour
 
     private bool _collectRequested;
 
-    private Queue<Transform> _bulletPool;
-
     //Fire cooldown (seconds) � controls max fire rate while preserving existing logic
     private float _fireCooldown = 0.07f; // was 0.15f
     private float _nextFireTime = 0f;
@@ -67,40 +65,39 @@ public class Shooter : MonoBehaviour
 
     private void Awake()
     {
-        InitializeBulletPool();
+        PrewarmBulletPool();
     }
 
-    private void InitializeBulletPool()
+    private void PrewarmBulletPool()
     {
-        _bulletPool = new Queue<Transform>();
+        if (PoolManager.Instance == null) return;
+        if (_bulletPrefab == null) return;
 
         for (int i = 0; i < _bulletPoolSize; i++)
         {
-            Transform bullet = Instantiate(_bulletPrefab, transform);
+            Transform bullet = PoolManager.Instance.Get(_bulletPrefab);
+            if (bullet == null) continue;
+            bullet.SetParent(transform, false);
             bullet.gameObject.SetActive(false);
-            _bulletPool.Enqueue(bullet);
         }
     }
 
     private Transform GetBullet()
     {
-        if (_bulletPool.Count > 0)
-        {
-            Transform bullet = _bulletPool.Dequeue();
-            bullet.gameObject.SetActive(true);
-            return bullet;
-        }
-
-        Transform newBullet = Instantiate(_bulletPrefab, transform);
-        return newBullet;
+        if (_bulletPrefab == null) return null;
+        if (PoolManager.Instance == null) return null;
+        Transform bullet = PoolManager.Instance.Get(_bulletPrefab);
+        if (bullet != null)
+            bullet.SetParent(transform, false);
+        return bullet;
     }
 
     private void ReturnBullet(Transform bullet)
     {
+        if (bullet == null) return;
         bullet.DOKill();
         bullet.gameObject.SetActive(false);
-        bullet.SetParent(transform);
-        _bulletPool.Enqueue(bullet);
+        bullet.SetParent(transform, false);
     }
 
     public void SetRole(ShooterRole role)
@@ -223,6 +220,7 @@ public class Shooter : MonoBehaviour
         Vector3 direction = -transform.right;
 
         Transform bullet = GetBullet();
+        if (bullet == null) return;
         bullet.position = origin;
         bullet.rotation = Quaternion.LookRotation(direction);
 

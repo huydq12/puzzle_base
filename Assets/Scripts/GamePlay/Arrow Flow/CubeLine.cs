@@ -36,9 +36,9 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private Material _materialElementType2;
 
     private Quaternion _initRotation;
+    private bool _elementType3Revealed;
     private ObjectColor _baseColor;
     private ObjectColor _originalColor;
-    private bool _elementType3Revealed;
 
     public bool HighlightHead
     {
@@ -71,16 +71,45 @@ public class CubeLine : SerializedMonoBehaviour
             _baseColor = shifted;
             RefreshColorAndMaterials(Type);
 
-            if (_hitEffect != null)
-                Instantiate(_hitEffect, transform.position, Quaternion.identity);
+            SpawnHitEffect();
 
             return;
         }
 
         ConveyorController.Instance.RemoveCubeFromPath(this);
-        if (_hitEffect != null)
-            Instantiate(_hitEffect, transform.position, Quaternion.identity);
+        SpawnHitEffect();
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
+    }
+
+    private void SpawnHitEffect()
+    {
+        if (_hitEffect == null) return;
+
+        if (PoolManager.Instance == null) return;
+
+        ParticleSystem ps = PoolManager.Instance.Get(_hitEffect, transform.position);
+
+        if (ps == null) return;
+
+        ps.transform.rotation = Quaternion.identity;
+        ps.Play(true);
+
+        var main = ps.main;
+        float lifetime = 0f;
+        if (main.startLifetime.mode == ParticleSystemCurveMode.TwoConstants)
+            lifetime = main.startLifetime.constantMax;
+        else
+            lifetime = main.startLifetime.constant;
+
+        float delay = Mathf.Max(0.1f, main.duration + lifetime);
+        if (PoolManager.Instance != null)
+        {
+            DOVirtual.DelayedCall(delay, () =>
+            {
+                if (ps != null)
+                    ps.gameObject.SetActive(false);
+            });
+        }
     }
     public void SetColor(ObjectColor color)
     {

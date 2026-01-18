@@ -387,12 +387,11 @@ public class Board : Singleton<Board>
         {
             bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
 
-            Line lineColor = Instantiate(
-                _linePrefab,
-                Vector3.zero,
-                Quaternion.identity,
-                transform
-            );
+            if (PoolManager.Instance == null) return;
+            Line lineColor = PoolManager.Instance.Get(_linePrefab);
+            lineColor.transform.SetParent(transform, false);
+            lineColor.transform.localPosition = Vector3.zero;
+            lineColor.transform.localRotation = Quaternion.identity;
 
             lineColor.Color = line.Color;
             lineColor.InitializeCounter(line.Counter);
@@ -408,12 +407,9 @@ public class Board : Singleton<Board>
                 Vector2Int? prev = i > 0 ? cells[i - 1] : (Vector2Int?)null;
                 Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
                 GridCell cell = GetCellAt(curr);
-                CubeLine cube = Instantiate(
-                    _cubePrefab,
-                    cell.transform.position,
-                    Quaternion.identity,
-                    lineColor.transform
-                );
+                CubeLine cube = PoolManager.Instance.Get(_cubePrefab);
+                cube.transform.SetParent(lineColor.transform, false);
+                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
 
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
@@ -502,9 +498,11 @@ public class Board : Singleton<Board>
 
         int expectedChildCount = rows * columns;
         GridCell[] gridCells = new GridCell[expectedChildCount];
+        if (PoolManager.Instance == null) return;
         for (int i = 0; i < expectedChildCount; i++)
         {
-            GridCell cell = Instantiate(_cellPrefab, transform);
+            GridCell cell = PoolManager.Instance.Get(_cellPrefab);
+            cell.transform.SetParent(transform, false);
             gridCells[i] = cell;
         }
 
@@ -575,9 +573,20 @@ public class Board : Singleton<Board>
 
     private void Clear()
     {
+        if (PoolManager.Instance == null)
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+            return;
+        }
+
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            Destroy(transform.GetChild(i).gameObject);
+            Transform child = transform.GetChild(i);
+            child.SetParent(PoolManager.Instance.transform, false);
+            child.gameObject.SetActive(false);
         }
     }
     public void SetupLevel(LevelConfig config)
