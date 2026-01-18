@@ -2571,7 +2571,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 138176886}
-  m_Mesh: {fileID: 243087388}
+  m_Mesh: {fileID: 513238739}
 --- !u!114 &138176891
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2623,7 +2623,67 @@ MonoBehaviour:
   - {fileID: 138176888}
   _rawSamples: []
   _nodes: []
---- !u!43 &243087388
+--- !u!1 &491426190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 491426192}
+  - component: {fileID: 491426193}
+  m_Layer: 0
+  m_Name: Board
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &491426192
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491426190}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &491426193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491426190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e114dc0ae7f4dfb9df5c038505a90a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cellPrefab: {fileID: 4474199747249905817, guid: c2f0e8c80cd754ddf8de83f9311191d7,
+    type: 3}
+  _linePrefab: {fileID: 9015815259076490863, guid: a0b5bc7173c1946cdb09b649e8a67622,
+    type: 3}
+  _cubePrefab: {fileID: 265987591388501784, guid: 5cfece62cfb2f41e894be9d673c3c579,
+    type: 3}
+  _elevatorPrefab: {fileID: 0}
+  _colorConfig: {fileID: 11400000, guid: 2427e89443f4b46fdacc9417a3cd1fcc, type: 2}
+  _cellSize: 1
+  _paddingCamera: 0
+  _spacing: {x: 0.95, y: 0.95}
+  _elevatorLineStagger: 0.05
+  _elevatorCubeScaleDuration: 0.12
+  _elevatorCubeScaleStagger: 0.02
+  _overlay: {fileID: 0}
+  CurrentBooster: 0
+--- !u!43 &513238739
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2788,60 +2848,6 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!1 &491426190
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 491426192}
-  - component: {fileID: 491426193}
-  m_Layer: 0
-  m_Name: Board
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &491426192
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491426190}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &491426193
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491426190}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5e114dc0ae7f4dfb9df5c038505a90a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _cellPrefab: {fileID: 4474199747249905817, guid: c2f0e8c80cd754ddf8de83f9311191d7,
-    type: 3}
-  _linePrefab: {fileID: 9015815259076490863, guid: a0b5bc7173c1946cdb09b649e8a67622,
-    type: 3}
-  _cubePrefab: {fileID: 265987591388501784, guid: 5cfece62cfb2f41e894be9d673c3c579,
-    type: 3}
-  _colorConfig: {fileID: 11400000, guid: 2427e89443f4b46fdacc9417a3cd1fcc, type: 2}
-  _cellSize: 1
-  _paddingCamera: 0
-  _spacing: {x: 0.95, y: 0.95}
 --- !u!1 &615510554
 GameObject:
   m_ObjectHideFlags: 0

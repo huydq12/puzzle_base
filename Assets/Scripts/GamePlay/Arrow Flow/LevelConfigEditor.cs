@@ -56,7 +56,11 @@ public class LevelConfigEditor : OdinEditor
     private bool _showLineCounters = true;
     private bool _showLineOverlay = true;
     private bool _showElementTypeColors = true;
+    private bool _showConveyorMeta = true;
     private int _elementTypeBrush = 0;
+    private int _conveyorTypeBrush = 0;
+    private int _conveyorCounterBrush = 0;
+    private bool _conveyorIsHoleBrush = false;
 
     // Cached GUIStyles
     private static GUIStyle _cellLabelStyle;
@@ -263,6 +267,7 @@ public class LevelConfigEditor : OdinEditor
         _showElementTypes = EditorGUILayout.ToggleLeft("Show Element Types", _showElementTypes, GUILayout.Width(160));
         _showElementTypeZero = EditorGUILayout.ToggleLeft("Show Zero", _showElementTypeZero, GUILayout.Width(100));
         _showElementTypeColors = EditorGUILayout.ToggleLeft("Colorize", _showElementTypeColors, GUILayout.Width(90));
+        _showConveyorMeta = EditorGUILayout.ToggleLeft("Conveyor Meta", _showConveyorMeta, GUILayout.Width(120));
         _showLineCounters = EditorGUILayout.ToggleLeft("Show Counters", _showLineCounters, GUILayout.Width(120));
         _showLineOverlay = EditorGUILayout.ToggleLeft("Show Lines", _showLineOverlay, GUILayout.Width(100));
         GUILayout.FlexibleSpace();
@@ -313,6 +318,28 @@ public class LevelConfigEditor : OdinEditor
                 EditorGUILayout.EndHorizontal();
             }
         }
+        else if (_currentSelectMode == SelectMode.Conveyor)
+        {
+            GUILayout.Space(10);
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            _conveyorTypeBrush = EditorGUILayout.IntField("Conveyor Type", _conveyorTypeBrush, GUILayout.Width(240));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            _conveyorCounterBrush = EditorGUILayout.IntField("Conveyor Counter", _conveyorCounterBrush, GUILayout.Width(240));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            _conveyorIsHoleBrush = EditorGUILayout.ToggleLeft("Conveyor Is Hole", _conveyorIsHoleBrush, GUILayout.Width(240));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+        }
 
         GUILayout.Space(10);
 
@@ -334,6 +361,19 @@ public class LevelConfigEditor : OdinEditor
     private static Rect InsetRect(Rect rect, float inset)
     {
         return new Rect(rect.x + inset, rect.y + inset, rect.width - inset * 2f, rect.height - inset * 2f);
+    }
+
+    private void DrawConveyorMetaLabel(Rect cellRect, int type, int counter, bool isHole)
+    {
+        string text = isHole ? "Hole" : $"T{type}";
+        if (!isHole && counter != 0)
+            text += $":{counter}";
+
+        GUIContent content = new GUIContent(text);
+        Vector2 size = ElementTypeLabelStyle.CalcSize(content);
+        Rect rect = new Rect(cellRect.xMin + 2f, cellRect.yMax - size.y - 1f, size.x + 4f, size.y);
+        EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, 0.35f));
+        GUI.Label(new Rect(rect.x + 2f, rect.y, rect.width, rect.height), content, ElementTypeLabelStyle);
     }
     private void LoadColors()
     {
@@ -785,21 +825,67 @@ public class LevelConfigEditor : OdinEditor
                         {
                             Vector2Int targetPos = new Vector2Int(x, y);
                             cell.CellType = GridCellType.Conveyor;
+
+                            if (_levelconfig.ConveyorLine == null)
+                                _levelconfig.ConveyorLine = new ConveyorLine();
+                            if (_levelconfig.ConveyorLine.Cells == null)
+                                _levelconfig.ConveyorLine.Cells = new List<Vector2Int>();
+                            if (_levelconfig.ConveyorLine.Types == null)
+                                _levelconfig.ConveyorLine.Types = new List<int>();
+                            if (_levelconfig.ConveyorLine.Counters == null)
+                                _levelconfig.ConveyorLine.Counters = new List<int>();
+                            if (_levelconfig.ConveyorLine.IsHoles == null)
+                                _levelconfig.ConveyorLine.IsHoles = new List<bool>();
+
                             if (!_levelconfig.ConveyorLine.Cells.Contains(targetPos))
                             {
                                 _levelconfig.ConveyorLine.Cells.Add(targetPos);
+                                _levelconfig.ConveyorLine.Types.Add(_conveyorTypeBrush);
+                                _levelconfig.ConveyorLine.Counters.Add(_conveyorCounterBrush);
+                                _levelconfig.ConveyorLine.IsHoles.Add(_conveyorIsHoleBrush);
                             }
                             RemoveCellAndTailFromLine(targetPos);
                         }
                         else if (e.button == 1)
                         {
-                            _levelconfig.ConveyorLine.Cells.Remove(new Vector2Int(x, y));
+                            Vector2Int targetPos = new Vector2Int(x, y);
+                            if (_levelconfig.ConveyorLine != null && _levelconfig.ConveyorLine.Cells != null)
+                            {
+                                int idx = _levelconfig.ConveyorLine.Cells.IndexOf(targetPos);
+                                if (idx >= 0)
+                                {
+                                    _levelconfig.ConveyorLine.Cells.RemoveAt(idx);
+                                    if (_levelconfig.ConveyorLine.Types != null && idx < _levelconfig.ConveyorLine.Types.Count)
+                                        _levelconfig.ConveyorLine.Types.RemoveAt(idx);
+                                    if (_levelconfig.ConveyorLine.Counters != null && idx < _levelconfig.ConveyorLine.Counters.Count)
+                                        _levelconfig.ConveyorLine.Counters.RemoveAt(idx);
+                                    if (_levelconfig.ConveyorLine.IsHoles != null && idx < _levelconfig.ConveyorLine.IsHoles.Count)
+                                        _levelconfig.ConveyorLine.IsHoles.RemoveAt(idx);
+                                }
+                            }
                             cell.CellType = GridCellType.Normal;
                         }
                         EditorUtility.SetDirty(_levelconfig);
                         e.Use();
                     }
                 }
+            }
+        }
+
+        if (_showConveyorMeta && _levelconfig.ConveyorLine != null && _levelconfig.ConveyorLine.Cells != null)
+        {
+            for (int i = 0; i < _levelconfig.ConveyorLine.Cells.Count; i++)
+            {
+                Vector2Int pos = _levelconfig.ConveyorLine.Cells[i];
+                if (pos.x < 0 || pos.x >= columns || pos.y < 0 || pos.y >= rows) continue;
+                Rect metaRect = GetCellRect(GetCellCenter(gridRect, pos.x, pos.y, rows));
+
+                int type = (_levelconfig.ConveyorLine.Types != null && i < _levelconfig.ConveyorLine.Types.Count) ? _levelconfig.ConveyorLine.Types[i] : 0;
+                int counter = (_levelconfig.ConveyorLine.Counters != null && i < _levelconfig.ConveyorLine.Counters.Count) ? _levelconfig.ConveyorLine.Counters[i] : 0;
+                bool isHole = (_levelconfig.ConveyorLine.IsHoles != null && i < _levelconfig.ConveyorLine.IsHoles.Count) && _levelconfig.ConveyorLine.IsHoles[i];
+
+                if (isHole || type != 0 || counter != 0)
+                    DrawConveyorMetaLabel(metaRect, type, counter, isHole);
             }
         }
 

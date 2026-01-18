@@ -353,6 +353,12 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             if (config.ConveyorLine == null) config.ConveyorLine = new ConveyorLine();
             if (config.ConveyorLine.Cells == null) config.ConveyorLine.Cells = new List<Vector2Int>();
             config.ConveyorLine.Cells.Clear();
+            if (config.ConveyorLine.Types == null) config.ConveyorLine.Types = new List<int>();
+            if (config.ConveyorLine.Counters == null) config.ConveyorLine.Counters = new List<int>();
+            if (config.ConveyorLine.IsHoles == null) config.ConveyorLine.IsHoles = new List<bool>();
+            config.ConveyorLine.Types.Clear();
+            config.ConveyorLine.Counters.Clear();
+            config.ConveyorLine.IsHoles.Clear();
 
             for (int c = 0; c < root.conveyors.Count; c++)
             {
@@ -367,6 +373,9 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                     int y = Mathf.RoundToInt(node.position.z) - originOffset.y;
                     Vector2Int cell = new Vector2Int(x, y);
                     config.ConveyorLine.Cells.Add(cell);
+                    config.ConveyorLine.IsHoles.Add(node.isHole);
+                    config.ConveyorLine.Counters.Add(node.counter);
+                    config.ConveyorLine.Types.Add(node.type);
 
                     if (x >= 0 && x < columns && y >= 0 && y < rows)
                     {
@@ -378,6 +387,17 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             if (config.ConveyorLine.Cells.Count == 0)
             {
                 config.ConveyorLine = null;
+            }
+            else
+            {
+                // Keep metadata lists aligned with Cells.
+                int count = config.ConveyorLine.Cells.Count;
+                while (config.ConveyorLine.IsHoles.Count < count) config.ConveyorLine.IsHoles.Add(false);
+                while (config.ConveyorLine.Counters.Count < count) config.ConveyorLine.Counters.Add(0);
+                while (config.ConveyorLine.Types.Count < count) config.ConveyorLine.Types.Add(0);
+                if (config.ConveyorLine.IsHoles.Count > count) config.ConveyorLine.IsHoles.RemoveRange(count, config.ConveyorLine.IsHoles.Count - count);
+                if (config.ConveyorLine.Counters.Count > count) config.ConveyorLine.Counters.RemoveRange(count, config.ConveyorLine.Counters.Count - count);
+                if (config.ConveyorLine.Types.Count > count) config.ConveyorLine.Types.RemoveRange(count, config.ConveyorLine.Types.Count - count);
             }
         }
         else
@@ -659,6 +679,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
     {
         public LevelJsonVector3 position;
         public bool isHole;
+        public int counter;
+        public int type;
     }
 
     [Serializable]

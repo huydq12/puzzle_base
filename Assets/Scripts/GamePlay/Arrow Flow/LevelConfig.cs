@@ -115,6 +115,14 @@ public class ConveyorLine
 {
     [ListDrawerSettings(DefaultExpandedState = false)]
     public List<Vector2Int> Cells = new List<Vector2Int>();
+
+    // Optional per-node metadata (aligned by index with Cells).
+    [ListDrawerSettings(DefaultExpandedState = false)]
+    public List<int> Types = new List<int>();
+    [ListDrawerSettings(DefaultExpandedState = false)]
+    public List<int> Counters = new List<int>();
+    [ListDrawerSettings(DefaultExpandedState = false)]
+    public List<bool> IsHoles = new List<bool>();
 }
 
 [Serializable]
