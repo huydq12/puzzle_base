@@ -58,6 +58,16 @@ public class CubeLine : SerializedMonoBehaviour
             _wariningEffect.Play();
         }
     }
+    public bool BringToTop
+    {
+        set
+        {
+            foreach (var pair in _renderers)
+            {
+                pair.Value.gameObject.layer = value ? LayerMask.NameToLayer("Top") : LayerMask.NameToLayer("Cube");
+            }
+        }
+    }
     public void OnHit()
     {
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
