@@ -1,4 +1,5 @@
 using DG.Tweening;
+using System;
 using UnityEngine;
 
 public class Elevator : MonoBehaviour
@@ -7,6 +8,10 @@ public class Elevator : MonoBehaviour
     [SerializeField] private Transform rightGate;
     [SerializeField] private float openDuration = 0.35f;
     [SerializeField] private float gateOpenDistance = 0.4f;
+    [SerializeField] private bool scaleGateOpenDistance = true;
+    [SerializeField] private float gateOpenDistanceScale = 1f;
+    [SerializeField] private float spawnDelayAfterOpen = 0.2f;
+    [SerializeField] private float holdOpenDuration = 0.25f;
     [SerializeField] private ParticleSystem vfx;
     [SerializeField] private Transform pointSpawn;
 
@@ -27,7 +32,7 @@ public class Elevator : MonoBehaviour
         if (rightGate != null) rightGate.localPosition = _rightGateStart;
     }
 
-    public void ActivateAndDisappear()
+    public void ActivateAndDisappear(Action onOpened = null)
     {
         if (_hasActivated) return;
         _hasActivated = true;
@@ -41,12 +46,22 @@ public class Elevator : MonoBehaviour
 
         Sequence seq = DOTween.Sequence();
 
-        if (leftGate != null)
-            seq.Join(leftGate.DOLocalMoveX(_leftGateStart.x - gateOpenDistance, openDuration).SetEase(Ease.OutQuad));
-        if (rightGate != null)
-            seq.Join(rightGate.DOLocalMoveX(_rightGateStart.x + gateOpenDistance, openDuration).SetEase(Ease.OutQuad));
+        float openDistance = gateOpenDistance;
+        if (scaleGateOpenDistance)
+            openDistance *= Mathf.Max(0.01f, transform.localScale.x) * Mathf.Max(0.01f, gateOpenDistanceScale);
 
-        seq.AppendInterval(0.15f);
+        if (leftGate != null)
+            seq.Join(leftGate.DOLocalMoveX(_leftGateStart.x - openDistance, openDuration).SetEase(Ease.OutQuad));
+        if (rightGate != null)
+            seq.Join(rightGate.DOLocalMoveX(_rightGateStart.x + openDistance, openDuration).SetEase(Ease.OutQuad));
+
+        if (spawnDelayAfterOpen > 0f)
+            seq.AppendInterval(spawnDelayAfterOpen);
+        if (onOpened != null)
+            seq.AppendCallback(() => onOpened());
+
+        if (holdOpenDuration > 0f)
+            seq.AppendInterval(holdOpenDuration);
         seq.AppendCallback(() =>
         {
             gameObject.SetActive(false);

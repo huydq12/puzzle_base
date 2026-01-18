@@ -23,6 +23,10 @@ public class Board : Singleton<Board>
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
     [SerializeField] private Vector2 _spacing;
+    [Header("Elevator Spawn Timing")]
+    [SerializeField] private float _elevatorLineStagger = 0.05f;
+    [SerializeField] private float _elevatorCubeScaleDuration = 0.12f;
+    [SerializeField] private float _elevatorCubeScaleStagger = 0.02f;
     [HideInInspector] public GridCell[,] Cells;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
@@ -278,21 +282,26 @@ public class Board : Singleton<Board>
         // Mark first to prevent re-entry.
         _elevators[index] = (entry.elevator, entry.data, true);
 
-        if (entry.data != null && entry.data.Lines != null)
+        void SpawnAllElevatorLines()
         {
-            for (int i = 0; i < entry.data.Lines.Count; i++)
+            if (entry.data != null && entry.data.Lines != null)
             {
-                SpawnLine(entry.data.Lines[i]);
+                for (int i = 0; i < entry.data.Lines.Count; i++)
+                {
+                    float delay = Mathf.Max(0f, _elevatorLineStagger) * i;
+                    SpawnLine(entry.data.Lines[i], animateSpawn: true, spawnDelay: delay);
+                }
             }
+            RefreshAllHeadHighlights();
         }
 
-        RefreshAllHeadHighlights();
-
         if (entry.elevator != null)
-            entry.elevator.ActivateAndDisappear();
+            entry.elevator.ActivateAndDisappear(SpawnAllElevatorLines);
+        else
+            SpawnAllElevatorLines();
     }
 
-    private void SpawnLine(ColorLine line)
+    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
     {
         if (line == null || line.Cells == null || line.Cells.Count == 0) return;
         if (PoolManager.Instance == null) return;
@@ -330,6 +339,14 @@ public class Board : Singleton<Board>
             cell.CubeOnCell = cube;
             cell.ShowRenderer(true);
             cube.Cell = cell;
+
+            if (animateSpawn && _elevatorCubeScaleDuration > 0f)
+            {
+                Vector3 targetScale = cube.transform.localScale;
+                cube.transform.localScale = Vector3.zero;
+                float delay = Mathf.Max(0f, spawnDelay) + Mathf.Max(0f, _elevatorCubeScaleStagger) * i;
+                cube.transform.DOScale(targetScale, _elevatorCubeScaleDuration).SetDelay(delay).SetEase(Ease.OutQuad);
+            }
 
             if (i == last)
             {
