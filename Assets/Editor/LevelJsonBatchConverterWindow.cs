@@ -242,29 +242,109 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
         if (config.ColorLines == null) config.ColorLines = new List<ColorLine>();
         config.ColorLines.Clear();
+        if (config.Elevators == null) config.Elevators = new List<ElevatorData>();
+        config.Elevators.Clear();
 
+        HashSet<string> seenLineKeys = new HashSet<string>();
+
+        void AddArrowAsLine(LevelJsonArrow arrow)
+        {
+            if (arrow == null || arrow.unitPositions == null || arrow.unitPositions.Count == 0) return;
+
+            // Deduplicate by (color + path).
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append(arrow.color).Append('|');
+            for (int k = 0; k < arrow.unitPositions.Count; k++)
+            {
+                LevelJsonUnitPos up = arrow.unitPositions[k];
+                if (up == null) continue;
+                sb.Append(up.x).Append(',').Append(up.y).Append(';');
+            }
+
+            string key = sb.ToString();
+            if (!seenLineKeys.Add(key)) return;
+
+            ColorLine line = new ColorLine();
+            line.Color = (ObjectColor)arrow.color;
+            line.Cells = new List<Vector2Int>();
+            line.ElementTypes = new List<int>();
+            line.Counter = arrow.counter;
+
+            for (int p = arrow.unitPositions.Count - 1; p >= 0; p--)
+            {
+                LevelJsonUnitPos pos = arrow.unitPositions[p];
+                if (pos == null) continue;
+                line.Cells.Add(new Vector2Int(pos.x - originOffset.x, pos.y - originOffset.y));
+                int elementType = pos.elementType != 0 ? pos.elementType : arrow.elementType;
+                line.ElementTypes.Add(elementType);
+            }
+
+            if (line.Cells.Count > 0)
+                config.ColorLines.Add(line);
+        }
+
+        // Old schema: root.arrows
         if (root.arrows != null)
         {
             for (int i = 0; i < root.arrows.Count; i++)
+                AddArrowAsLine(root.arrows[i]);
+        }
+
+        // New schema: nested shooters.arrowData
+        if (root.shooters != null)
+        {
+            for (int i = 0; i < root.shooters.Count; i++)
             {
-                LevelJsonArrow arrow = root.arrows[i];
-                if (arrow == null || arrow.unitPositions == null || arrow.unitPositions.Count == 0) continue;
+                LevelJsonShooter shooter = root.shooters[i];
+                if (shooter == null || shooter.arrowData == null) continue;
+                for (int a = 0; a < shooter.arrowData.Count; a++)
+                    AddArrowAsLine(shooter.arrowData[a]);
+            }
+        }
+        
+        // Elevator schema: root.elementData (type=4)
+        if (root.elementData != null)
+        {
+            for (int e = 0; e < root.elementData.Count; e++)
+            {
+                LevelJsonElementData ed = root.elementData[e];
+                if (ed == null) continue;
+                if (ed.type != 4) continue;
+                if (ed.position == null || ed.size == null) continue;
 
-                ColorLine line = new ColorLine();
-                line.Color = (ObjectColor)arrow.color;
-                line.Cells = new List<Vector2Int>();
-                line.ElementTypes = new List<int>();
-                line.Counter = arrow.counter;
+                ElevatorData elevator = new ElevatorData();
+                elevator.Position = new Vector2Int(ed.position.x - originOffset.x, ed.position.y - originOffset.y);
+                elevator.Size = new Vector2Int(ed.size.x, ed.size.y);
+                elevator.Lines = new List<ColorLine>();
 
-                for (int p = arrow.unitPositions.Count - 1; p >= 0; p--)
+                if (ed.arrowData != null)
                 {
-                    LevelJsonUnitPos pos = arrow.unitPositions[p];
-                    line.Cells.Add(new Vector2Int(pos.x - originOffset.x, pos.y - originOffset.y));
-                    int elementType = pos.elementType != 0 ? pos.elementType : arrow.elementType;
-                    line.ElementTypes.Add(elementType);
+                    for (int a = 0; a < ed.arrowData.Count; a++)
+                    {
+                        LevelJsonArrow arrow = ed.arrowData[a];
+                        if (arrow == null || arrow.unitPositions == null || arrow.unitPositions.Count == 0) continue;
+
+                        ColorLine line = new ColorLine();
+                        line.Color = (ObjectColor)arrow.color;
+                        line.Cells = new List<Vector2Int>();
+                        line.ElementTypes = new List<int>();
+                        line.Counter = arrow.counter;
+
+                        for (int p = arrow.unitPositions.Count - 1; p >= 0; p--)
+                        {
+                            LevelJsonUnitPos pos = arrow.unitPositions[p];
+                            if (pos == null) continue;
+                            line.Cells.Add(new Vector2Int(pos.x - originOffset.x, pos.y - originOffset.y));
+                            int elementType = pos.elementType != 0 ? pos.elementType : arrow.elementType;
+                            line.ElementTypes.Add(elementType);
+                        }
+
+                        if (line.Cells.Count > 0)
+                            elevator.Lines.Add(line);
+                    }
                 }
 
-                config.ColorLines.Add(line);
+                config.Elevators.Add(elevator);
             }
         }
 
@@ -429,18 +509,22 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             maxY = Mathf.Max(maxY, y);
         }
 
+        void ConsiderArrow(LevelJsonArrow arrow)
+        {
+            if (arrow == null || arrow.unitPositions == null) return;
+            for (int p = 0; p < arrow.unitPositions.Count; p++)
+            {
+                LevelJsonUnitPos pos = arrow.unitPositions[p];
+                if (pos == null) continue;
+                Consider(pos.x, pos.y);
+            }
+        }
+
         if (root.arrows != null)
         {
             for (int i = 0; i < root.arrows.Count; i++)
             {
-                LevelJsonArrow a = root.arrows[i];
-                if (a == null || a.unitPositions == null) continue;
-                for (int p = 0; p < a.unitPositions.Count; p++)
-                {
-                    LevelJsonUnitPos pos = a.unitPositions[p];
-                    if (pos == null) continue;
-                    Consider(pos.x, pos.y);
-                }
+                ConsiderArrow(root.arrows[i]);
             }
         }
 
@@ -451,6 +535,23 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 LevelJsonShooter s = root.shooters[i];
                 if (s == null || s.position == null) continue;
                 Consider(Mathf.RoundToInt(s.position.x), Mathf.RoundToInt(s.position.y));
+
+                if (s.arrowData != null)
+                {
+                    for (int a = 0; a < s.arrowData.Count; a++)
+                        ConsiderArrow(s.arrowData[a]);
+                }
+            }
+        }
+
+        if (root.elementData != null)
+        {
+            for (int e = 0; e < root.elementData.Count; e++)
+            {
+                LevelJsonElementData ed = root.elementData[e];
+                if (ed == null || ed.arrowData == null) continue;
+                for (int a = 0; a < ed.arrowData.Count; a++)
+                    ConsiderArrow(ed.arrowData[a]);
             }
         }
 
@@ -485,6 +586,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public List<LevelJsonArrow> arrows;
         public List<LevelJsonShooter> shooters;
         public List<LevelJsonConveyor> conveyors;
+        public List<LevelJsonElementData> elementData;
     }
 
     [Serializable]
@@ -511,6 +613,24 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public LevelJsonFloat2 position;
         public int direction;
         public List<LevelJsonShooterUnit> shooterUnits;
+        public List<LevelJsonArrow> arrowData;
+    }
+
+    [Serializable]
+    public class LevelJsonElementData
+    {
+        public LevelJsonInt2 position;
+        public int direction;
+        public int type;
+        public LevelJsonInt2 size;
+        public List<LevelJsonArrow> arrowData;
+    }
+
+    [Serializable]
+    public class LevelJsonInt2
+    {
+        public int x;
+        public int y;
     }
 
     [Serializable]

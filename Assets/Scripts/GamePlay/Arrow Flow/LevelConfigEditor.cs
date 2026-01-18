@@ -54,6 +54,9 @@ public class LevelConfigEditor : OdinEditor
     private bool _showElementTypes = true;
     private bool _showElementTypeZero = false;
     private bool _showLineCounters = true;
+    private bool _showLineOverlay = true;
+    private bool _showElementTypeColors = true;
+    private int _elementTypeBrush = 0;
 
     // Cached GUIStyles
     private static GUIStyle _cellLabelStyle;
@@ -104,10 +107,12 @@ public class LevelConfigEditor : OdinEditor
         _occupiedCellsCache.Clear();
         _elementTypeByCellCache.Clear();
         _lineCounterByHeadCellCache.Clear();
-        if (_levelconfig == null || _levelconfig.ColorLines == null) return;
-        foreach (var line in _levelconfig.ColorLines)
+
+        if (_levelconfig == null) return;
+
+        void AddLineToCaches(ColorLine line)
         {
-            if (line == null) continue;
+            if (line == null) return;
             bool changed = EnsureLineElementTypes(line);
             if (changed) EditorUtility.SetDirty(_levelconfig);
 
@@ -128,6 +133,23 @@ public class LevelConfigEditor : OdinEditor
             {
                 Vector2Int headCell = line.Cells[count - 1];
                 _lineCounterByHeadCellCache[headCell] = line.Counter;
+            }
+        }
+
+        if (_levelconfig.ColorLines != null)
+        {
+            foreach (var line in _levelconfig.ColorLines)
+                AddLineToCaches(line);
+        }
+
+        if (_levelconfig.Elevators != null)
+        {
+            for (int e = 0; e < _levelconfig.Elevators.Count; e++)
+            {
+                ElevatorData elevator = _levelconfig.Elevators[e];
+                if (elevator == null || elevator.Lines == null) continue;
+                for (int i = 0; i < elevator.Lines.Count; i++)
+                    AddLineToCaches(elevator.Lines[i]);
             }
         }
     }
@@ -240,7 +262,9 @@ public class LevelConfigEditor : OdinEditor
         GUILayout.FlexibleSpace();
         _showElementTypes = EditorGUILayout.ToggleLeft("Show Element Types", _showElementTypes, GUILayout.Width(160));
         _showElementTypeZero = EditorGUILayout.ToggleLeft("Show Zero", _showElementTypeZero, GUILayout.Width(100));
+        _showElementTypeColors = EditorGUILayout.ToggleLeft("Colorize", _showElementTypeColors, GUILayout.Width(90));
         _showLineCounters = EditorGUILayout.ToggleLeft("Show Counters", _showLineCounters, GUILayout.Width(120));
+        _showLineOverlay = EditorGUILayout.ToggleLeft("Show Lines", _showLineOverlay, GUILayout.Width(100));
         GUILayout.FlexibleSpace();
         EditorGUILayout.EndHorizontal();
 
@@ -269,12 +293,47 @@ public class LevelConfigEditor : OdinEditor
                 }
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                _elementTypeBrush = EditorGUILayout.IntField("Element Type", _elementTypeBrush, GUILayout.Width(240));
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Apply Element Type To Line", GUILayout.Width(240)))
+                {
+                    EnsureLineElementTypes(_selectedLine);
+                    for (int i = 0; i < _selectedLine.ElementTypes.Count; i++)
+                        _selectedLine.ElementTypes[i] = _elementTypeBrush;
+                    EditorUtility.SetDirty(_levelconfig);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
             }
         }
 
         GUILayout.Space(10);
 
         DrawGrid();
+    }
+
+    private static Color GetElementTypeColor(int elementType)
+    {
+        return elementType switch
+        {
+            0 => new Color(0f, 0f, 0f, 0f),
+            1 => new Color(1f, 0.92f, 0.02f, 0.35f),
+            2 => new Color(0.3f, 0.9f, 1f, 0.35f),
+            3 => new Color(1f, 0.2f, 0.2f, 0.35f),
+            _ => new Color(0.85f, 0.2f, 1f, 0.25f)
+        };
+    }
+
+    private static Rect InsetRect(Rect rect, float inset)
+    {
+        return new Rect(rect.x + inset, rect.y + inset, rect.width - inset * 2f, rect.height - inset * 2f);
     }
     private void LoadColors()
     {
@@ -660,7 +719,15 @@ public class LevelConfigEditor : OdinEditor
                 if (_showElementTypes && TryGetElementType(new Vector2Int(x, y), out int elementType))
                 {
                     if (_showElementTypeZero || elementType != 0)
+                    {
+                        if (_showElementTypeColors)
+                        {
+                            Color tint = GetElementTypeColor(elementType);
+                            if (tint.a > 0.0001f)
+                                EditorGUI.DrawRect(InsetRect(cellRect, 2f), tint);
+                        }
                         DrawElementTypeLabel(cellRect, elementType);
+                    }
                 }
 
                 if (_showLineCounters && TryGetLineCounterAtHead(new Vector2Int(x, y), out int counter) && counter > 0)
@@ -737,7 +804,46 @@ public class LevelConfigEditor : OdinEditor
         }
 
 
-        if (_levelconfig.ColorLines != null && _gridViewState == gridViewState.Image)
+        if (_showLineOverlay && _levelconfig.Elevators != null && _gridViewState == gridViewState.Image)
+        {
+            for (int eIdx = 0; eIdx < _levelconfig.Elevators.Count; eIdx++)
+            {
+                ElevatorData elevator = _levelconfig.Elevators[eIdx];
+                if (elevator == null) continue;
+
+                Rect elevatorRect = new Rect(
+                    gridRect.x + elevator.Position.x * _cellSize,
+                    gridRect.y + (rows - elevator.Position.y - elevator.Size.y) * _cellSize,
+                    elevator.Size.x * _cellSize,
+                    elevator.Size.y * _cellSize
+                );
+
+                EditorGUI.DrawRect(InsetRect(elevatorRect, 1f), new Color(1f, 1f, 1f, 0.06f));
+                DrawCellOutline(elevatorRect, new Color(1f, 1f, 1f, 0.35f));
+
+                if (elevator.Lines == null) continue;
+                for (int l = 0; l < elevator.Lines.Count; l++)
+                {
+                    var line = elevator.Lines[l];
+                    if (line == null || line.Cells == null || line.Cells.Count < 2) continue;
+                    Handles.color = Common.GetColorForEnumEditor(line.Color);
+                    Vector3[] points = new Vector3[line.Cells.Count];
+                    for (int i = 0; i < line.Cells.Count; i++)
+                    {
+                        var cell = line.Cells[i];
+                        points[i] = new Vector3(
+                            gridRect.x + cell.x * _cellSize + _cellSize / 2f,
+                            gridRect.y + (rows - 1 - cell.y) * _cellSize + _cellSize / 2f,
+                            0
+                        );
+                    }
+                    Handles.DrawAAPolyLine(4f, points);
+                    Handles.color = Color.white;
+                }
+            }
+        }
+
+        if (_showLineOverlay && _levelconfig.ColorLines != null && _gridViewState == gridViewState.Image)
         {
             foreach (var line in _levelconfig.ColorLines)
             {
@@ -950,7 +1056,7 @@ public class LevelConfigEditor : OdinEditor
             {
                 var line = new ColorLine { Color = color };
                 line.Cells.Add(cellPos);
-                line.ElementTypes.Add(0);
+                line.ElementTypes.Add(_elementTypeBrush);
                 _levelconfig.ColorLines.Add(line);
                 _occupiedCellsCache.Add(cellPos);
                 _currentDrawingLine = line;
@@ -978,9 +1084,7 @@ public class LevelConfigEditor : OdinEditor
         if (finalPath != null)
         {
             EnsureLineElementTypes(_currentDrawingLine);
-            int elementType = (_currentDrawingLine.ElementTypes != null && _currentDrawingLine.ElementTypes.Count > 0)
-                ? _currentDrawingLine.ElementTypes[_currentDrawingLine.ElementTypes.Count - 1]
-                : 0;
+            int elementType = _elementTypeBrush;
 
             foreach (var pos in finalPath)
             {

@@ -10,6 +10,7 @@ public class Board : Singleton<Board>
     [SerializeField] private GridCell _cellPrefab;
     [SerializeField] private Line _linePrefab;
     [SerializeField] private CubeLine _cubePrefab;
+    [SerializeField] private Elevator _elevatorPrefab;
     [SerializeField] private GameColorConfig _colorConfig;
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
@@ -21,6 +22,8 @@ public class Board : Singleton<Board>
     private LevelConfig _currentConfig;
 
     private readonly List<Line> _iceLines = new();
+    private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
+    private float _nextElevatorCheckTime;
     public void NotifyAnyLineEnteredConveyor()
     {
         if (_iceLines.Count == 0) return;
@@ -137,6 +140,187 @@ public class Board : Singleton<Board>
     private void SetupShooter()
     {
         ShooterController.Instance.Setup(_currentConfig.Shooters);
+    }
+
+    private void SetupElevators()
+    {
+        _elevators.Clear();
+        _nextElevatorCheckTime = 0f;
+
+        if (_currentConfig == null || _currentConfig.Elevators == null || _currentConfig.Elevators.Count == 0)
+            return;
+        if (_elevatorPrefab == null) return;
+        if (PoolManager.Instance == null) return;
+
+        for (int i = 0; i < _currentConfig.Elevators.Count; i++)
+        {
+            ElevatorData data = _currentConfig.Elevators[i];
+            if (data == null) continue;
+            if (data.Size.x <= 0 || data.Size.y <= 0) continue;
+
+            Elevator elevator = PoolManager.Instance.Get(_elevatorPrefab);
+            if (elevator == null) continue;
+            elevator.transform.SetParent(transform, false);
+
+            Vector3 center = GetRectCenterWorld(data.Position, data.Size);
+            elevator.transform.position = center;
+
+            float scaleX = data.Size.x / 4f;
+            float scaleZ = data.Size.y / 4f;
+            elevator.transform.localScale = new Vector3(scaleX, 1f, scaleZ);
+
+            _elevators.Add((elevator, data, false));
+        }
+    }
+
+    private Vector3 GetRectCenterWorld(Vector2Int pos, Vector2Int size)
+    {
+        Vector2Int min = pos;
+        Vector2Int max = new Vector2Int(pos.x + size.x - 1, pos.y + size.y - 1);
+
+        GridCell a = GetCellAt(min);
+        GridCell b = GetCellAt(max);
+        if (a == null || b == null) return Vector3.zero;
+
+        Vector3 p0 = a.transform.position;
+        Vector3 p1 = b.transform.position;
+        return (p0 + p1) * 0.5f;
+    }
+
+    private void Update()
+    {
+        if (_currentConfig == null) return;
+        if (_elevators.Count == 0) return;
+        if (Time.time < _nextElevatorCheckTime) return;
+        _nextElevatorCheckTime = Time.time + 0.1f;
+
+        for (int i = 0; i < _elevators.Count; i++)
+        {
+            var entry = _elevators[i];
+            if (entry.activated) continue;
+            if (!IsRectEmpty(entry.data.Position, entry.data.Size)) continue;
+
+            ActivateElevator(i);
+        }
+    }
+
+    private bool IsRectEmpty(Vector2Int pos, Vector2Int size)
+    {
+        int minX = pos.x;
+        int minY = pos.y;
+        int maxX = pos.x + size.x - 1;
+        int maxY = pos.y + size.y - 1;
+
+        if (Cells == null) return false;
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+        if (minX < 0 || minY < 0 || maxX >= w || maxY >= h) return false;
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                GridCell cell = Cells[x, y];
+                if (cell == null) continue;
+                if (cell.CubeOnCell != null) return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void ActivateElevator(int index)
+    {
+        var entry = _elevators[index];
+        if (entry.activated) return;
+
+        // Mark first to prevent re-entry.
+        _elevators[index] = (entry.elevator, entry.data, true);
+
+        if (entry.data != null && entry.data.Lines != null)
+        {
+            for (int i = 0; i < entry.data.Lines.Count; i++)
+            {
+                SpawnLine(entry.data.Lines[i]);
+            }
+        }
+
+        RefreshAllHeadHighlights();
+
+        if (entry.elevator != null)
+            entry.elevator.ActivateAndDisappear();
+    }
+
+    private void SpawnLine(ColorLine line)
+    {
+        if (line == null || line.Cells == null || line.Cells.Count == 0) return;
+        if (PoolManager.Instance == null) return;
+
+        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
+
+        Line lineGo = PoolManager.Instance.Get(_linePrefab);
+        lineGo.transform.SetParent(transform, false);
+        lineGo.transform.localPosition = Vector3.zero;
+        lineGo.transform.localRotation = Quaternion.identity;
+
+        lineGo.Color = line.Color;
+        lineGo.InitializeCounter(line.Counter);
+        lineGo.SetIsIceLine(lineHasIce);
+        lineGo.Cubes = new List<CubeLine>();
+
+        int last = line.Cells.Count - 1;
+        for (int i = 0; i < line.Cells.Count; i++)
+        {
+            Vector2Int curr = line.Cells[i];
+            Vector2Int? prev = i > 0 ? line.Cells[i - 1] : (Vector2Int?)null;
+            Vector2Int? next = i < last ? line.Cells[i + 1] : (Vector2Int?)null;
+
+            GridCell cell = GetCellAt(curr);
+            if (cell == null) continue;
+            if (cell.CubeOnCell != null) continue;
+
+            CubeLine cube = PoolManager.Instance.Get(_cubePrefab);
+            cube.transform.SetParent(lineGo.transform, false);
+            cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
+
+            cube.SetColor(line.Color);
+            int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
+            cube.SetElementType(elementType);
+            cell.CubeOnCell = cube;
+            cell.ShowRenderer(true);
+            cube.Cell = cell;
+
+            if (i == last)
+            {
+                cube.SetType(CubeType.Head);
+                if (prev.HasValue)
+                {
+                    Direction dir = DirFromDelta(curr - prev.Value);
+                    float yaw = GetYawFromDirection(dir);
+                    cube.transform.localRotation = Quaternion.Euler(0f, yaw + 180, 0f);
+                }
+            }
+            else if (prev.HasValue && next.HasValue && IsCorner(prev.Value, curr, next.Value))
+            {
+                cube.SetType(CubeType.Corner);
+                Direction inDir = DirFromDelta(curr - prev.Value);
+                Direction outDir = DirFromDelta(next.Value - curr);
+                float yaw = GetCornerYaw(inDir, outDir);
+                cube.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            }
+            else
+            {
+                cube.SetType(CubeType.Normal);
+            }
+
+            cube.Line = lineGo;
+            lineGo.Cubes.Add(cube);
+        }
+
+        if (lineHasIce)
+            _iceLines.Add(lineGo);
+
+        lineGo.RefreshCounterText();
     }
     private void SetupConveyor()
     {
@@ -599,6 +783,7 @@ public class Board : Singleton<Board>
         _currentConfig = config;
         SetupGrid();
         SetupLine();
+        SetupElevators();
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();

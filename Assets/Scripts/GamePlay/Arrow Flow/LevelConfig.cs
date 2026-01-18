@@ -30,6 +30,7 @@ public class LevelConfig : SerializedScriptableObject
     public GridCellData[,] Cells;
     [HideInInspector]
     public List<ColorLine> ColorLines = new List<ColorLine>();
+    public List<ElevatorData> Elevators = new List<ElevatorData>();
     [InlineProperty]
     public ConveyorLine ConveyorLine;
 
@@ -99,6 +100,14 @@ public class ColorLine
     public List<Vector2Int> Cells = new List<Vector2Int>();
     public List<int> ElementTypes = new List<int>();
     public int Counter;
+}
+
+[Serializable]
+public class ElevatorData
+{
+    public Vector2Int Position;
+    public Vector2Int Size;
+    public List<ColorLine> Lines = new List<ColorLine>();
 }
 
 [Serializable]
