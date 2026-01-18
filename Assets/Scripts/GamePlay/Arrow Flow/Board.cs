@@ -1,10 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using Dreamteck.Splines;
+using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
-
+public enum BoosterType
+{
+    None,
+    Hammer,
+    Conveyor,
+    Rainbow
+}
 public class Board : Singleton<Board>
 {
     [SerializeField] private GridCell _cellPrefab;
@@ -16,6 +24,8 @@ public class Board : Singleton<Board>
     [SerializeField] private float _paddingCamera;
     [SerializeField] private Vector2 _spacing;
     [HideInInspector] public GridCell[,] Cells;
+    [SerializeField] private SpriteRenderer _overlay;
+    [ReadOnly] public BoosterType CurrentBooster;
     public Vector2 Spacing => _spacing;
     public int InitLine => _currentConfig.ColorLines.Count;
     public GameColorConfig ColorConfig => _colorConfig;
@@ -51,6 +61,37 @@ public class Board : Singleton<Board>
         }
         float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + _paddingCamera * 2f) / (2f * Camera.main.aspect);
         Camera.main.orthographicSize = Mathf.Max(halfSizeBoard, limit);
+    }
+    public void UseBooster()
+    {
+        
+    }
+
+    public void UseBooster(BoosterType type)
+    {
+        CurrentBooster = type;
+        switch (type)
+        {
+            case BoosterType.Hammer:
+                {
+                    foreach(var cell in Cells)
+                    {
+                        if(cell.IsOccupied) continue;
+                        cell.CubeOnCell.BringToTop = true;
+                    }
+                    _overlay.enabled = true;
+                    _overlay.DOFade(0.85f, 0.25f);
+                    break;
+                }
+            case BoosterType.Conveyor:
+                {
+                    break;
+                }
+            case BoosterType.Rainbow:
+                {
+                    break;
+                }
+        }
     }
     private SplinePoint CreatePoint(Vector3 pos)
     {
