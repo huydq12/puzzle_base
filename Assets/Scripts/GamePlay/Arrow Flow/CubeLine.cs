@@ -123,6 +123,7 @@ public class CubeLine : SerializedMonoBehaviour
         _elementType3Revealed = false;
         ElementType = elementType;
         RefreshColorAndMaterials(Type);
+        Line?.RefreshCounterText();
     }
     public void PlayEffectMelt()
     {

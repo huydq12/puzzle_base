@@ -126,7 +126,7 @@ public class Line : MonoBehaviour
         StepForward();
     }
 
-    private void LateUpdate()
+    public void RefreshCounterText()
     {
         UpdateCounterText();
         UpdateCounterTextPosition();
@@ -454,6 +454,7 @@ public class Line : MonoBehaviour
         float duration = GetStepDuration();
         int finished = 0;
         int expected = Cubes.Count;
+        CubeLine anchor = (Cubes != null && Cubes.Count > 0) ? Cubes[Cubes.Count / 2] : null;
 
         for (int i = 0; i < Cubes.Count; i++)
         {
@@ -463,7 +464,7 @@ public class Line : MonoBehaviour
 
             Vector3 targetPos = to.transform.position;
 
-            cube.transform.DOMove(targetPos, duration)
+            Tween tween = cube.transform.DOMove(targetPos, duration)
                 .SetEase(Ease.Linear)
                 .OnStart(() =>
                 {
@@ -497,6 +498,11 @@ public class Line : MonoBehaviour
                         onComplete?.Invoke();
                     }
                 });
+
+            if (cube == anchor && _counterText != null)
+            {
+                tween.OnUpdate(UpdateCounterTextPosition);
+            }
         }
     }
 
@@ -509,6 +515,7 @@ public class Line : MonoBehaviour
             _pendingDetach[i].transform.SetParent(Board.Instance.transform, true);
         }
         _pendingDetach.Clear();
+        RefreshCounterText();
         if (Cubes.Count == 0)
         {
             ConveyorController.Instance.OnLineMoved();
@@ -681,6 +688,7 @@ public class Line : MonoBehaviour
         GridCell[] prev = _history.Pop();
         float duration = GetStepDuration();
         int finished = 0;
+        CubeLine anchor = (Cubes != null && Cubes.Count > 0) ? Cubes[Cubes.Count / 2] : null;
 
         for (int i = 0; i < Cubes.Count; i++)
         {
@@ -696,7 +704,7 @@ public class Line : MonoBehaviour
                 return;
             }
 
-            cube.transform.DOMove(to.transform.position, duration)
+            Tween tween = cube.transform.DOMove(to.transform.position, duration)
                 .SetEase(Ease.Linear)
                 .OnStart(() =>
                 {
@@ -724,6 +732,11 @@ public class Line : MonoBehaviour
                         StepBackward();
                     }
                 });
+
+            if (cube == anchor && _counterText != null)
+            {
+                tween.OnUpdate(UpdateCounterTextPosition);
+            }
         }
     }
 

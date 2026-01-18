@@ -448,6 +448,8 @@ public class Board : Singleton<Board>
             {
                 _iceLines.Add(lineColor);
             }
+
+            lineColor.RefreshCounterText();
         }
     }
 
