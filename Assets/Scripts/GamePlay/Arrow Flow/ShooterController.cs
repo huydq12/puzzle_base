@@ -56,4 +56,25 @@ public class ShooterController : Singleton<ShooterController>
         if (ConveyorController.Instance != null)
             ConveyorController.Instance.WinGame();
     }
+
+    public void ReduceShooterTotalByColor(ObjectColor color, int amount)
+    {
+        if (Gates == null || Gates.Count == 0 || amount <= 0) return;
+
+        int remaining = amount;
+
+        // First pass: prioritize non-current shooters (queue shooters)
+        foreach (var gate in Gates)
+        {
+            if (gate == null || remaining <= 0) continue;
+            remaining = gate.ReduceNonCurrentShooterTotal(color, remaining);
+        }
+
+        // Second pass: reduce current shooters if still remaining
+        foreach (var gate in Gates)
+        {
+            if (gate == null || remaining <= 0) continue;
+            remaining = gate.ReduceCurrentShooterTotal(color, remaining);
+        }
+    }
 }

@@ -115,6 +115,90 @@ public class Gate : MonoBehaviour
     }
 
 
+    public int ReduceNonCurrentShooterTotal(ObjectColor color, int amount)
+    {
+        if (amount <= 0 || _shooterInstances == null) return amount;
+
+        int remaining = amount;
+
+        // Start from the end of queue (furthest from current)
+        for (int i = _shooterInstances.Count - 1; i > _currentShooterIndex; i--)
+        {
+            if (remaining <= 0) break;
+
+            Shooter shooter = _shooterInstances[i];
+            if (shooter == null || shooter.Color != color || shooter.Total <= 0) continue;
+
+            int reduceAmount = Mathf.Min(shooter.Total, remaining);
+            shooter.Total -= reduceAmount;
+            remaining -= reduceAmount;
+
+            if (shooter.Total <= 0)
+            {
+                RemoveShooterFromQueue(i);
+            }
+        }
+
+        return remaining;
+    }
+
+    public int ReduceCurrentShooterTotal(ObjectColor color, int amount)
+    {
+        if (amount <= 0 || CurrentShooter == null) return amount;
+        if (CurrentShooter.Color != color || CurrentShooter.Total <= 0) return amount;
+
+        int reduceAmount = Mathf.Min(CurrentShooter.Total, amount);
+        CurrentShooter.Total -= reduceAmount;
+        int remaining = amount - reduceAmount;
+
+        if (CurrentShooter.Total <= 0)
+        {
+            CollectCurrentShooter();
+        }
+
+        return remaining;
+    }
+
+    private void RemoveShooterFromQueue(int index)
+    {
+        if (index <= _currentShooterIndex || index >= _shooterInstances.Count) return;
+
+        Shooter shooter = _shooterInstances[index];
+        if (shooter == null) return;
+
+        _shooterInstances.RemoveAt(index);
+        Shooters.RemoveAt(index);
+        Total = Mathf.Max(0, Total - 1);
+
+        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
+        {
+            shooter.gameObject.SetActive(false);
+        });
+
+        // Update NextShooter and QueueShooter references
+        NextShooter = (_currentShooterIndex + 1 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 1] : null;
+        QueueShooter = (_currentShooterIndex + 2 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 2] : null;
+
+        UpdateShooterRoles();
+        RearrangeShooterPositions();
+    }
+
+    private void RearrangeShooterPositions()
+    {
+        for (int i = _currentShooterIndex; i < _shooterInstances.Count && i < _currentShooterIndex + 3; i++)
+        {
+            Shooter shooter = _shooterInstances[i];
+            if (shooter == null) continue;
+
+            Transform holder = GetShooterHolderByIndex(i - _currentShooterIndex);
+            if (shooter.transform.parent != holder)
+            {
+                shooter.transform.SetParent(holder, false);
+                shooter.transform.DOLocalMove(Vector3.zero, 0.2f);
+            }
+        }
+    }
+
     [Button]
     public void CollectCurrentShooter()
     {

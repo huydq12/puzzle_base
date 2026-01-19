@@ -32,7 +32,13 @@ public class ConveyorController : Singleton<ConveyorController>
     private Tween _blinkTween;
     private WaitForSeconds _cycleWait;
     private float _cycleWaitSeconds = -1f;
-
+    public bool BringToTop
+    {
+        set
+        {
+            SplineComputer.gameObject.layer = value ? LayerMask.NameToLayer("Top") : LayerMask.NameToLayer("Cube");
+        }
+    }
     void Start()
     {
         GameManagerInGame.Instance.OnEndLevel += () =>
@@ -292,6 +298,72 @@ public class ConveyorController : Singleton<ConveyorController>
         if (idx == _lstPaths.Count - 1) idx = 0;
         return idx;
     }
+    public bool HasAnyCubeOnConveyor()
+    {
+        return _totalPathSlotTaken > 0;
+    }
+
+    public void SetAllCubesBringToTop(bool value)
+    {
+        for (int i = 0; i < _lstPaths.Count; i++)
+        {
+            if (_lstPaths[i].CubeSlot != null)
+            {
+                _lstPaths[i].CubeSlot.BringToTop = value;
+            }
+        }
+    }
+
+    public List<CubeLine> GetConsecutiveCubesByColor(CubeLine clickedCube)
+    {
+        List<CubeLine> result = new List<CubeLine>();
+        if (clickedCube == null || _lstPaths == null || _lstPaths.Count == 0)
+            return result;
+
+        int clickedIndex = -1;
+        for (int i = 0; i < _lstPaths.Count; i++)
+        {
+            if (_lstPaths[i].CubeSlot == clickedCube)
+            {
+                clickedIndex = i;
+                break;
+            }
+        }
+
+        if (clickedIndex < 0) return result;
+
+        ObjectColor targetColor = clickedCube.Color;
+        result.Add(clickedCube);
+
+        for (int i = clickedIndex - 1; i >= 0; i--)
+        {
+            CubeLine cube = _lstPaths[i].CubeSlot;
+            if (cube == null || cube.Color != targetColor) break;
+            result.Add(cube);
+        }
+
+        for (int i = clickedIndex + 1; i < _lstPaths.Count; i++)
+        {
+            CubeLine cube = _lstPaths[i].CubeSlot;
+            if (cube == null || cube.Color != targetColor) break;
+            result.Add(cube);
+        }
+
+        return result;
+    }
+
+    public void DestroyConsecutiveCubes(List<CubeLine> cubes)
+    {
+        if (cubes == null || cubes.Count == 0) return;
+
+        foreach (var cube in cubes)
+        {
+            if (cube == null) continue;
+            RemoveCubeFromPath(cube);
+            cube.OnHit();
+        }
+    }
+
     public bool RemoveCubeFromPath(CubeLine cube)
     {
         if (cube == null) return false;

@@ -68,14 +68,26 @@ public class Board : Singleton<Board>
     }
     public void UseHammer()
     {
+        if (CurrentBooster != BoosterType.None)
+        {
+            return;
+        }
         UseBooster(BoosterType.Hammer);
     }
     public void UseConveyor()
     {
+        if (CurrentBooster != BoosterType.None)
+        {
+            return;
+        }
         UseBooster(BoosterType.Conveyor);
     }
     public void UseRainbow()
     {
+        if (CurrentBooster != BoosterType.None)
+        {
+            return;
+        }
         UseBooster(BoosterType.Rainbow);
     }
     public void ResetBooster()
@@ -83,18 +95,23 @@ public class Board : Singleton<Board>
         _overlay.DOFade(0f, 0.25f).OnComplete(() =>
         {
             _overlay.enabled = false;
+            foreach (var cell in Cells)
+            {
+                if (!cell.IsOccupied) continue;
+                cell.CubeOnCell.BringToTop = false;
+            }
         });
     }
-    public void UseBooster(BoosterType type)    
+    public void UseBooster(BoosterType type)
     {
         CurrentBooster = type;
         switch (type)
         {
             case BoosterType.Hammer:
                 {
-                    foreach(var cell in Cells)
+                    foreach (var cell in Cells)
                     {
-                        if(!cell.IsOccupied) continue;
+                        if (!cell.IsOccupied) continue;
                         cell.CubeOnCell.BringToTop = true;
                     }
                     _overlay.color = _overlay.color.With(a: 0f);
@@ -104,6 +121,20 @@ public class Board : Singleton<Board>
                 }
             case BoosterType.Conveyor:
                 {
+                    if (!ConveyorController.Instance.HasAnyCubeOnConveyor())
+                    {
+                        CurrentBooster = BoosterType.None;
+                        return;
+                    }
+                    else
+                    {
+                        ConveyorController.Instance.StopConveyor();
+                        ConveyorController.Instance.BringToTop = true;
+                        ConveyorController.Instance.SetAllCubesBringToTop(true);
+                        _overlay.color = _overlay.color.With(a: 0f);
+                        _overlay.enabled = true;
+                        _overlay.DOFade(0.85f, 0.25f);
+                    }
                     break;
                 }
             case BoosterType.Rainbow:

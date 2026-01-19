@@ -64,6 +64,19 @@ public class LineController : Singleton<LineController>
                         }
                     case BoosterType.Conveyor:
                         {
+                            var consecutiveCubes = ConveyorController.Instance.GetConsecutiveCubesByColor(cube);
+                            if (consecutiveCubes.Count > 0)
+                            {
+                                Board.Instance.CurrentBooster = BoosterType.None;
+                                ObjectColor cubeColor = cube.Color;
+                                int destroyedCount = consecutiveCubes.Count;
+                                ConveyorController.Instance.DestroyConsecutiveCubes(consecutiveCubes);
+                                ShooterController.Instance.ReduceShooterTotalByColor(cubeColor, destroyedCount);
+                                ConveyorController.Instance.SetAllCubesBringToTop(false);
+                                ConveyorController.Instance.BringToTop = false;
+                                ConveyorController.Instance.StartConveyor();
+                                Board.Instance.ResetBooster();
+                            }
                             break;
                         }
                     case BoosterType.Rainbow:
