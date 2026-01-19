@@ -139,6 +139,12 @@ public class Board : Singleton<Board>
                 }
             case BoosterType.Rainbow:
                 {
+                    bool success = ShooterController.Instance.ConvertRandomShooterToRainbow();
+                    CurrentBooster = BoosterType.None;
+                    if (!success)
+                    {
+                        return;
+                    }
                     break;
                 }
         }

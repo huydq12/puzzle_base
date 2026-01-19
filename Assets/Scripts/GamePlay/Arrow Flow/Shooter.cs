@@ -88,7 +88,14 @@ public class Shooter : MonoBehaviour
         if (PoolManager.Instance == null) return null;
         Transform bullet = PoolManager.Instance.Get(_bulletPrefab);
         if (bullet != null)
+        {
             bullet.SetParent(transform, false);
+            TrailRenderer trail = bullet.GetComponentInChildren<TrailRenderer>();
+            if (trail != null)
+            {
+                trail.Clear();
+            }
+        }
         return bullet;
     }
 
@@ -160,8 +167,9 @@ public class Shooter : MonoBehaviour
 
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
-                // choose first cube that matches color and is not placed on a cell
-                if (cube != _lastHit && cube.Color == Color && cube.Cell == null)
+                // choose first cube that matches color (or any color if rainbow Type 6) and is not placed on a cell
+                bool colorMatches = Type == 6 || cube.Color == Color;
+                if (cube != _lastHit && colorMatches && cube.Cell == null)
                 {
                     // record the exact hit so the visual bullet travels to the raycast hit point
                     _hit = hit;
@@ -246,18 +254,31 @@ public class Shooter : MonoBehaviour
         ApplyMaterial();
     }
 
+    public void SetRainbow()
+    {
+        Type = 6;
+        ApplyMaterial();
+    }
+
     private void ApplyMaterial(bool forceColorMaterial = false)
     {
         if (_renderer == null || _renderer.Length == 0) return;
 
         Material material = null;
-        if (!forceColorMaterial && Type == 1) material = _materialType1;
-        else if (Type == 6) material = _materialType6;
+
+        if (Type == 6)
+        {
+            material = _materialType6;
+        }
+        else if (!forceColorMaterial && Type == 1)
+        {
+            material = _materialType1;
+        }
 
         if (material == null)
         {
             material = Board.Instance.ColorConfig.GetShooterColor(Color);
-            if(Type == 1)
+            if (Type == 1)
             {
                 Type = 0;
                 _hiddenEffect.Play();

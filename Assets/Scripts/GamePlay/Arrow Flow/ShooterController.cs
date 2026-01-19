@@ -63,18 +63,69 @@ public class ShooterController : Singleton<ShooterController>
 
         int remaining = amount;
 
-        // First pass: prioritize non-current shooters (queue shooters)
+        // First pass: prioritize non-current shooters with matching color
         foreach (var gate in Gates)
         {
             if (gate == null || remaining <= 0) continue;
-            remaining = gate.ReduceNonCurrentShooterTotal(color, remaining);
+            remaining = gate.ReduceNonCurrentShooterTotal(color, remaining, rainbowOnly: false);
         }
 
-        // Second pass: reduce current shooters if still remaining
+        // Second pass: reduce current shooters with matching color
         foreach (var gate in Gates)
         {
             if (gate == null || remaining <= 0) continue;
-            remaining = gate.ReduceCurrentShooterTotal(color, remaining);
+            remaining = gate.ReduceCurrentShooterTotal(color, remaining, rainbowOnly: false);
         }
+
+        // Third pass: reduce non-current rainbow shooters (Type == 6)
+        foreach (var gate in Gates)
+        {
+            if (gate == null || remaining <= 0) continue;
+            remaining = gate.ReduceNonCurrentShooterTotal(color, remaining, rainbowOnly: true);
+        }
+
+        // Fourth pass: reduce current rainbow shooters (Type == 6)
+        foreach (var gate in Gates)
+        {
+            if (gate == null || remaining <= 0) continue;
+            remaining = gate.ReduceCurrentShooterTotal(color, remaining, rainbowOnly: true);
+        }
+    }
+
+    public bool ConvertRandomShooterToRainbow()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+
+        // Collect all current shooters that are not rainbow (Type != 6) and not closed
+        List<Shooter> candidates = new List<Shooter>();
+        foreach (var gate in Gates)
+        {
+            if (gate == null || gate.IsClosed) continue;
+            if (gate.CurrentShooter != null && gate.CurrentShooter.Type != 6 && gate.CurrentShooter.Total > 0)
+            {
+                candidates.Add(gate.CurrentShooter);
+            }
+        }
+
+        // If no non-rainbow candidates, try any current shooter that's not closed
+        if (candidates.Count == 0)
+        {
+            foreach (var gate in Gates)
+            {
+                if (gate == null || gate.IsClosed) continue;
+                if (gate.CurrentShooter != null && gate.CurrentShooter.Total > 0)
+                {
+                    candidates.Add(gate.CurrentShooter);
+                }
+            }
+        }
+
+        if (candidates.Count == 0) return false;
+
+        // Pick random shooter from candidates
+        int randomIndex = Random.Range(0, candidates.Count);
+        Shooter chosen = candidates[randomIndex];
+        chosen.SetRainbow();
+        return true;
     }
 }

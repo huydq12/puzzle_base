@@ -8,6 +8,7 @@ public class Gate : MonoBehaviour
 {
     [SerializeField] private Transform _maskDoor;
     [SerializeField] private TextMeshPro _total;
+    [SerializeField] private Transform _tunnel;
     [SerializeField] private Transform _belt;
     [SerializeField] private Transform _door;
     [SerializeField] private Transform _currentShooterHolder;
@@ -22,6 +23,7 @@ public class Gate : MonoBehaviour
     private int _currentShooterIndex = 0;
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
+    private bool _isSingleShooterMode = false;
 
     public int Total
     {
@@ -52,6 +54,23 @@ public class Gate : MonoBehaviour
         Shooters = new List<ShooterData>(datas);
         _shooterInstances.Clear();
         _currentShooterIndex = 0;
+
+        // Check if single shooter mode (only 1 shooter from the start)
+        _isSingleShooterMode = datas.Count == 1;
+        if (_isSingleShooterMode)
+        {
+            _tunnel.gameObject.SetActive(false);
+            _door.gameObject.SetActive(false);
+            _total.gameObject.SetActive(false);
+            _belt.localPosition = new Vector3(0f, -0.175f, -2.25f);
+        }
+        else
+        {
+            _tunnel.gameObject.SetActive(true);
+            _door.gameObject.SetActive(true);
+            _total.gameObject.SetActive(true);
+            _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
+        }
 
         for (int i = 0; i < datas.Count; i++)
         {
@@ -86,13 +105,25 @@ public class Gate : MonoBehaviour
     public void CloseGate()
     {
         IsClosed = true;
-        _total.enabled = false;
-        _door.gameObject.SetActive(true);
-        _maskDoor.gameObject.SetActive(true);
-        Sequence sq = DOTween.Sequence();
-        sq.Append(_belt.DOScaleX(0.3f, 0.25f));
-        sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
-        sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
+
+        if (_isSingleShooterMode)
+        {
+            // Single shooter mode: just scale belt to 0, no door animation
+            _belt.DOScale(Vector3.zero, 0.25f).OnComplete(() =>
+            {
+                ShooterController.Instance?.NotifyGateClosed(this);
+            });
+        }
+        else
+        {
+            _total.enabled = false;
+            _door.gameObject.SetActive(true);
+            _maskDoor.gameObject.SetActive(true);
+            Sequence sq = DOTween.Sequence();
+            sq.Append(_belt.DOScaleX(0.3f, 0.25f));
+            sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
+            sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
+        }
     }
     [Button]
     public void OpenGate()
@@ -101,7 +132,7 @@ public class Gate : MonoBehaviour
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
-        _belt.transform.localScale = Vector3.one;
+        _belt.transform.localScale = new Vector3(0.55f, 0.67f , 0.67f);
         _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
     }
 
@@ -115,7 +146,7 @@ public class Gate : MonoBehaviour
     }
 
 
-    public int ReduceNonCurrentShooterTotal(ObjectColor color, int amount)
+    public int ReduceNonCurrentShooterTotal(ObjectColor color, int amount, bool rainbowOnly = false)
     {
         if (amount <= 0 || _shooterInstances == null) return amount;
 
@@ -127,7 +158,11 @@ public class Gate : MonoBehaviour
             if (remaining <= 0) break;
 
             Shooter shooter = _shooterInstances[i];
-            if (shooter == null || shooter.Color != color || shooter.Total <= 0) continue;
+            if (shooter == null || shooter.Total <= 0) continue;
+
+            // Check if shooter matches: either same color, or rainbow mode checking Type == 6
+            bool matches = rainbowOnly ? (shooter.Type == 6) : (shooter.Color == color);
+            if (!matches) continue;
 
             int reduceAmount = Mathf.Min(shooter.Total, remaining);
             shooter.Total -= reduceAmount;
@@ -142,10 +177,14 @@ public class Gate : MonoBehaviour
         return remaining;
     }
 
-    public int ReduceCurrentShooterTotal(ObjectColor color, int amount)
+    public int ReduceCurrentShooterTotal(ObjectColor color, int amount, bool rainbowOnly = false)
     {
         if (amount <= 0 || CurrentShooter == null) return amount;
-        if (CurrentShooter.Color != color || CurrentShooter.Total <= 0) return amount;
+        if (CurrentShooter.Total <= 0) return amount;
+
+        // Check if shooter matches: either same color, or rainbow mode checking Type == 6
+        bool matches = rainbowOnly ? (CurrentShooter.Type == 6) : (CurrentShooter.Color == color);
+        if (!matches) return amount;
 
         int reduceAmount = Mathf.Min(CurrentShooter.Total, amount);
         CurrentShooter.Total -= reduceAmount;
