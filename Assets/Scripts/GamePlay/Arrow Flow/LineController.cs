@@ -68,10 +68,11 @@ public class LineController : Singleton<LineController>
                             if (consecutiveCubes.Count > 0)
                             {
                                 Board.Instance.CurrentBooster = BoosterType.None;
-                                ObjectColor cubeColor = cube.Color;
-                                int destroyedCount = consecutiveCubes.Count;
-                                ConveyorController.Instance.DestroyConsecutiveCubes(consecutiveCubes);
-                                ShooterController.Instance.ReduceShooterTotalByColor(cubeColor, destroyedCount);
+                                var destroyedByColor = ConveyorController.Instance.DestroyConsecutiveCubes(consecutiveCubes);
+                                foreach (var kvp in destroyedByColor)
+                                {
+                                    ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
+                                }
                                 ConveyorController.Instance.SetAllCubesBringToTop(false);
                                 ConveyorController.Instance.BringToTop = false;
                                 ConveyorController.Instance.StartConveyor();

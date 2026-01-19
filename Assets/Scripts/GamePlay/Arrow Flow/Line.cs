@@ -337,29 +337,68 @@ public class Line : MonoBehaviour
 
         Board.Instance.NotifyAnyLineEnteredConveyor();
 
-        int cubeCount = Cubes.Count;
-        ObjectColor lineColor = Color;
-        ShooterController.Instance.ReduceShooterTotalByColor(lineColor, cubeCount);
+        // Track destroyed cubes by color
+        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
 
-        for (int i = 0; i < Cubes.Count; i++)
+        for (int i = Cubes.Count - 1; i >= 0; i--)
         {
             CubeLine cube = Cubes[i];
             if (cube == null) continue;
 
             cube.transform.DOKill();
 
-            if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
-            {
-                cube.Cell.CubeOnCell = null;
-            }
+            // Check if cube will only reveal (ElementType 3 not yet revealed)
+            bool willOnlyReveal = cube.ElementType == 3 && !cube.IsElementType3Revealed;
 
-            cube.Line = null;
-            cube.transform.SetParent(Board.Instance.transform, true);
-            cube.OnHammerDestroy();
+            // Get the color to reduce from shooter (use OriginalColor for outer layer)
+            ObjectColor colorToReduce = cube.OriginalColor;
+
+            if (willOnlyReveal)
+            {
+                // Only reveal the inner layer, keep the cube in the line
+                // Reduce shooter for the outer color being removed
+                if (!destroyedByColor.ContainsKey(colorToReduce))
+                    destroyedByColor[colorToReduce] = 0;
+                destroyedByColor[colorToReduce]++;
+
+                cube.OnHit();
+            }
+            else
+            {
+                // Actually destroy the cube
+                // Use current Color for cubes that are fully destroyed
+                ObjectColor cubeColor = cube.Color;
+                if (!destroyedByColor.ContainsKey(cubeColor))
+                    destroyedByColor[cubeColor] = 0;
+                destroyedByColor[cubeColor]++;
+
+                if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
+                {
+                    cube.Cell.CubeOnCell = null;
+                }
+
+                cube.Line = null;
+                cube.transform.SetParent(Board.Instance.transform, true);
+                cube.OnHammerDestroy();
+                Cubes.RemoveAt(i);
+            }
         }
 
-        Cubes.Clear();
-        Destroy(gameObject);
+        // Reduce shooters for each color
+        foreach (var kvp in destroyedByColor)
+        {
+            ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
+        }
+
+        if (Cubes.Count == 0)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            // Refresh counter text if some cubes remain
+            RefreshCounterText();
+        }
     }
     private void StepForward()
     {

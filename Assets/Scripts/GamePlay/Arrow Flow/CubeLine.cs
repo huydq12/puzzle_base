@@ -50,6 +50,8 @@ public class CubeLine : SerializedMonoBehaviour
         get => _outline.enabled;
         set => _outline.enabled = value;
     }
+    public bool IsElementType3Revealed => _elementType3Revealed;
+    public ObjectColor OriginalColor => _originalColor;
     public void ShowWarning()
     {
         _warningHeadEffect.Stop();

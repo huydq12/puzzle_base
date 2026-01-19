@@ -352,16 +352,30 @@ public class ConveyorController : Singleton<ConveyorController>
         return result;
     }
 
-    public void DestroyConsecutiveCubes(List<CubeLine> cubes)
+    public Dictionary<ObjectColor, int> DestroyConsecutiveCubes(List<CubeLine> cubes)
     {
-        if (cubes == null || cubes.Count == 0) return;
+        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
+        if (cubes == null || cubes.Count == 0) return destroyedByColor;
 
         foreach (var cube in cubes)
         {
             if (cube == null) continue;
-            RemoveCubeFromPath(cube);
+
+            // Check if cube will only reveal (ElementType 3 not yet revealed)
+            bool willOnlyReveal = cube.ElementType == 3 && !cube.IsElementType3Revealed;
+
+            // For 2-layer cubes revealing outer layer, use OriginalColor (outer)
+            // For fully destroyed cubes, use Color (current color)
+            ObjectColor colorToReduce = willOnlyReveal ? cube.OriginalColor : cube.Color;
+
+            if (!destroyedByColor.ContainsKey(colorToReduce))
+                destroyedByColor[colorToReduce] = 0;
+            destroyedByColor[colorToReduce]++;
+
             cube.OnHit();
         }
+
+        return destroyedByColor;
     }
 
     public bool RemoveCubeFromPath(CubeLine cube)
