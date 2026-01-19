@@ -49,7 +49,7 @@ public class Gate : MonoBehaviour
     {
         OpenGate();
         Total = datas.Count;
-        Shooters = datas;
+        Shooters = new List<ShooterData>(datas);
         _shooterInstances.Clear();
         _currentShooterIndex = 0;
 

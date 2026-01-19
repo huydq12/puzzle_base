@@ -335,6 +335,12 @@ public class Line : MonoBehaviour
     {
         ResetMoveState();
 
+        Board.Instance.NotifyAnyLineEnteredConveyor();
+
+        int cubeCount = Cubes.Count;
+        ObjectColor lineColor = Color;
+        ShooterController.Instance.ReduceShooterTotalByColor(lineColor, cubeCount);
+
         for (int i = 0; i < Cubes.Count; i++)
         {
             CubeLine cube = Cubes[i];
