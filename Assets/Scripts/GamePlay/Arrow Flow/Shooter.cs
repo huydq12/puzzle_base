@@ -37,7 +37,7 @@ public class Shooter : MonoBehaviour
     private bool _collectRequested;
 
     //Fire cooldown (seconds) � controls max fire rate while preserving existing logic
-    private float _fireCooldown = 0.07f; // was 0.15f
+    private float _fireCooldown = 0.025f; // was 0.15f
     private float _nextFireTime = 0f;
 
     private int _totalValue;

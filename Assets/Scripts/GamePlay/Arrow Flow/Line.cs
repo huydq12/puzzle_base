@@ -379,7 +379,7 @@ public class Line : MonoBehaviour
 
                 cube.Line = null;
                 cube.transform.SetParent(Board.Instance.transform, true);
-                cube.OnHammerDestroy();
+                cube.OnHit();
                 Cubes.RemoveAt(i);
             }
         }

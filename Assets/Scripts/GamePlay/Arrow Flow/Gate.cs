@@ -61,14 +61,13 @@ public class Gate : MonoBehaviour
         {
             _tunnel.gameObject.SetActive(false);
             _door.gameObject.SetActive(false);
-            _total.gameObject.SetActive(false);
+            _total.enabled = false;
             _belt.localPosition = new Vector3(0f, -0.175f, -2.25f);
         }
         else
         {
             _tunnel.gameObject.SetActive(true);
-            _door.gameObject.SetActive(true);
-            _total.gameObject.SetActive(true);
+            _total.enabled = true;
             _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
         }
 
@@ -109,7 +108,7 @@ public class Gate : MonoBehaviour
         if (_isSingleShooterMode)
         {
             // Single shooter mode: just scale belt to 0, no door animation
-            _belt.DOScale(Vector3.zero, 0.25f).OnComplete(() =>
+            _belt.DOScale(Vector3.zero, 0.5f).OnComplete(() =>
             {
                 ShooterController.Instance?.NotifyGateClosed(this);
             });
@@ -120,7 +119,7 @@ public class Gate : MonoBehaviour
             _door.gameObject.SetActive(true);
             _maskDoor.gameObject.SetActive(true);
             Sequence sq = DOTween.Sequence();
-            sq.Append(_belt.DOScaleX(0.3f, 0.25f));
+            sq.Append(_belt.DOScaleX(0.18f, 0.25f));
             sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
             sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
         }
@@ -274,7 +273,7 @@ public class Gate : MonoBehaviour
             seq.Append(prevCurrent.transform.DOScale(Vector3.zero, 0.25f));
             if (isLastShooter)
             {
-                seq.Join(prevCurrent.transform.DORotate(new Vector3(0, 180, 0), 0.25f, RotateMode.LocalAxisAdd));
+                seq.Join(prevCurrent.transform.DORotate(new Vector3(0, 180, 0), 0.5f, RotateMode.LocalAxisAdd));
             }
             seq.AppendCallback(() =>
             {

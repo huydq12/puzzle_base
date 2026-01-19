@@ -43,8 +43,8 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         GameManagerInGame.Instance.OnEndLevel += () =>
         {
-            Time.timeScale = 1;
             _totalLineMoved = 0;
+            _walkAroundSpeed = 12;
         };
     }
     private void LoseGame()
@@ -63,7 +63,7 @@ public class ConveyorController : Singleton<ConveyorController>
         _totalLineMoved++;
         if (_totalLineMoved >= Board.Instance.InitLine)
         {
-            Time.timeScale = 2;
+            _walkAroundSpeed = 20;
         }
     }
 

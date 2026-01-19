@@ -75,11 +75,6 @@ public class CubeLine : SerializedMonoBehaviour
             }
         }
     }
-    public void OnHammerDestroy()
-    {
-        Cantouch = false;
-        transform.DOScale(0, 0.15f).SetEase(Ease.InBack).OnComplete(() => Destroy(gameObject));
-    }
     public void OnHit()
     {
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
@@ -97,6 +92,7 @@ public class CubeLine : SerializedMonoBehaviour
 
             return;
         }
+        Cantouch = false;
 
         ConveyorController.Instance.RemoveCubeFromPath(this);
         SpawnHitEffect();
