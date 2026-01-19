@@ -22,7 +22,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private float _rayDistance;
     [SerializeField] private LayerMask _cubeLayer;
     [SerializeField] private ParticleSystem _hiddenEffect;
-    [SerializeField] private Transform _bulletPrefab;
+    [SerializeField] private Bullet _bulletPrefab;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
@@ -75,36 +75,31 @@ public class Shooter : MonoBehaviour
 
         for (int i = 0; i < _bulletPoolSize; i++)
         {
-            Transform bullet = PoolManager.Instance.Get(_bulletPrefab);
+            Bullet bullet = PoolManager.Instance.Get(_bulletPrefab);
             if (bullet == null) continue;
-            bullet.SetParent(transform, false);
+            bullet.transform.SetParent(transform, false);
             bullet.gameObject.SetActive(false);
         }
     }
 
-    private Transform GetBullet()
+    private Bullet GetBullet()
     {
         if (_bulletPrefab == null) return null;
         if (PoolManager.Instance == null) return null;
-        Transform bullet = PoolManager.Instance.Get(_bulletPrefab);
+        Bullet bullet = PoolManager.Instance.Get(_bulletPrefab);
         if (bullet != null)
         {
-            bullet.SetParent(transform, false);
-            TrailRenderer trail = bullet.GetComponentInChildren<TrailRenderer>();
-            if (trail != null)
-            {
-                trail.Clear();
-            }
+            bullet.transform.SetParent(transform, false);
         }
         return bullet;
     }
 
-    private void ReturnBullet(Transform bullet)
+    private void ReturnBullet(Bullet bullet)
     {
         if (bullet == null) return;
         bullet.DOKill();
         bullet.gameObject.SetActive(false);
-        bullet.SetParent(transform, false);
+        bullet.transform.SetParent(transform, false);
     }
 
     public void SetRole(ShooterRole role)
@@ -202,7 +197,7 @@ public class Shooter : MonoBehaviour
         });
 
         // game logic removal happens immediately; bullet is visual
-        cube.OnHit();
+        cube.OnHit(Type == 6);
 
         // Immediately decrement shooter ammo and handle collect � keeps logic atomic with hit
         Total = Mathf.Max(0, Total - 1);
@@ -227,15 +222,17 @@ public class Shooter : MonoBehaviour
         Vector3 origin = transform.position;
         Vector3 direction = -transform.right;
 
-        Transform bullet = GetBullet();
+        Bullet bullet = GetBullet();
         if (bullet == null) return;
-        bullet.position = origin;
-        bullet.rotation = Quaternion.LookRotation(direction);
+        bullet.ShowTrail = false;
+        bullet.transform.position = origin;
+        bullet.ShowTrail = true;
+        bullet.transform.rotation = Quaternion.LookRotation(direction);
 
         float distance = Vector3.Distance(origin, _hit.point);
         float duration = distance / _bulletSpeed;
 
-        bullet.DOMove(origin + direction * distance, duration).SetEase(Ease.Linear)
+        bullet.transform.DOMove(origin + direction * distance, duration).SetEase(Ease.Linear)
         .OnComplete(() =>
         {
             ReturnBullet(bullet);

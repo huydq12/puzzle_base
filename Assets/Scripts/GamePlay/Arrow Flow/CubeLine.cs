@@ -75,7 +75,7 @@ public class CubeLine : SerializedMonoBehaviour
             }
         }
     }
-    public void OnHit()
+    public void OnHit(bool byRainbow = false)
     {
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
             return;
@@ -93,6 +93,10 @@ public class CubeLine : SerializedMonoBehaviour
             return;
         }
         Cantouch = false;
+        if (byRainbow)
+        {
+            ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
+        }
 
         ConveyorController.Instance.RemoveCubeFromPath(this);
         SpawnHitEffect();

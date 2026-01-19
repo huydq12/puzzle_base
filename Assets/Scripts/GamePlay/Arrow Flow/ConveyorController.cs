@@ -316,39 +316,14 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public List<CubeLine> GetConsecutiveCubesByColor(CubeLine clickedCube)
     {
-        List<CubeLine> result = new List<CubeLine>();
-        if (clickedCube == null || _lstPaths == null || _lstPaths.Count == 0)
-            return result;
-
-        int clickedIndex = -1;
-        for (int i = 0; i < _lstPaths.Count; i++)
+        List<CubeLine> result = new List<CubeLine>(){ clickedCube };
+        foreach(var slot in _lstPaths)
         {
-            if (_lstPaths[i].CubeSlot == clickedCube)
+            if(slot.CubeSlot != null && slot.CubeSlot.Color == clickedCube.Color)
             {
-                clickedIndex = i;
-                break;
+                result.Add(slot.CubeSlot);
             }
         }
-
-        if (clickedIndex < 0) return result;
-
-        ObjectColor targetColor = clickedCube.Color;
-        result.Add(clickedCube);
-
-        for (int i = clickedIndex - 1; i >= 0; i--)
-        {
-            CubeLine cube = _lstPaths[i].CubeSlot;
-            if (cube == null || cube.Color != targetColor) break;
-            result.Add(cube);
-        }
-
-        for (int i = clickedIndex + 1; i < _lstPaths.Count; i++)
-        {
-            CubeLine cube = _lstPaths[i].CubeSlot;
-            if (cube == null || cube.Color != targetColor) break;
-            result.Add(cube);
-        }
-
         return result;
     }
 

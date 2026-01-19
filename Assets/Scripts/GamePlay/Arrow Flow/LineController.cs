@@ -53,6 +53,7 @@ public class LineController : Singleton<LineController>
                         }
                     case BoosterType.Hammer:
                         {
+                             if(cube.Cell == null) return;
                             Board.Instance.CurrentBooster = BoosterType.None;
                             var hammer = Instantiate(_hammerPrefab);
                             StartCoroutine(hammer.Hit(cube, onHit: () =>
@@ -64,6 +65,7 @@ public class LineController : Singleton<LineController>
                         }
                     case BoosterType.Conveyor:
                         {
+                            if(cube.Cell != null) return;
                             var consecutiveCubes = ConveyorController.Instance.GetConsecutiveCubesByColor(cube);
                             if (consecutiveCubes.Count > 0)
                             {
