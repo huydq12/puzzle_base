@@ -126,6 +126,18 @@ public static class Common
             stateInfo = animator.GetCurrentAnimatorStateInfo(0);
         }
     }
+    public static void SetLayerRecursively(GameObject obj, int layer, bool excludedParent = false)
+    {
+        if (!excludedParent)
+        {
+            obj.layer = layer;
+        }
+        foreach (Transform child in obj.transform)
+        {
+            SetLayerRecursively(child.gameObject, layer);
+        }
+    }
+
     public static bool IsPointerOverObject(string name)
     {
         var pointerData = new PointerEventData(EventSystem.current)

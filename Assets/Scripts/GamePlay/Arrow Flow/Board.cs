@@ -66,12 +66,26 @@ public class Board : Singleton<Board>
         float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + _paddingCamera * 2f) / (2f * Camera.main.aspect);
         Camera.main.orthographicSize = Mathf.Max(halfSizeBoard, limit);
     }
-    public void UseBooster()
+    public void UseHammer()
     {
-        
+        UseBooster(BoosterType.Hammer);
     }
-
-    public void UseBooster(BoosterType type)
+    public void UseConveyor()
+    {
+        UseBooster(BoosterType.Conveyor);
+    }
+    public void UseRainbow()
+    {
+        UseBooster(BoosterType.Rainbow);
+    }
+    public void ResetBooster()
+    {
+        _overlay.DOFade(0f, 0.25f).OnComplete(() =>
+        {
+            _overlay.enabled = false;
+        });
+    }
+    public void UseBooster(BoosterType type)    
     {
         CurrentBooster = type;
         switch (type)
@@ -80,9 +94,10 @@ public class Board : Singleton<Board>
                 {
                     foreach(var cell in Cells)
                     {
-                        if(cell.IsOccupied) continue;
+                        if(!cell.IsOccupied) continue;
                         cell.CubeOnCell.BringToTop = true;
                     }
+                    _overlay.color = _overlay.color.With(a: 0f);
                     _overlay.enabled = true;
                     _overlay.DOFade(0.85f, 0.25f);
                     break;

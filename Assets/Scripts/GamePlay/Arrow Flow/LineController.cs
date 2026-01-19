@@ -5,13 +5,14 @@ using UnityEngine;
 public class LineController : Singleton<LineController>
 {
     [SerializeField] private LayerMask _cubeLayer;
+    [SerializeField] private Hammer _hammerPrefab;
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
             UnityEditor.EditorApplication.isPaused = true;
         }
-        if(GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
+        if (GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
         {
             return;
         }
@@ -40,10 +41,37 @@ public class LineController : Singleton<LineController>
         {
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
-                if (cube.Line != null)
+                switch (Board.Instance.CurrentBooster)
                 {
-                    cube.Line.MoveLine();
+                    case BoosterType.None:
+                        {
+                            if (cube.Line != null)
+                            {
+                                cube.Line.MoveLine();
+                            }
+                            break;
+                        }
+                    case BoosterType.Hammer:
+                        {
+                            Board.Instance.CurrentBooster = BoosterType.None;
+                            var hammer = Instantiate(_hammerPrefab);
+                            StartCoroutine(hammer.Hit(cube, onHit: () =>
+                            {
+                                cube.Line.DestroyLine();
+                                Board.Instance.ResetBooster();
+                            }));
+                            break;
+                        }
+                    case BoosterType.Conveyor:
+                        {
+                            break;
+                        }
+                    case BoosterType.Rainbow:
+                        {
+                            break;
+                        }
                 }
+
             }
         }
     }

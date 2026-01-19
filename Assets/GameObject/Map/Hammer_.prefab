@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2546726953336279085}
   - component: {fileID: 4276384012901408460}
   - component: {fileID: 2394306905017397635}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Hammer2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -32,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8348421159124954655}
-  m_LocalEulerAnglesHint: {x: -35.74143, y: -47.69154, z: 25.431215}
+  m_LocalEulerAnglesHint: {x: -12.468536, y: -36.25563, z: 19.669552}
 --- !u!33 &4276384012901408460
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -58,9 +58,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -96,8 +93,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8348421159124954655}
   - component: {fileID: 9047813482549750594}
-  - component: {fileID: 7083172457460297234}
-  m_Layer: 0
+  - component: {fileID: 8803841187722969671}
+  m_Layer: 13
   m_Name: Hammer_
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -122,7 +119,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 180, y: 0, z: 180}
 --- !u!95 &9047813482549750594
 Animator:
-  serializedVersion: 7
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -136,13 +133,12 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7083172457460297234
+--- !u!114 &8803841187722969671
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -151,6 +147,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 4334496651956351116}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d42028f72aa36f79c77387012d210028, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d0e922ed44ad6742b860b05b347770a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  offset: {x: 2, y: 0, z: -2}
+  _animator: {fileID: 9047813482549750594}

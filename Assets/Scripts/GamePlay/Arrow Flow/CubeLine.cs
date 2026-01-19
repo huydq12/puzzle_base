@@ -34,12 +34,17 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private Renderer _doubleHeadCube;
     [SerializeField] private Outline _outline;
     [SerializeField] private Material _materialElementType2;
-
+    [SerializeField] private Collider _collider;
     private Quaternion _initRotation;
     private bool _elementType3Revealed;
     private ObjectColor _baseColor;
     private ObjectColor _originalColor;
 
+    public bool Cantouch
+    {
+        get => _collider.enabled;
+        set => _collider.enabled = value;
+    }
     public bool HighlightHead
     {
         get => _outline.enabled;
@@ -64,9 +69,14 @@ public class CubeLine : SerializedMonoBehaviour
         {
             foreach (var pair in _renderers)
             {
-                pair.Value.gameObject.layer = value ? LayerMask.NameToLayer("Top") : LayerMask.NameToLayer("Cube");
+                Common.SetLayerRecursively(pair.Value.gameObject, value ? LayerMask.NameToLayer("Top") : LayerMask.NameToLayer("Cube"));
             }
         }
+    }
+    public void OnHammerDestroy()
+    {
+        Cantouch = false;
+        transform.DOScale(0, 0.15f).SetEase(Ease.InBack).OnComplete(() => Destroy(gameObject));
     }
     public void OnHit()
     {

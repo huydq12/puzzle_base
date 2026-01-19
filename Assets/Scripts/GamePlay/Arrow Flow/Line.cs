@@ -331,7 +331,30 @@ public class Line : MonoBehaviour
         for (int i = 0; i < Cubes.Count; i++)
             Cubes[i].ShowWarning();
     }
+    public void DestroyLine()
+    {
+        ResetMoveState();
 
+        for (int i = 0; i < Cubes.Count; i++)
+        {
+            CubeLine cube = Cubes[i];
+            if (cube == null) continue;
+
+            cube.transform.DOKill();
+
+            if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
+            {
+                cube.Cell.CubeOnCell = null;
+            }
+
+            cube.Line = null;
+            cube.transform.SetParent(Board.Instance.transform, true);
+            cube.OnHammerDestroy();
+        }
+
+        Cubes.Clear();
+        Destroy(gameObject);
+    }
     private void StepForward()
     {
         if (_waitingForConveyorEnter)
