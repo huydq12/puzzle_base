@@ -27,6 +27,22 @@ public class UIBottomInGame : UIElement
     public GameObject iconType3;
     public GameObject iconType4;
 
+    public GameObject iconType1Locked;
+    public GameObject iconType2Locked;
+    public GameObject iconType3Locked;
+
+    public GameObject iconType1Add;
+    public GameObject iconType2Add;
+    public GameObject iconType3Add;
+
+    [Header("Lock State")]
+    [SerializeField] private Image bgType1;
+    [SerializeField] private Image bgType2;
+    [SerializeField] private Image bgType3;
+
+    [SerializeField] private Sprite bgUnlockedSprite;
+    [SerializeField] private Sprite bgLockedSprite;
+
     public Image fillLevel;
     public TextMeshProUGUI _percentLevel;
 
@@ -49,6 +65,7 @@ public class UIBottomInGame : UIElement
 
         SetSwapBoosterVisible(false);
 
+        RefreshBoosterLockState();
         RefreshBoosterQuantity();
     }
 
@@ -61,6 +78,7 @@ public class UIBottomInGame : UIElement
     public override void Show()
     {
         base.Show();
+        RefreshBoosterLockState();
         RefreshBoosterQuantity();
     }
 
@@ -77,6 +95,12 @@ public class UIBottomInGame : UIElement
 
     private void TryUseBooster(BoosterType booster, int inventoryBoosterType)
     {
+        if (!IsBoosterUnlocked(inventoryBoosterType))
+        {
+            ShowLockedToast(inventoryBoosterType);
+            return;
+        }
+
         if (InventoryManager.Instance == null)
         {
             return;
@@ -123,45 +147,108 @@ public class UIBottomInGame : UIElement
         RefreshBoosterQuantity();
     }
 
+    private bool IsBoosterUnlocked(int boosterType)
+    {
+        int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
+        return BoosterUnlockService.IsUnlocked(boosterType, level);
+    }
+
+    private void ShowLockedToast(int boosterType)
+    {
+        string msg = BoosterUnlockService.GetLockedToast(boosterType);
+        if (GameUI.Instance != null)
+        {
+            var toast = GameUI.Instance.Get<UINotification>();
+            if (toast != null)
+            {
+                toast.ShowToast(msg);
+                return;
+            }
+        }
+
+        Debug.Log(msg);
+    }
+
+    public void RefreshBoosterLockState()
+    {
+        bool unlocked1 = IsBoosterUnlocked(1);
+        bool unlocked2 = IsBoosterUnlocked(2);
+        bool unlocked3 = IsBoosterUnlocked(3);
+
+        ApplyBoosterLockState(unlocked1, BoosterButtonType1, bgType1, iconType1Locked, iconType1, iconType1Add, BoosterTextType1);
+        ApplyBoosterLockState(unlocked2, BoosterButtonType2, bgType2, iconType2Locked, iconType2, iconType2Add, BoosterTextType2);
+        ApplyBoosterLockState(unlocked3, BoosterButtonType3, bgType3, iconType3Locked, iconType3, iconType3Add, BoosterTextType3);
+    }
+
+    private void ApplyBoosterLockState(
+        bool unlocked,
+        Button button,
+        Image background,
+        GameObject lockedIcon,
+        GameObject ownedIcon,
+        GameObject addIcon,
+        TextMeshProUGUI quantityText)
+    {
+        // Keep the button clickable so we can show the "unlock at level" toast when locked.
+        if (button != null) button.interactable = true;
+
+        if (background != null)
+        {
+            background.sprite = unlocked ? bgUnlockedSprite : bgLockedSprite;
+        }
+
+        if (lockedIcon != null) lockedIcon.SetActive(!unlocked);
+
+        if (!unlocked)
+        {
+            if (ownedIcon != null) ownedIcon.SetActive(false);
+            if (addIcon != null) addIcon.SetActive(false);
+            if (quantityText != null) quantityText.gameObject.SetActive(false);
+        }
+    }
+
     public void RefreshBoosterQuantity()
     {
         if (InventoryManager.Instance == null) return;
+
+        bool unlocked1 = IsBoosterUnlocked(1);
+        bool unlocked2 = IsBoosterUnlocked(2);
+        bool unlocked3 = IsBoosterUnlocked(3);
 
         int b1 = InventoryManager.Instance.GetBoosterType1();
         int b2 = InventoryManager.Instance.GetBoosterType2();
         int b3 = InventoryManager.Instance.GetBoosterType3();
 
-        if (BoosterTextType1 != null) BoosterTextType1.text = "x"+b1.ToString();
-        if (BoosterTextType2 != null) BoosterTextType2.text = "x"+b2.ToString();
-        if (BoosterTextType3 != null) BoosterTextType3.text = "x"+b3.ToString();
+        SetBoosterVisual(unlocked1, b1, iconType1Locked, iconType1, iconType1Add, BoosterTextType1);
+        SetBoosterVisual(unlocked2, b2, iconType2Locked, iconType2, iconType2Add, BoosterTextType2);
+        SetBoosterVisual(unlocked3, b3, iconType3Locked, iconType3, iconType3Add, BoosterTextType3);
+    }
 
-        if (iconType1 != null) {
-            if (b1 <= 0) {
-                iconType1.SetActive(true);
-                BoosterTextType1.gameObject.SetActive(false);
-            } else {
-                iconType1.SetActive(false);
-                BoosterTextType1.gameObject.SetActive(true);
-            }
-        };
-        if (iconType2 != null) {
-            if (b2 <= 0) {
-                iconType2.SetActive(true);
-                BoosterTextType2.gameObject.SetActive(false);
-            } else {
-                iconType2.SetActive(false);
-                BoosterTextType2.gameObject.SetActive(true);
-            }
-        };
-        if (iconType3 != null)  {
-            if (b3 <= 0) {
-                iconType3.SetActive(true);
-                BoosterTextType3.gameObject.SetActive(false);
-            } else {
-                iconType3.SetActive(false);
-                BoosterTextType3.gameObject.SetActive(true);
-            }
-        };
+    private static void SetBoosterVisual(
+        bool unlocked,
+        int count,
+        GameObject lockedIcon,
+        GameObject ownedIcon,
+        GameObject addIcon,
+        TextMeshProUGUI quantityText)
+    {
+        if (!unlocked)
+        {
+            if (lockedIcon != null) lockedIcon.SetActive(true);
+            if (ownedIcon != null) ownedIcon.SetActive(false);
+            if (addIcon != null) addIcon.SetActive(false);
+            if (quantityText != null) quantityText.gameObject.SetActive(false);
+            return;
+        }
+
+        if (lockedIcon != null) lockedIcon.SetActive(false);
+
+        if (quantityText != null) quantityText.text = "x" + Mathf.Max(0, count);
+
+        bool hasAny = count > 0;
+        if (ownedIcon != null) ownedIcon.SetActive(true);
+        if (addIcon != null) addIcon.SetActive(!hasAny);
+        if (quantityText != null) quantityText.gameObject.SetActive(hasAny);
     }
 
     public void SetConveyorPercent(float percent)

@@ -75,6 +75,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         CurrentLevel = Mathf.Max(1, CurrentLevel + 1);
         MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
         SaveData();
+        // Grant unlock gift for the newly reached level (config unlockLevel matches StartGame level).
+        BoosterUnlockService.TryGrantUnlockGift(CurrentLevel);
+        var bottom = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+        if (bottom != null) bottom.RefreshBoosterQuantity();
         PlayVfxWin();
         SetState(GameStateInGame.Result);
     }
@@ -120,6 +124,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _playRoutine = StartCoroutine(PlayGame(level));
 
         SpawnUI();
+        BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(CurrentLevel);
         ClearVfx();
     }
 
