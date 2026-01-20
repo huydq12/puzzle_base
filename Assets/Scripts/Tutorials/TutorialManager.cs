@@ -1,5 +1,4 @@
 using UnityEngine;
-using Sirenix.OdinInspector;
 using System.Collections.Generic;
 
 
@@ -20,55 +19,30 @@ public class TutorialEntry
 }
 public class TutorialManager : Singleton<TutorialManager>
 {
-    private Dictionary<TutorialType, TutorialBase> _tutorialMap;
-    [SerializeField, TableList] private List<TutorialEntry> _tutorialEntries;
-    [ReadOnly] public TutorialBase CurrentTutorial;
-    [ReadOnly] public bool TutorialControlWaitMoveButton;
+    [SerializeField] private GameObject Hand;
+    [SerializeField] private List<TutorialEntry> _tutorialEntries;
 
-    public TutorialType CurrentTutorialType => (TutorialType)_currentLevel;
+    private Dictionary<TutorialType, TutorialBase> _tutorialMap;
+    public TutorialBase CurrentTutorial { get; private set; }
     public bool IsInTutorial { get; private set; }
 
     private int _currentLevel;
-    private new void Awake()
+
+    protected override void Awake()
     {
         base.Awake();
         _tutorialMap = new Dictionary<TutorialType, TutorialBase>();
-        foreach (var entry in _tutorialEntries)
+        if (_tutorialEntries == null) return;
+
+        for (int i = 0; i < _tutorialEntries.Count; i++)
         {
-            if (!_tutorialMap.ContainsKey(entry.Type))
-            {
-                _tutorialMap.Add(entry.Type, entry.Tutorial);
-            }
+            var entry = _tutorialEntries[i];
+            if (entry == null || entry.Tutorial == null) continue;
+            if (_tutorialMap.ContainsKey(entry.Type)) continue;
+            _tutorialMap.Add(entry.Type, entry.Tutorial);
         }
     }
-    public void SetupTutorial(int currentLevel)
-    {
-        _currentLevel = currentLevel;
 
-        if (!HasTutorial(currentLevel))
-        {
-            if (CurrentTutorial != null)
-            {
-                CurrentTutorial.Hide();
-            }
-            CurrentTutorial = null;
-            IsInTutorial = false;
-            return;
-        }
-
-        if (_tutorialMap.TryGetValue((TutorialType)currentLevel, out var tutorial))
-        {
-            CurrentTutorial = tutorial;
-            CurrentTutorial.Setup();
-            IsInTutorial = true;
-        }
-        else
-        {
-            Debug.LogWarning($"Tutorial not found in map: {(TutorialType)currentLevel}");
-            CurrentTutorial = null;
-            IsInTutorial = false;
-        }
-    }
     public void TryShowTutorial(int levelIndex)
     {
         if (!HasTutorial(levelIndex)) return;
@@ -76,52 +50,63 @@ public class TutorialManager : Singleton<TutorialManager>
         ShowTutorial();
     }
 
-    public void ShowTutorial()
+    public void SetupTutorial(int currentLevel)
     {
-        if (CurrentTutorial != null)
+        _currentLevel = Mathf.Max(1, currentLevel);
+
+        if (!HasTutorial(_currentLevel))
         {
-            IsInTutorial = true;
-            CurrentTutorial.GoNextStep();
-        }
-        else
-        {
+            if (CurrentTutorial != null) CurrentTutorial.Hide();
+            CurrentTutorial = null;
             IsInTutorial = false;
+            return;
         }
+
+        var type = (TutorialType)_currentLevel;
+        if (_tutorialMap != null && _tutorialMap.TryGetValue(type, out var tutorial) && tutorial != null)
+        {
+            CurrentTutorial = tutorial;
+            CurrentTutorial.Setup();
+            IsInTutorial = true;
+            return;
+        }
+
+        Debug.LogWarning($"[TutorialManager] Tutorial not found for type: {type} level={_currentLevel}");
+        CurrentTutorial = null;
+        IsInTutorial = false;
     }
 
-    public bool HasTutorial(int currentLevel)
+    public void ShowTutorial()
     {
-        if (!System.Enum.IsDefined(typeof(TutorialType), currentLevel))
-            return false;
+        if (CurrentTutorial == null)
+        {
+            IsInTutorial = false;
+            return;
+        }
 
-        var type = (TutorialType)currentLevel;
+        IsInTutorial = true;
+        CurrentTutorial.Show();
+        CurrentTutorial.GoNextStep();
+    }
+
+    public bool HasTutorial(int level)
+    {
+        level = Mathf.Max(1, level);
+        if (!System.Enum.IsDefined(typeof(TutorialType), level)) return false;
+
+        var type = (TutorialType)level;
         string key = type.ToString();
-
         return PlayerPrefs.GetInt(key, 0) == 0;
     }
 
     public void TutorialFinish()
     {
-        if (!IsInTutorial || CurrentTutorial == null)
-            return;
+        if (CurrentTutorial != null) CurrentTutorial.Hide();
 
-        var type = (TutorialType)_currentLevel;
+        var type = (TutorialType)Mathf.Max(1, _currentLevel);
         PlayerPrefs.SetInt(type.ToString(), 1);
 
         CurrentTutorial = null;
         IsInTutorial = false;
     }
-
-    public void HandleNextStep()
-    {
-        if (_tutorialMap.TryGetValue(CurrentTutorialType, out var tutorial))
-        {
-            tutorial.GoNextStep();
-        }
-        else
-        {
-            Debug.LogWarning($"No current tutorial to handle next step for type: {CurrentTutorialType}");
-        }
-    }
 }
-

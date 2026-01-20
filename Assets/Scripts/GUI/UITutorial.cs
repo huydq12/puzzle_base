@@ -4,59 +4,89 @@ using UnityEngine.UI;
 
 public class UITutorial : UIPopup
 {
+    [Header("Config (optional)")]
+    [SerializeField] private TutorialPopupConfig _config;
+
     [SerializeField] private Image _icon;
     [SerializeField] private TextMeshProUGUI _title;
     [SerializeField] private TextMeshProUGUI _description;
     [SerializeField] private Button _btnClose;
-    [SerializeField] private Sprite _iconIce;
-    [SerializeField] private Sprite _iconGate;
-    [SerializeField] private Sprite _iconLockItem;
-    [SerializeField] private Sprite _iconLockItemColor;
-    [SerializeField] private Sprite _iconScrew;
+
+    private bool _useOverrideContent;
+    private Sprite _overrideIcon;
+    private string _overrideTitle;
+    private string _overrideDescription;
+
+    private TutorialPopupConfig Config => _config != null ? _config : TutorialPopupService.Config;
 
     void Start()
     {
-        _btnClose.onClick.AddListener(() =>
+        if (_btnClose != null)
         {
-            Hide();
-        });
-        switch (TutorialManager.Instance.CurrentTutorialType)
-        {
-            case TutorialType.Ice:
-                {
-                    _icon.sprite = _iconIce;
-                    _title.text = "Ice";
-                    _description.text = "Clear the tiles underneath to melt the ice and free the frozen cell.";
-                    break;
-                }
-            case TutorialType.Gate:
-                {
-                    _icon.sprite = _iconGate;
-                    _title.text = "Gate";
-                    _description.text = "Clear the blocking tiles to open the gate and move forward.";
-                    break;
-                }
-            case TutorialType.LockItem:
-                {
-                    _icon.sprite = _iconLockItem;
-                    _title.text = "Locked Hexagon";
-                    _description.text = "Clear the related tiles to unlock the Hexagon.";
-                    break;
-                }
-            case TutorialType.LockItemColor:
-                {
-                    _icon.sprite = _iconLockItemColor;
-                    _title.text = "Color Lock";
-                    _description.text = "Clear the tiles with the correct color to unlock the Hexagon.";
-                    break;
-                }
-            case TutorialType.Screw:
-                {
-                    _icon.sprite = _iconScrew;
-                    _title.text = "Screw";
-                    _description.text = "Clear the tiles to remove the screw and free the obstacle.";
-                    break;
-                }
+            _btnClose.onClick.AddListener(Hide);
         }
+    }
+
+    public override void Show()
+    {
+        RefreshView();
+        base.Show();
+    }
+
+    public override void Hide()
+    {
+        _useOverrideContent = false;
+        base.Hide();
+    }
+
+    public void ShowBoosterTutorial(Sprite icon, string title, string description)
+    {
+        _useOverrideContent = true;
+        _overrideIcon = icon;
+        _overrideTitle = title;
+        _overrideDescription = description;
+        Show();
+    }
+
+    private void RefreshView()
+    {
+        if (_useOverrideContent)
+        {
+            if (_icon != null)
+            {
+                _icon.sprite = _overrideIcon;
+                _icon.enabled = _overrideIcon != null;
+            }
+            if (_title != null) _title.text = _overrideTitle ?? string.Empty;
+            if (_description != null) _description.text = _overrideDescription ?? string.Empty;
+            return;
+        }
+
+        if (TutorialManager.Instance == null) return;
+
+        var cfg = Config;
+        if (cfg != null)
+        {
+            int level = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
+            var entry = cfg.GetEntry(level);
+            if (entry != null)
+            {
+                ApplyTutorialContent(entry.icon, entry.title, entry.description);
+                return;
+            }
+        }
+
+	        ApplyTutorialContent(null, string.Empty, string.Empty);
+	    }
+
+    private void ApplyTutorialContent(Sprite icon, string title, string description)
+    {
+        if (_icon != null)
+        {
+            _icon.sprite = icon;
+            _icon.enabled = icon != null;
+        }
+        if (_title != null) _title.text = title ?? string.Empty;
+        if (_description != null) _description.text = description ?? string.Empty;
     }
 }

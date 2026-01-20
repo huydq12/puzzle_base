@@ -118,7 +118,10 @@ public class UIWin : UIPopup
 
         int prevMilestone;
         int nextMilestone;
-        GetTutorialMilestones(completedLevel, out prevMilestone, out nextMilestone);
+        if (!GetTutorialMilestonesFromConfig(completedLevel, out prevMilestone, out nextMilestone))
+        {
+            GetTutorialMilestones(completedLevel, out prevMilestone, out nextMilestone);
+        }
 
         float toFill = CalcSegmentFill(completedLevel, prevMilestone, nextMilestone);
         float fromFill = CalcSegmentFill(Mathf.Max(1, completedLevel - 1), prevMilestone, nextMilestone);
@@ -163,6 +166,49 @@ public class UIWin : UIPopup
             nextMilestone = m;
             break;
         }
+    }
+
+    private static bool GetTutorialMilestonesFromConfig(int level, out int prevMilestone, out int nextMilestone)
+    {
+        prevMilestone = 1;
+        nextMilestone = -1;
+
+        var cfg = TutorialPopupService.Config;
+        if (cfg == null || cfg.entries == null || cfg.entries.Count == 0) return false;
+
+        List<int> milestones = new List<int>(cfg.entries.Count);
+        for (int i = 0; i < cfg.entries.Count; i++)
+        {
+            var e = cfg.entries[i];
+            if (e == null) continue;
+            milestones.Add(Mathf.Max(1, e.level));
+        }
+
+        if (milestones.Count == 0) return false;
+
+        milestones.Sort();
+
+        // de-dup
+        for (int i = milestones.Count - 1; i > 0; i--)
+        {
+            if (milestones[i] == milestones[i - 1]) milestones.RemoveAt(i);
+        }
+
+        level = Mathf.Max(1, level);
+
+        for (int i = 0; i < milestones.Count; i++)
+        {
+            int m = milestones[i];
+            if (m <= level)
+            {
+                prevMilestone = m;
+                continue;
+            }
+            nextMilestone = m;
+            break;
+        }
+
+        return true;
     }
 
     protected override void Start()

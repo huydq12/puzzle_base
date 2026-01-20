@@ -151,6 +151,7 @@ public static class BoosterUnlockService
     {
         if (GameUI.Instance == null) return;
 
+        // Booster unlock tutorial uses UITutorialBotter prefab.
         var popup = GameUI.Instance.Get<UITutorialBotter>();
         if (popup == null)
         {

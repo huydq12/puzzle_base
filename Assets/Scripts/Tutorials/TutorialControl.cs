@@ -1,126 +1,125 @@
-using System.Collections;
-using DG.Tweening;
-using TMPro;
 using UnityEngine;
 
 public class TutorialControl : TutorialBase
 {
-    [SerializeField] private RectTransform _canvasRectTransform;
-    [SerializeField] private RectTransform _hand;
-    [SerializeField] private GameObject _arrowStep1;
-    [SerializeField] private GameObject _arrowStep2;
-    [SerializeField] private TextMeshProUGUI _tapText;
-    [SerializeField] private CanvasGroup _tapTextCanvasGroup;
-    [SerializeField] private CanvasGroup _handCanvasGroup;
+    [Header("Arrow (3D)")]
+    [SerializeField] private GameObject arrow;
+    [SerializeField] private Transform arrowTransform;
+    [SerializeField] private Vector3 arrowOffset;
+
+    [Header("Target (3D)")]
+    [SerializeField] private Collider targetCollider;
+    [SerializeField] private Camera raycastCamera;
+    [SerializeField] private LayerMask raycastMask = ~0;
+    [SerializeField] private float raycastMaxDistance = 1000f;
+
+    private bool _listening;
 
     public override void Setup()
     {
         base.Setup();
         Type = TutorialType.Control;
         _tutName = Type.ToString();
-        GameManagerInGame.Instance.OnEndLevel += OnEndLevel;
-        GameManagerInGame.Instance.OnStartLevel += OnStartLevel;
-    }
-    private void OnStartLevel()
-    {
-        Hide();
-        GameManagerInGame.Instance.OnStartLevel -= OnStartLevel;
     }
 
-    private void OnEndLevel()
+    private void OnEnable()
     {
-        _tapTextCanvasGroup.DOFade(0, 0.5f).OnComplete(() =>
-        {
-            Hide();
-            GameManagerInGame.Instance.OnEndLevel -= OnEndLevel;
-        });
+        StartListening();
+        RefreshArrowPosition();
     }
 
-    public override void GoNextStep()
+    private void OnDisable()
     {
-        base.GoNextStep();
-        if (_currentStep == 1)
-        {
-            Show();
-        }
-        StartCoroutine(GoNextStepCoroutine());
-        IEnumerator GoNextStepCoroutine()
-        {
+        StopListening();
+    }
 
-            switch (_currentStep)
+    private void StartListening()
+    {
+        if (_listening) return;
+        _listening = true;
+    }
+
+    private void StopListening()
+    {
+        if (!_listening) return;
+        _listening = false;
+    }
+
+    public override void Show()
+    {
+        base.Show();
+        if (arrow != null) arrow.SetActive(true);
+        RefreshArrowPosition();
+    }
+
+    public override void Hide()
+    {
+        if (arrow != null) arrow.SetActive(false);
+        base.Hide();
+    }
+
+    private void Update()
+    {
+        if (!_listening) return;
+
+        if (targetCollider == null) return;
+
+        if (TryGetPointerDown(out Vector2 screenPos))
+        {
+            Camera cam = raycastCamera != null ? raycastCamera : Camera.main;
+            if (cam == null) return;
+
+            Ray ray = cam.ScreenPointToRay(screenPos);
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, raycastMask, QueryTriggerInteraction.Ignore))
             {
-                case 1:
-                    {
-                        _handCanvasGroup.DOKill();
-                        _tapTextCanvasGroup.DOKill();
-                        _hand.DOKill();
-
-                        _handCanvasGroup.alpha = 0f;
-                        _tapTextCanvasGroup.alpha = 0f;
-                        yield return new WaitForSeconds(0.2f);
-                        PlayMoveHand();
-                        PlayShowText("Drag matching buttons next to each other");
-                        yield return new WaitForSeconds(0.5f);
-                        TutorialManager.Instance.TutorialControlWaitMoveButton = true;
-                        break;
-                    }
-                default:
-                    {
-                        if (IsFinish())
-                        {
-                            TutorialManager.Instance.TutorialControlWaitMoveButton = false;
-                            TutorialManager.Instance.TutorialFinish();
-                            float dur = 0.5f;
-                            _arrowStep1.SetActive(false);
-                            _arrowStep2.SetActive(true);
-                            _tapTextCanvasGroup.gameObject.SetActive(false);
-                            _hand.DOKill();
-                            _handCanvasGroup.DOKill();
-                            _tapTextCanvasGroup.DOKill();
-                            _handCanvasGroup.DOFade(0f, dur);
-                        }
-                        break;
-                    }
+                if (hit.collider == targetCollider)
+                {
+                    OnCorrectClick();
+                }
             }
         }
     }
 
-
-
-    public override bool IsFinish()
+    private static bool TryGetPointerDown(out Vector2 screenPos)
     {
-        if (_currentStep > 1)
+        if (Input.touchCount > 0)
         {
+            Touch t = Input.GetTouch(0);
+            if (t.phase == TouchPhase.Began)
+            {
+                screenPos = t.position;
+                return true;
+            }
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            screenPos = Input.mousePosition;
             return true;
         }
+
+        screenPos = default;
         return false;
     }
 
-    private void PlayMoveHand()
+    private void RefreshArrowPosition()
     {
-        
+        if (arrowTransform == null) arrowTransform = arrow != null ? arrow.transform : null;
+        if (arrowTransform == null) return;
+
+        if (targetCollider != null)
+        {
+            arrowTransform.position = targetCollider.transform.position + arrowOffset;
+        }
     }
 
-    private void PlayShowText(string text)
+    private void OnCorrectClick()
     {
-        _tapText.text = text;
-        // if (topCell != null)
-        // {
-        //     _tapTextCanvasGroup.DOFade(1f, 0.5f);
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.TutorialFinish();
+        }
 
-        //     Vector3 screenPos =
-        //         Camera.main.WorldToScreenPoint(topCell.transform.position + new Vector3(0f, 15.0f, 0f));
-        //     Vector2 localPointInCanvas;
-        //     RectTransformUtility.ScreenPointToLocalPointInRectangle(
-        //         _canvasRectTransform,
-        //         new Vector2(screenPos.x, screenPos.y),
-        //         null,
-        //         out localPointInCanvas
-        //     );
-
-        //     RectTransform rectTransform = _tapTextCanvasGroup.GetComponent<RectTransform>();
-        //     rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, localPointInCanvas.y-100f);
-        // }
+        Hide();
     }
 }
-
