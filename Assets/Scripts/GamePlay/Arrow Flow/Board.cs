@@ -671,8 +671,12 @@ public class Board : Singleton<Board>
             List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset);
             if (worldPositions.Count < 2) continue;
 
-            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
-            tunel.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            ConveyorTunel tunel = PoolManager.Instance != null
+                ? PoolManager.Instance.Get(_conveyorTunelPrefab)
+                : Instantiate(_conveyorTunelPrefab);
+
+            tunel.transform.SetParent(transform, false);
+            tunel.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             tunel.transform.localScale = Vector3.one;
             tunel.gameObject.SetActive(true);
 
