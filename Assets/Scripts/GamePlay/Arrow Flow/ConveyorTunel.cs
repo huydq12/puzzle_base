@@ -13,6 +13,10 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
 
+    [SerializeField] private float _splineHeight;
+    [SerializeField] private float _gateHeight = 0.5f;
+    [SerializeField] private float _textHeight = 2f;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
     {
@@ -42,9 +46,9 @@ public class ConveyorTunel : MonoBehaviour
             gameObject.name = $"ConveyorTunel_T{type}_{counter}";
 
         if (_gate_start != null)
-            _gate_start.transform.position = new Vector3(worldPositions[0].x, 0.5f, worldPositions[0].z);
+            _gate_start.transform.position = new Vector3(worldPositions[0].x, _gateHeight, worldPositions[0].z);
         if (_gate_end != null)
-            _gate_end.transform.position = new Vector3(worldPositions[^1].x, 0.5f, worldPositions[^1].z);
+            _gate_end.transform.position = new Vector3(worldPositions[^1].x, _gateHeight, worldPositions[^1].z);
 
         if (_countTunel != null)
         {
@@ -56,6 +60,8 @@ public class ConveyorTunel : MonoBehaviour
             _countTunel.gameObject.SetActive(counter > 0);
 #endif
             _countTunel.text = counter.ToString();
+
+            _countTunel.transform.position = worldPositions[midIdx] + Vector3.up * _splineHeight + Vector3.up * _textHeight;
         }
 
         if (_splineComputer == null || worldPositions == null || worldPositions.Count < 2) return;
@@ -78,7 +84,7 @@ public class ConveyorTunel : MonoBehaviour
         SplinePoint[] points = new SplinePoint[worldPositions.Count];
         for (int i = 0; i < worldPositions.Count; i++)
         {
-            SplinePoint point = new SplinePoint(worldPositions[i])
+            SplinePoint point = new SplinePoint(worldPositions[i] + Vector3.up * _splineHeight)
             {
                 type = SplinePoint.Type.SmoothMirrored,
                 size = ConveyorController.Instance._cubeSize
