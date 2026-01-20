@@ -17,6 +17,9 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private float _gateHeight = 0.5f;
     [SerializeField] private float _textHeight = 2f;
 
+    public int Type { get; private set; }
+    public int Counter { get; private set; }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
     {
@@ -42,24 +45,31 @@ public class ConveyorTunel : MonoBehaviour
 
     public void Setup(int type, int counter, IReadOnlyList<Vector3> worldPositions)
     {
-        if (type != 0)
-            gameObject.name = $"ConveyorTunel_T{type}_{counter}";
+        Type = type;
+        SetCounter(counter);
+
+        if (Type != 0)
+            gameObject.name = $"ConveyorTunel_T{Type}_{Counter}";
 
         if (_gate_start != null)
             _gate_start.transform.position = new Vector3(worldPositions[0].x, _gateHeight, worldPositions[0].z);
         if (_gate_end != null)
             _gate_end.transform.position = new Vector3(worldPositions[^1].x, _gateHeight, worldPositions[^1].z);
 
+        // If counter is 0, tunnel should be hidden and not block.
+        if (Counter <= 0)
+            return;
+
         if (_countTunel != null)
         {
             int midIdx = Mathf.Clamp(worldPositions.Count / 2, 0, worldPositions.Count - 1);
             _countTunel.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            DebugSetActive(_countTunel.gameObject, counter > 0, this, "ConveyorTunel.Setup() toggle _countTunel");
+            DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.Setup() toggle _countTunel");
 #else
-            _countTunel.gameObject.SetActive(counter > 0);
+            _countTunel.gameObject.SetActive(Counter > 0);
 #endif
-            _countTunel.text = counter.ToString();
+            _countTunel.text = Counter.ToString();
 
             _countTunel.transform.position = worldPositions[midIdx] + Vector3.up * _splineHeight + Vector3.up * _textHeight;
         }
@@ -97,5 +107,27 @@ public class ConveyorTunel : MonoBehaviour
 
         if (splineMesh != null)
             splineMesh.RebuildImmediate();
+    }
+
+    public void SetCounter(int counter)
+    {
+        Counter = Mathf.Max(0, counter);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugSetActive(gameObject, Counter > 0, this, "ConveyorTunel.SetCounter() toggle tunnel");
+#else
+        gameObject.SetActive(Counter > 0);
+#endif
+
+        if (_countTunel == null) return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.SetCounter() toggle _countTunel");
+#else
+        _countTunel.gameObject.SetActive(Counter > 0);
+#endif
+
+        if (Counter > 0)
+            _countTunel.text = Counter.ToString();
     }
 }

@@ -208,6 +208,8 @@ public class Gate : MonoBehaviour
         Shooters.RemoveAt(index);
         Total = Mathf.Max(0, Total - 1);
 
+        Board.Instance?.NotifyShooterDisappeared();
+
         shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
         {
             shooter.gameObject.SetActive(false);
@@ -244,6 +246,8 @@ public class Gate : MonoBehaviour
         {
             return;
         }
+
+        Board.Instance?.NotifyShooterDisappeared();
         AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
         _collectEffect.Stop();
         _collectEffect.Play();

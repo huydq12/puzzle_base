@@ -110,6 +110,15 @@ public class Line : MonoBehaviour
         GridCell conveyorCell = board.FindConveyorCell(prev, headPos);
         GridCell occupiedCell = board.FindOccupiedCell(prev, headPos);
 
+        if (conveyorCell != null && board.IsConveyorCellBlockedByTunnel(conveyorCell.Position))
+        {
+            int distToTunnel = board.GetManhattanDistance(headPos, conveyorCell.Position);
+            int distToOccupied = occupiedCell != null ? board.GetManhattanDistance(headPos, occupiedCell.Position) : int.MaxValue;
+            if (distToTunnel <= distToOccupied)
+                occupiedCell = conveyorCell;
+            conveyorCell = null;
+        }
+
         if (!TryBuildMovePlan(board, headPos, conveyorCell, occupiedCell))
             return;
 
@@ -611,6 +620,17 @@ public class Line : MonoBehaviour
         if (Cubes == null || Cubes.Count == 0) return false;
         if (ConveyorController.Instance == null) return false;
 
+        if (Board.Instance != null && Board.Instance.IsConveyorCellBlockedByTunnel(_targetConveyorCell.Position))
+        {
+            _isMoving = false;
+            _waitingForConveyorEnter = false;
+            _reservedConveyorBaseIndex = -1;
+            _targetConveyorCell = null;
+            _willDefinitelyRevert = true;
+            StartRevert();
+            return true;
+        }
+
         CubeLine head = Cubes[^1];
         if (head == null || head.Cell == null) return false;
 
@@ -696,6 +716,15 @@ public class Line : MonoBehaviour
 
                 GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, newHeadPos);
                 GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, newHeadPos);
+
+                if (conveyorCell != null && Board.Instance.IsConveyorCellBlockedByTunnel(conveyorCell.Position))
+                {
+                    int distToTunnel = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position);
+                    int distToOccupied = occupiedCell != null ? Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position) : int.MaxValue;
+                    if (distToTunnel <= distToOccupied)
+                        occupiedCell = conveyorCell;
+                    conveyorCell = null;
+                }
 
                 if (conveyorCell != null)
                 {

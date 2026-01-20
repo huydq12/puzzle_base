@@ -40,6 +40,9 @@ public class Board : Singleton<Board>
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
+    private readonly Dictionary<Vector2Int, int> _conveyorTunnelBlockCounts = new();
+
+    private readonly List<(ConveyorTunel tunnel, List<Vector2Int> cells)> _activeTunnels = new();
 
     private struct ConveyorMeta
     {
@@ -210,6 +213,38 @@ public class Board : Singleton<Board>
             }
         }
     }
+    public bool IsConveyorCellBlockedByTunnel(Vector2Int cellPos)
+    {
+        return _conveyorTunnelBlockCounts.TryGetValue(cellPos, out int count) && count > 0;
+    }
+    public void NotifyShooterDisappeared()
+    {
+        if (_activeTunnels == null || _activeTunnels.Count == 0) return;
+
+        for (int i = _activeTunnels.Count - 1; i >= 0; i--)
+        {
+            var entry = _activeTunnels[i];
+            ConveyorTunel tunnel = entry.tunnel;
+            if (tunnel == null)
+            {
+                _activeTunnels.RemoveAt(i);
+                continue;
+            }
+
+            if (tunnel.Counter <= 0)
+                continue;
+
+            int nextCounter = tunnel.Counter - 1;
+            tunnel.SetCounter(nextCounter);
+
+            if (nextCounter <= 0)
+            {
+                UnregisterTunnelCells(entry.cells);
+                RefreshAllHeadHighlights();
+                _activeTunnels.RemoveAt(i);
+            }
+        }
+    }
     private bool CanHeadReachConveyor(CubeLine head)
     {
         if (head == null) return false;
@@ -236,6 +271,9 @@ public class Board : Singleton<Board>
 
         GridCell conveyorCell = FindConveyorCell(prev, curr);
         if (conveyorCell == null) return false;
+
+        // A conveyor cell covered by a tunnel is not a valid entry point.
+        if (IsConveyorCellBlockedByTunnel(conveyorCell.Position)) return false;
 
         GridCell occupiedCell = FindOccupiedCell(prev, curr);
         if (occupiedCell == null) return true;
@@ -462,6 +500,8 @@ public class Board : Singleton<Board>
     }
     private void SetupConveyor()
     {
+        _conveyorTunnelBlockCounts.Clear();
+        _activeTunnels.Clear();
         if (_currentConfig.ConveyorLine == null || _currentConfig.ConveyorLine.Cells.IsNullOrEmpty()) return;
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
@@ -611,6 +651,9 @@ public class Board : Singleton<Board>
         if (orderedCells == null || orderedCells.Count < 2) return;
         if (metaByCell == null || metaByCell.Count == 0) return;
 
+        _conveyorTunnelBlockCounts.Clear();
+        _activeTunnels.Clear();
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (_currentConfig != null && _currentConfig.Level == 39)
         {
@@ -687,6 +730,40 @@ public class Board : Singleton<Board>
             }
 #endif
             tunel.Setup(group.meta.Type, group.meta.Counter, worldPositions);
+
+            if (group.meta.Counter > 0)
+            {
+                RegisterTunnelCells(group.cells);
+                _activeTunnels.Add((tunel, group.cells));
+            }
+        }
+    }
+
+    private void RegisterTunnelCells(List<Vector2Int> cells)
+    {
+        if (cells == null) return;
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Vector2Int cell = cells[i];
+            if (_conveyorTunnelBlockCounts.TryGetValue(cell, out int count))
+                _conveyorTunnelBlockCounts[cell] = count + 1;
+            else
+                _conveyorTunnelBlockCounts[cell] = 1;
+        }
+    }
+
+    private void UnregisterTunnelCells(List<Vector2Int> cells)
+    {
+        if (cells == null) return;
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Vector2Int cell = cells[i];
+            if (!_conveyorTunnelBlockCounts.TryGetValue(cell, out int count)) continue;
+            count--;
+            if (count <= 0)
+                _conveyorTunnelBlockCounts.Remove(cell);
+            else
+                _conveyorTunnelBlockCounts[cell] = count;
         }
     }
 
