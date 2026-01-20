@@ -30,6 +30,10 @@ public class Board : Singleton<Board>
     [SerializeField] private float _elevatorLineStagger = 0.05f;
     [SerializeField] private float _elevatorCubeScaleDuration = 0.12f;
     [SerializeField] private float _elevatorCubeScaleStagger = 0.02f;
+
+    [SerializeField] private Camera mainCam;
+    [SerializeField] private Camera effectCam;
+    
     [HideInInspector] public GridCell[,] Cells;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
@@ -60,6 +64,61 @@ public class Board : Singleton<Board>
 
     private float _nextElevatorCheckTime;
 
+    protected override void Awake()
+    {
+        base.Awake();
+        EnsureCameras();
+    }
+
+    private void EnsureCameras()
+    {
+        if (mainCam == null) mainCam = Camera.main;
+        if (mainCam == null) mainCam = FindMainCameraFallback();
+        if (effectCam == null) effectCam = FindEffectCameraFallback(mainCam);
+        SyncEffectCameraFromMainInternal();
+    }
+
+    private void SyncEffectCameraFromMainInternal()
+    {
+        if (mainCam == null || effectCam == null) return;
+
+        effectCam.transform.SetPositionAndRotation(mainCam.transform.position, mainCam.transform.rotation);
+        effectCam.orthographic = mainCam.orthographic;
+        effectCam.orthographicSize = mainCam.orthographicSize;
+        effectCam.fieldOfView = mainCam.fieldOfView;
+        effectCam.nearClipPlane = mainCam.nearClipPlane;
+        effectCam.farClipPlane = mainCam.farClipPlane;
+        effectCam.aspect = mainCam.aspect;
+    }
+
+    private static Camera FindMainCameraFallback()
+    {
+        Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+        for (int i = 0; i < cams.Length; i++)
+        {
+            Camera cam = cams[i];
+            if (cam != null && cam.CompareTag("MainCamera"))
+            {
+                return cam;
+            }
+        }
+
+        return cams.Length > 0 ? cams[0] : null;
+    }
+
+    private static Camera FindEffectCameraFallback(Camera main)
+    {
+        Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+        for (int i = 0; i < cams.Length; i++)
+        {
+            Camera cam = cams[i];
+            if (cam == null || cam == main) continue;
+            if (!cam.CompareTag("MainCamera")) return cam;
+        }
+
+        return null;
+    }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
     {
@@ -83,6 +142,9 @@ public class Board : Singleton<Board>
 
     void SetupCamera(float paddingCamera, float minOrthoSize)
     {
+        EnsureCameras();
+        if (mainCam == null) return;
+
         float limit = minOrthoSize > 0f ? minOrthoSize : 12f;
         float minPosX = Mathf.Infinity;
         float maxPosX = Mathf.NegativeInfinity;
@@ -95,32 +157,31 @@ public class Board : Singleton<Board>
             if (childPosX > maxPosX) maxPosX = childPosX;
         }
         float padding = paddingCamera > 0f ? paddingCamera : _paddingCamera;
-        float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + padding * 2f) / (2f * Camera.main.aspect);
-        Camera.main.orthographicSize = Mathf.Max(halfSizeBoard, limit);
+        float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + padding * 2f) / (2f * mainCam.aspect);
+        mainCam.orthographicSize = Mathf.Max(halfSizeBoard, limit);
+        SyncEffectCameraFromMainInternal();
     }
     public void UseHammer()
     {
-        if (CurrentBooster != BoosterType.None)
-        {
-            return;
-        }
-        UseBooster(BoosterType.Hammer);
+        TryUseBooster(BoosterType.Hammer);
     }
     public void UseConveyor()
     {
-        if (CurrentBooster != BoosterType.None)
-        {
-            return;
-        }
-        UseBooster(BoosterType.Conveyor);
+        TryUseBooster(BoosterType.Conveyor);
     }
     public void UseRainbow()
+    {
+        TryUseBooster(BoosterType.Rainbow);
+    }
+
+    private void TryUseBooster(BoosterType type)
     {
         if (CurrentBooster != BoosterType.None)
         {
             return;
         }
-        UseBooster(BoosterType.Rainbow);
+
+        UseBooster(type);
     }
     public void ResetBooster()
     {
@@ -1181,13 +1242,20 @@ public class Board : Singleton<Board>
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();
-        if (config != null && config.Camera.Enabled && Camera.main != null)
+        EnsureCameras();
+        if (config != null && config.Camera.Enabled && mainCam != null)
         {
             if (config.Camera.UsePosition)
-                Camera.main.transform.position = config.Camera.Position;
+            {
+                mainCam.transform.position = config.Camera.Position;
+                SyncEffectCameraFromMainInternal();
+            }
 
             if (config.Camera.UseOrthographicSize && config.Camera.OrthographicSize > 0f)
-                Camera.main.orthographicSize = config.Camera.OrthographicSize;
+            {
+                mainCam.orthographicSize = config.Camera.OrthographicSize;
+                SyncEffectCameraFromMainInternal();
+            }
             else
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }

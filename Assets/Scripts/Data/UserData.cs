@@ -24,6 +24,9 @@ public class UserData : SavePlayerPrefs
     public int boosterType3 = 0;
     public int boosterType4 = 0;
 
+    public List<string> boosterUnlockGiftClaimedKeys = new();
+    public List<string> boosterUnlockTutorialShownKeys = new();
+
     public string playerName;
 
     public int maxLevel = 1;
@@ -84,6 +87,9 @@ public class UserData : SavePlayerPrefs
         boosterType2 = 0;
         boosterType3 = 0;
         boosterType4 = 0;
+
+        boosterUnlockGiftClaimedKeys = new List<string>();
+        boosterUnlockTutorialShownKeys = new List<string>();
         playerName = "Player"+UnityEngine.Random.Range(0,1000);
         maxLevel = 1;
         currentLevel = 1;

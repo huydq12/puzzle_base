@@ -8,7 +8,6 @@ using UnityEngine;
 
 public class ConveyorController : Singleton<ConveyorController>
 {
-    [SerializeField] private TextMeshProUGUI _percent;
     [SerializeField] private Color _warningColor;
     [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
@@ -113,18 +112,19 @@ public class ConveyorController : Singleton<ConveyorController>
     }
     private void UpdatePercent()
     {
-        if (_percent == null) return;
-
-        if (_lstPaths == null || _lstPaths.Count == 0)
+        float percent = 0f;
+        if (_lstPaths != null && _lstPaths.Count > 0)
         {
-            _percent.text = "0%";
-            return;
+            percent = (_totalPathSlotTaken / (float)_lstPaths.Count) * 100f;
+            percent = Mathf.Clamp(percent, 0f, 100f);
         }
 
-        float percent = (_totalPathSlotTaken / (float)_lstPaths.Count) * 100f;
-        percent = Mathf.Clamp(percent, 0f, 100f);
+        var ui = GameUI.Instance.Get<UIBottomInGame>();
+        if (ui != null)
+        {
+            ui.SetConveyorPercent(percent);
+        }
 
-        _percent.text = Mathf.RoundToInt(percent) + "%";
         bool shouldBlink = percent >= 70f;
 
         if (shouldBlink && !_isBlinking)
