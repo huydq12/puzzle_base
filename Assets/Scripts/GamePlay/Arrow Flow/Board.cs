@@ -81,9 +81,9 @@ public class Board : Singleton<Board>
         }
     }
 
-    void SetupCamera()
+    void SetupCamera(float paddingCamera, float minOrthoSize)
     {
-        float limit = 12f;
+        float limit = minOrthoSize > 0f ? minOrthoSize : 12f;
         float minPosX = Mathf.Infinity;
         float maxPosX = Mathf.NegativeInfinity;
 
@@ -94,7 +94,8 @@ public class Board : Singleton<Board>
             if (childPosX < minPosX) minPosX = childPosX;
             if (childPosX > maxPosX) maxPosX = childPosX;
         }
-        float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + _paddingCamera * 2f) / (2f * Camera.main.aspect);
+        float padding = paddingCamera > 0f ? paddingCamera : _paddingCamera;
+        float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + padding * 2f) / (2f * Camera.main.aspect);
         Camera.main.orthographicSize = Mathf.Max(halfSizeBoard, limit);
     }
     public void UseHammer()
@@ -1180,7 +1181,16 @@ public class Board : Singleton<Board>
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();
-        // SetupCamera();
+        if (config != null && config.Camera.Enabled && Camera.main != null)
+        {
+            if (config.Camera.UsePosition)
+                Camera.main.transform.position = config.Camera.Position;
+
+            if (config.Camera.UseOrthographicSize && config.Camera.OrthographicSize > 0f)
+                Camera.main.orthographicSize = config.Camera.OrthographicSize;
+            else
+                SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
+        }
         GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
     }
 }

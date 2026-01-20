@@ -33,6 +33,7 @@ public class LevelConfig : SerializedScriptableObject
     public List<ElevatorData> Elevators = new List<ElevatorData>();
     [InlineProperty]
     public ConveyorLine ConveyorLine;
+    public CameraSetupData Camera;
 
 #if UNITY_EDITOR
     private void ResizeGridCells()
@@ -74,6 +75,18 @@ public class LevelConfig : SerializedScriptableObject
         ResizeGridCells();
     }
 #endif
+}
+
+[Serializable]
+public struct CameraSetupData
+{
+    public bool Enabled;
+    public float MinOrthoSize;
+    public float Padding;
+    public bool UsePosition;
+    public Vector3 Position;
+    public bool UseOrthographicSize;
+    public float OrthographicSize;
 }
 [HideReferenceObjectPicker]
 public class GateData

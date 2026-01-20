@@ -203,6 +203,23 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         config.Level = level;
         config.Rows = rows;
         config.Columns = columns;
+        // Optional camera fields (when present in JSON): cameraPosition + cameraOrthographicSize
+        if (root != null)
+        {
+            if (root.cameraPosition != null)
+            {
+                config.Camera.Enabled = true;
+                config.Camera.UsePosition = true;
+                config.Camera.Position = new Vector3(root.cameraPosition.x, root.cameraPosition.y, root.cameraPosition.z);
+            }
+
+            if (root.cameraOrthographicSize > 0f)
+            {
+                config.Camera.Enabled = true;
+                config.Camera.UseOrthographicSize = true;
+                config.Camera.OrthographicSize = root.cameraOrthographicSize;
+            }
+        }
 
         GridCellData[,] newCells = new GridCellData[columns, rows];
         if (config.Cells != null)
@@ -607,6 +624,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public List<LevelJsonShooter> shooters;
         public List<LevelJsonConveyor> conveyors;
         public List<LevelJsonElementData> elementData;
+        public LevelJsonVector3 cameraPosition;
+        public float cameraOrthographicSize;
     }
 
     [Serializable]
@@ -690,4 +709,5 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public float y;
         public float z;
     }
+
 }
