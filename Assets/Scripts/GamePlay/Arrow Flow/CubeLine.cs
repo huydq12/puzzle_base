@@ -149,6 +149,7 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public void PlayEffectMelt()
     {
+        if (_meltEffect == null) return;
         _meltEffect.Play();
     }
 

@@ -74,8 +74,27 @@ public class Line : MonoBehaviour
         if (Counter <= 0) return;
         if (RemainingCounter <= 0) return;
 
-        RemainingCounter = Mathf.Max(0, RemainingCounter - Mathf.Max(0, amount));
+        int clamped = Mathf.Max(0, amount);
+        if (clamped <= 0) return;
+
+        int before = RemainingCounter;
+        RemainingCounter = Mathf.Max(0, RemainingCounter - clamped);
         UpdateCounterText();
+
+        if (RemainingCounter < before)
+        {
+            // Play ice effect every time the ice counter decreases.
+            if (Cubes != null)
+            {
+                for (int i = 0; i < Cubes.Count; i++)
+                {
+                    CubeLine cube = Cubes[i];
+                    if (cube == null) continue;
+                    if (cube.ElementType != 2) continue;
+                    cube.PlayEffectMelt();
+                }
+            }
+        }
 
         if (RemainingCounter <= 0)
         {
@@ -169,17 +188,13 @@ public class Line : MonoBehaviour
 
     private void MeltIce()
     {
-        CubeLine[] cubes = Board.Instance.GetComponentsInChildren<CubeLine>(true);
-        for (int i = 0; i < cubes.Length; i++)
+        if (Cubes == null) return;
+        for (int i = 0; i < Cubes.Count; i++)
         {
-            CubeLine cube = cubes[i];
+            CubeLine cube = Cubes[i];
             if (cube == null) continue;
-            if (cube.Line != this) continue;
-            if (cube.ElementType == 2)
-            {
-                cube.PlayEffectMelt();
-                cube.SetElementType(0);
-            }
+            if (cube.ElementType != 2) continue;
+            cube.SetElementType(0);
         }
         AudioManager.Instance.PlaySFX(SFXType.Ice);
     }
