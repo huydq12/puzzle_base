@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -34,6 +35,9 @@ public class UIBottomInGame : UIElement
     [SerializeField] private Color _fillColor25To50 = Color.yellow;
     [SerializeField] private Color _fillColor50To75 = new Color(1f, 0.5f, 0f);
     [SerializeField] private Color _fillColor75To100 = Color.red;
+    [SerializeField] private float _fillSmoothTime = 0.2f;
+
+    private Tween _fillTween;
 
     private void Start()
     {
@@ -46,6 +50,12 @@ public class UIBottomInGame : UIElement
         SetSwapBoosterVisible(false);
 
         RefreshBoosterQuantity();
+    }
+
+    private void OnDisable()
+    {
+        _fillTween?.Kill();
+        _fillTween = null;
     }
 
     public override void Show()
@@ -162,16 +172,35 @@ public class UIBottomInGame : UIElement
 
         if (fillLevel != null)
         {
-            fillLevel.fillAmount = percent / 100f;
-            fillLevel.color = GetFillColor(percent);
+            float targetFill = percent / 100f;
+
+            _fillTween?.Kill();
+            if (_fillSmoothTime <= 0.0001f)
+            {
+                fillLevel.fillAmount = targetFill;
+                fillLevel.color = GetFillColor(percent);
+                return;
+            }
+
+            _fillTween = DOTween.To(
+                    () => fillLevel.fillAmount,
+                    v =>
+                    {
+                        fillLevel.fillAmount = v;
+                        fillLevel.color = GetFillColor(v * 100f);
+                    },
+                    targetFill,
+                    _fillSmoothTime
+                )
+                .SetEase(Ease.OutCubic);
         }
     }
 
     private Color GetFillColor(float percent)
     {
-        if (percent < 25f) return _fillColor0To25;
-        if (percent < 50f) return _fillColor25To50;
-        if (percent < 75f) return _fillColor50To75;
+        if (percent <= 25f) return Color.Lerp(_fillColor0To25, _fillColor25To50, percent / 25f);
+        if (percent <= 50f) return Color.Lerp(_fillColor25To50, _fillColor50To75, (percent - 25f) / 25f);
+        if (percent <= 75f) return Color.Lerp(_fillColor50To75, _fillColor75To100, (percent - 50f) / 25f);
         return _fillColor75To100;
     }
 
