@@ -26,6 +26,15 @@ public class UIBottomInGame : UIElement
     public GameObject iconType3;
     public GameObject iconType4;
 
+    public Image fillLevel;
+    public TextMeshProUGUI _percentLevel;
+
+    [Header("Conveyor Level Colors")]
+    [SerializeField] private Color _fillColor0To25 = Color.green;
+    [SerializeField] private Color _fillColor25To50 = Color.yellow;
+    [SerializeField] private Color _fillColor50To75 = new Color(1f, 0.5f, 0f);
+    [SerializeField] private Color _fillColor75To100 = Color.red;
+
     private void Start()
     {
         // Only 3 boosters are supported in this mode: Hammer / Conveyor / Rainbow.
@@ -145,5 +154,25 @@ public class UIBottomInGame : UIElement
         };
     }
 
+    public void SetConveyorPercent(float percent)
+    {
+        percent = Mathf.Clamp(percent, 0f, 100f);
+
+        if (_percentLevel != null) _percentLevel.text = Mathf.RoundToInt(percent) + "%";
+
+        if (fillLevel != null)
+        {
+            fillLevel.fillAmount = percent / 100f;
+            fillLevel.color = GetFillColor(percent);
+        }
+    }
+
+    private Color GetFillColor(float percent)
+    {
+        if (percent < 25f) return _fillColor0To25;
+        if (percent < 50f) return _fillColor25To50;
+        if (percent < 75f) return _fillColor50To75;
+        return _fillColor75To100;
+    }
 
 }

@@ -6,6 +6,9 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+using System.Collections;
+using System.Collections.Generic;
+
 public enum GameStateInGame
 {
     Init,
@@ -25,6 +28,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public UserData userData { get; private set; }
     public bool InitLevel = true;
     private Coroutine _playRoutine;
+
+    [SerializeField] private List<ParticleSystem> _winEffect;
 
     private new void Awake()
     {
@@ -47,11 +52,30 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         // SetUpNotification();
     }
+
+    public void PlayVfxWin(){
+        foreach (var effect in _winEffect)
+        {
+            effect.gameObject.SetActive(true);
+            effect.Play();
+        }
+    }
+
+    public void ClearVfx()
+    {
+        foreach (var effect in _winEffect)
+        {
+            effect.gameObject.SetActive(false);
+        }
+    }
+
+
     public void SetWin()
     {
         CurrentLevel = Mathf.Max(1, CurrentLevel + 1);
         MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
         SaveData();
+        PlayVfxWin();
         SetState(GameStateInGame.Result);
     }
     public void SetLose()
@@ -96,6 +120,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _playRoutine = StartCoroutine(PlayGame(level));
 
         SpawnUI();
+        ClearVfx();
     }
 
     public void SpawnUI()
