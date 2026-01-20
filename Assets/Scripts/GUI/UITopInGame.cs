@@ -18,12 +18,17 @@ public class UITopInGame : UIElement
 
     [SerializeField] private RectTransform reactLevelNormal;
     [SerializeField] private RectTransform reactLevelHard;
+    [SerializeField] private Animator ani_hard_level;
 
     [SerializeField] private CanvasGroup trayNotificationGroup;
     [SerializeField] private TextMeshProUGUI textDeps;
 
     [SerializeField] private RectTransform infoSelectButon;
    
+    private Coroutine hardLevelPopupCoroutine;
+    private const float HardLevelPopupAutoHideDelay = 1.2f;
+    private const string PopupOpenStateName = "Open";
+    private const string PopupCloseStateName = "Close";
     
     private void Start()
     {
@@ -39,6 +44,20 @@ public class UITopInGame : UIElement
                 GameManagerInGame.Instance.StartGame();
             }
         });
+    }
+
+    private void OnDisable()
+    {
+        if (hardLevelPopupCoroutine != null)
+        {
+            StopCoroutine(hardLevelPopupCoroutine);
+            hardLevelPopupCoroutine = null;
+        }
+
+        if (ani_hard_level != null)
+        {
+            ani_hard_level.gameObject.SetActive(false);
+        }
     }
 
     public void ShowInfoButton(string message)
@@ -61,6 +80,7 @@ public class UITopInGame : UIElement
         bool isHard = level % 10 == 0;
         if (reactLevelNormal != null) reactLevelNormal.gameObject.SetActive(!isHard);
         if (reactLevelHard != null) reactLevelHard.gameObject.SetActive(isHard);
+        if (isHard) ShowHardLevelPopup();
 
         RectTransform target = isHard ? reactLevelHard : reactLevelNormal;
         if (target != null)
@@ -80,6 +100,54 @@ public class UITopInGame : UIElement
                 seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
             }
         }
+    }
+
+    private void ShowHardLevelPopup()
+    {
+        if (ani_hard_level == null) return;
+
+        if (hardLevelPopupCoroutine != null)
+        {
+            StopCoroutine(hardLevelPopupCoroutine);
+            hardLevelPopupCoroutine = null;
+        }
+
+        hardLevelPopupCoroutine = StartCoroutine(HardLevelPopupRoutine());
+    }
+
+    private IEnumerator HardLevelPopupRoutine()
+    {
+        var popupGo = ani_hard_level.gameObject;
+        if (popupGo != null) popupGo.SetActive(true);
+
+        ani_hard_level.Play(PopupOpenStateName, 0, 0f);
+
+        yield return new WaitForSeconds(HardLevelPopupAutoHideDelay);
+
+        ani_hard_level.Play(PopupCloseStateName, 0, 0f);
+        yield return new WaitForSeconds(GetAnimationClipLengthSeconds(ani_hard_level, PopupCloseStateName, 0.3f));
+
+        if (popupGo != null) popupGo.SetActive(false);
+        hardLevelPopupCoroutine = null;
+    }
+
+    private static float GetAnimationClipLengthSeconds(Animator animator, string clipName, float fallbackSeconds)
+    {
+        if (animator == null) return fallbackSeconds;
+        var controller = animator.runtimeAnimatorController;
+        if (controller == null) return fallbackSeconds;
+
+        var clips = controller.animationClips;
+        if (clips == null) return fallbackSeconds;
+
+        for (int i = 0; i < clips.Length; i++)
+        {
+            var clip = clips[i];
+            if (clip != null && string.Equals(clip.name, clipName, StringComparison.Ordinal))
+                return clip.length;
+        }
+
+        return fallbackSeconds;
     }
 
     public void ShowTrayNotificationLose(float autoHideDelay = 1.2f,string message = "")

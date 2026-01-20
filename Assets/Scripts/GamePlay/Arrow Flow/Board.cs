@@ -6,6 +6,8 @@ using Dreamteck.Splines;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+using StackTrace = System.Diagnostics.StackTrace;
 public enum BoosterType
 {
     None,
@@ -19,6 +21,7 @@ public class Board : Singleton<Board>
     [SerializeField] private Line _linePrefab;
     [SerializeField] private CubeLine _cubePrefab;
     [SerializeField] private Elevator _elevatorPrefab;
+    [SerializeField] private ConveyorTunel _conveyorTunelPrefab;
     [SerializeField] private GameColorConfig _colorConfig;
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
@@ -37,7 +40,32 @@ public class Board : Singleton<Board>
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
+
+    private struct ConveyorMeta
+    {
+        public int Type;
+        public int Counter;
+        public bool IsHole;
+
+        public bool HasAny => IsHole || Type != 0 || Counter > 0;
+
+        public bool SameAs(in ConveyorMeta other)
+        {
+            return Type == other.Type && Counter == other.Counter && IsHole == other.IsHole;
+        }
+    }
+
     private float _nextElevatorCheckTime;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
+    {
+        if (obj == null) return;
+        if (obj.activeSelf == active) return;
+        UnityEngine.Debug.LogWarning($"[Board.DebugSetActive] {obj.name} -> {active} reason={reason}\n{new StackTrace(true)}", context);
+        obj.SetActive(active);
+    }
+#endif
     public void NotifyAnyLineEnteredConveyor()
     {
         if (_iceLines.Count == 0) return;
@@ -451,6 +479,8 @@ public class Board : Singleton<Board>
             return;
         }
 
+        Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(_currentConfig.ConveyorLine);
+
         List<Vector2> conveyorPolygon = new();
         foreach (var c in orderedCells)
         {
@@ -540,6 +570,166 @@ public class Board : Singleton<Board>
         ConveyorController.Instance.SplineComputer.Close();
         ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
+
+        SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
+    }
+
+    private static Dictionary<Vector2Int, ConveyorMeta> BuildConveyorMetaByCell(ConveyorLine line)
+    {
+        Dictionary<Vector2Int, ConveyorMeta> result = new();
+        if (line == null || line.Cells == null) return result;
+
+        for (int i = 0; i < line.Cells.Count; i++)
+        {
+            int type = (line.Types != null && i < line.Types.Count) ? line.Types[i] : 0;
+            int counter = (line.Counters != null && i < line.Counters.Count) ? line.Counters[i] : 0;
+            bool isHole = (line.IsHoles != null && i < line.IsHoles.Count) && line.IsHoles[i];
+
+            // Some legacy/serialized data uses -1 to mean "unset".
+            if (type < 0) type = 0;
+            if (counter < 0) counter = 0;
+
+            ConveyorMeta meta = new ConveyorMeta
+            {
+                Type = type,
+                Counter = counter,
+                IsHole = isHole
+            };
+
+            if (!meta.HasAny) continue;
+            Vector2Int cell = line.Cells[i];
+            if (!result.ContainsKey(cell))
+                result.Add(cell, meta);
+        }
+
+        return result;
+    }
+
+    private void SpawnConveyorTunels(List<Vector2Int> orderedCells, Dictionary<Vector2Int, ConveyorMeta> metaByCell, float cornerOffset)
+    {
+        if (_conveyorTunelPrefab == null) return;
+        if (orderedCells == null || orderedCells.Count < 2) return;
+        if (metaByCell == null || metaByCell.Count == 0) return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_currentConfig != null && _currentConfig.Level == 39)
+        {
+            Debug.Log($"[Board] Level 39: Conveyor meta entries={metaByCell.Count}, conveyor orderedCells={orderedCells.Count}", this);
+            foreach (var kvp in metaByCell)
+                Debug.Log($"[Board] Level 39 meta cell={kvp.Key} type={kvp.Value.Type} counter={kvp.Value.Counter} isHole={kvp.Value.IsHole}", this);
+        }
+#endif
+
+        List<(ConveyorMeta meta, List<Vector2Int> cells)> groups = new();
+        ConveyorMeta currentMeta = default;
+        List<Vector2Int> currentCells = null;
+
+        for (int i = 0; i < orderedCells.Count; i++)
+        {
+            Vector2Int cell = orderedCells[i];
+            bool hasMeta = metaByCell.TryGetValue(cell, out ConveyorMeta meta) && meta.HasAny && !meta.IsHole && meta.Type != 0;
+
+            if (!hasMeta)
+            {
+                if (currentCells != null)
+                {
+                    groups.Add((currentMeta, currentCells));
+                    currentCells = null;
+                }
+                continue;
+            }
+
+            if (currentCells != null && meta.SameAs(currentMeta))
+            {
+                currentCells.Add(cell);
+                continue;
+            }
+
+            if (currentCells != null)
+                groups.Add((currentMeta, currentCells));
+
+            currentMeta = meta;
+            currentCells = new List<Vector2Int> { cell };
+        }
+
+        if (currentCells != null)
+            groups.Add((currentMeta, currentCells));
+
+        if (groups.Count > 1 && groups[0].meta.SameAs(groups[^1].meta))
+        {
+            var merged = (meta: groups[^1].meta, cells: groups[^1].cells);
+            merged.cells.AddRange(groups[0].cells);
+            groups.RemoveAt(0);
+            groups[^1] = merged;
+        }
+
+        for (int i = 0; i < groups.Count; i++)
+        {
+            var group = groups[i];
+            if (group.cells.Count < 2) continue;
+
+            List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset);
+            if (worldPositions.Count < 2) continue;
+
+            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
+            tunel.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            tunel.transform.localScale = Vector3.one;
+            tunel.gameObject.SetActive(true);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_currentConfig != null && _currentConfig.Level == 39)
+            {
+                Debug.Log($"[Board] Level 39 spawn tunnel type={group.meta.Type} counter={group.meta.Counter} cells={group.cells.Count} splinePoints={worldPositions.Count} activeInHierarchy={tunel.gameObject.activeInHierarchy}", tunel);
+            }
+#endif
+            tunel.Setup(group.meta.Type, group.meta.Counter, worldPositions);
+        }
+    }
+
+    private List<Vector3> BuildOpenConveyorSplinePositions(List<Vector2Int> cells, float cornerOffset)
+    {
+        List<Vector3> allPositions = new();
+        if (cells == null || cells.Count < 2) return allPositions;
+
+        for (int i = 0; i < cells.Count; i++)
+        {
+            GridCell currCell = GetCellAt(cells[i]);
+            if (currCell == null) continue;
+
+            Vector3 curr = currCell.transform.position;
+
+            if (i == 0 || i == cells.Count - 1)
+            {
+                allPositions.Add(curr);
+                continue;
+            }
+
+            GridCell prevCell = GetCellAt(cells[i - 1]);
+            GridCell nextCell = GetCellAt(cells[i + 1]);
+            if (prevCell == null || nextCell == null)
+            {
+                allPositions.Add(curr);
+                continue;
+            }
+
+            Vector3 prev = prevCell.transform.position;
+            Vector3 next = nextCell.transform.position;
+
+            if (IsRightAngle(prev, curr, next))
+            {
+                Vector3 dirIn = (curr - prev).normalized;
+                Vector3 dirOut = (next - curr).normalized;
+
+                allPositions.Add(curr - dirIn * cornerOffset);
+                allPositions.Add(curr + dirOut * cornerOffset);
+            }
+            else
+            {
+                allPositions.Add(curr);
+            }
+        }
+
+        return allPositions;
     }
 
     private static List<Vector2Int> FilterInBoundsDistinct(List<Vector2Int> cells, int columns, int rows)
@@ -837,11 +1027,13 @@ public class Board : Singleton<Board>
     {
         if (transform.childCount == 0) return;
 
+        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
         Vector3 sum = Vector3.zero;
         int count = 0;
 
         foreach (Transform child in transform)
         {
+            if (conveyorTemplate != null && child == conveyorTemplate) continue;
             sum += child.localPosition;
             count++;
         }
@@ -852,6 +1044,7 @@ public class Board : Singleton<Board>
 
         foreach (Transform child in transform)
         {
+            if (conveyorTemplate != null && child == conveyorTemplate) continue;
             child.localPosition -= center;
         }
     }
@@ -869,11 +1062,15 @@ public class Board : Singleton<Board>
 
     private void Clear()
     {
+        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
+
         if (PoolManager.Instance == null)
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
-                Destroy(transform.GetChild(i).gameObject);
+                Transform child = transform.GetChild(i);
+                if (conveyorTemplate != null && child == conveyorTemplate) continue;
+                Destroy(child.gameObject);
             }
             return;
         }
@@ -881,8 +1078,13 @@ public class Board : Singleton<Board>
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             Transform child = transform.GetChild(i);
+            if (conveyorTemplate != null && child == conveyorTemplate) continue;
             child.SetParent(PoolManager.Instance.transform, false);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DebugSetActive(child.gameObject, false, this, "Board.Clear() moved to PoolManager");
+#else
             child.gameObject.SetActive(false);
+#endif
         }
     }
     public void SetupLevel(LevelConfig config)

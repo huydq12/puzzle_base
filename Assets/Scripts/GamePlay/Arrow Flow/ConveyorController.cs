@@ -13,7 +13,7 @@ public class ConveyorController : Singleton<ConveyorController>
     [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
     [SerializeField] private GameObject _arrow;
-    [SerializeField] private float _cubeSize;
+    public float _cubeSize;
     [SerializeField] private int _walkAroundSpeed;
     [SerializeField] private float _baseOffsetAmount;
     private int _totalLineMoved;
