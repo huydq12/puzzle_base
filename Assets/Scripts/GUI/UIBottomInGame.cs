@@ -11,27 +11,30 @@ public class UIBottomInGame : UIElement
     public override bool DestroyOnHide => false;
     public override bool UseBehindPanel => false;
 
-    public Button BoosterBackButton;
-    public Button BoosterAddButton;
-    public Button BoosterShufferButton;
-    public Button BoosterSwapContainerButton;
+    public Button BoosterButtonType1;
+    public Button BoosterButtonType2;
+    public Button BoosterButtonType3;
+    public Button BoosterButtonType4;
 
-    public TextMeshProUGUI BoosterBackText;
-    public TextMeshProUGUI BoosterAddText;
-    public TextMeshProUGUI BoosterShufferText;
-    public TextMeshProUGUI BoosterSwapContainerText;
+    public TextMeshProUGUI BoosterTextType1;
+    public TextMeshProUGUI BoosterTextType2;
+    public TextMeshProUGUI BoosterTextType3;
+    public TextMeshProUGUI BoosterTextType4;
 
-    public GameObject iconBack;
-    public GameObject iconAdd;
-    public GameObject iconShuffle;
-    public GameObject iconSwap;
+    public GameObject iconType1;
+    public GameObject iconType2;
+    public GameObject iconType3;
+    public GameObject iconType4;
 
     private void Start()
     {
-        if (BoosterBackButton != null) BoosterBackButton.onClick.AddListener(OnBoosterBackClicked);
-        if (BoosterAddButton != null) BoosterAddButton.onClick.AddListener(OnBoosterAddClicked);
-        if (BoosterShufferButton != null) BoosterShufferButton.onClick.AddListener(OnBoosterShuffleClicked);
-        if (BoosterSwapContainerButton != null) BoosterSwapContainerButton.onClick.AddListener(OnBoosterSwapContainerClicked);
+        // Only 3 boosters are supported in this mode: Hammer / Conveyor / Rainbow.
+        // We reuse the first 3 button slots and hide the 4th one (Swap).
+        if (BoosterButtonType1 != null) BoosterButtonType1.onClick.AddListener(UseHammer);
+        if (BoosterButtonType2 != null) BoosterButtonType2.onClick.AddListener(UseConveyor);
+        if (BoosterButtonType3 != null) BoosterButtonType3.onClick.AddListener(UseRainbow);
+
+        SetSwapBoosterVisible(false);
 
         RefreshBoosterQuantity();
     }
@@ -42,54 +45,62 @@ public class UIBottomInGame : UIElement
         RefreshBoosterQuantity();
     }
 
-    public void OnBoosterBackClicked()
+    public void UseHammer() => TryUseBooster(BoosterType.Hammer, inventoryBoosterType: 1);
+    public void UseConveyor() => TryUseBooster(BoosterType.Conveyor, inventoryBoosterType: 2);
+    public void UseRainbow() => TryUseBooster(BoosterType.Rainbow, inventoryBoosterType: 3);
+
+    private void SetSwapBoosterVisible(bool visible)
     {
-        // TryUseBooster(1, () => GameController.Instance.UndoLastMove());
+        if (BoosterButtonType4 != null) BoosterButtonType4.gameObject.SetActive(visible);
+        if (BoosterTextType4 != null) BoosterTextType4.gameObject.SetActive(visible);
+        if (iconType4 != null) iconType4.SetActive(visible);
     }
 
-    public void OnBoosterAddClicked()
+    private void TryUseBooster(BoosterType booster, int inventoryBoosterType)
     {
-        // TryUseBooster(2, () => GameController.Instance.AddSlotButton());
-    }
-
-    public void OnBoosterShuffleClicked()
-    {
-        // TryUseBooster(3, () => GameController.Instance.ShuffleEqualStacks());
-    }
-
-    public void OnBoosterSwapContainerClicked()
-    {
-        // TryUseBooster(4, () => GameController.Instance.SwapCurrentAndNextContainers());
-    }
-
-    private void TryUseBooster(int boosterType, Action onUsed)
-    {
-        if (GameController.Instance == null || InventoryManager.Instance == null)
+        if (InventoryManager.Instance == null)
         {
             return;
         }
 
-        // if (GameController.Instance.IsAnimating)
-        // {
-        //     return;
-        // }
+        var board = FindFirstObjectByType<Board>();
+        if (board == null)
+        {
+            return;
+        }
 
-        bool used = boosterType switch
+        if (board.CurrentBooster != BoosterType.None)
+        {
+            return;
+        }
+
+        bool used = inventoryBoosterType switch
         {
             1 => InventoryManager.Instance.UseBoosterType1(),
             2 => InventoryManager.Instance.UseBoosterType2(),
             3 => InventoryManager.Instance.UseBoosterType3(),
-            4 => InventoryManager.Instance.UseBoosterType4(),
             _ => false
         };
 
         if (!used)
         {
-            GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(boosterType);
+            GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
             return;
         }
 
-        onUsed?.Invoke();
+        switch (booster)
+        {
+            case BoosterType.Hammer:
+                board.UseHammer();
+                break;
+            case BoosterType.Conveyor:
+                board.UseConveyor();
+                break;
+            case BoosterType.Rainbow:
+                board.UseRainbow();
+                break;
+        }
+
         RefreshBoosterQuantity();
     }
 
@@ -100,48 +111,36 @@ public class UIBottomInGame : UIElement
         int b1 = InventoryManager.Instance.GetBoosterType1();
         int b2 = InventoryManager.Instance.GetBoosterType2();
         int b3 = InventoryManager.Instance.GetBoosterType3();
-        int b4 = InventoryManager.Instance.GetBoosterType4();
 
-        if (BoosterBackText != null) BoosterBackText.text = "x"+b1.ToString();
-        if (BoosterAddText != null) BoosterAddText.text = "x"+b2.ToString();
-        if (BoosterShufferText != null) BoosterShufferText.text = "x"+b3.ToString();
-        if (BoosterSwapContainerText != null) BoosterSwapContainerText.text = "x"+b4.ToString();
+        if (BoosterTextType1 != null) BoosterTextType1.text = "x"+b1.ToString();
+        if (BoosterTextType2 != null) BoosterTextType2.text = "x"+b2.ToString();
+        if (BoosterTextType3 != null) BoosterTextType3.text = "x"+b3.ToString();
 
-        if (iconBack != null) {
+        if (iconType1 != null) {
             if (b1 <= 0) {
-                iconBack.SetActive(true);
-                BoosterBackText.gameObject.SetActive(false);
+                iconType1.SetActive(true);
+                BoosterTextType1.gameObject.SetActive(false);
             } else {
-                iconBack.SetActive(false);
-                BoosterBackText.gameObject.SetActive(true);
+                iconType1.SetActive(false);
+                BoosterTextType1.gameObject.SetActive(true);
             }
         };
-        if (iconAdd != null) {
+        if (iconType2 != null) {
             if (b2 <= 0) {
-                iconAdd.SetActive(true);
-                BoosterAddText.gameObject.SetActive(false);
+                iconType2.SetActive(true);
+                BoosterTextType2.gameObject.SetActive(false);
             } else {
-                iconAdd.SetActive(false);
-                BoosterAddText.gameObject.SetActive(true);
+                iconType2.SetActive(false);
+                BoosterTextType2.gameObject.SetActive(true);
             }
         };
-        if (iconShuffle != null)  {
+        if (iconType3 != null)  {
             if (b3 <= 0) {
-                iconShuffle.SetActive(true);
-                BoosterShufferText.gameObject.SetActive(false);
+                iconType3.SetActive(true);
+                BoosterTextType3.gameObject.SetActive(false);
             } else {
-                iconShuffle.SetActive(false);
-                BoosterShufferText.gameObject.SetActive(true);
-            }
-        };
-
-        if (iconSwap != null)  {
-            if (b4 <= 0) {
-                iconSwap.SetActive(true);
-                BoosterSwapContainerText.gameObject.SetActive(false);
-            } else {
-                iconSwap.SetActive(false);
-                BoosterSwapContainerText.gameObject.SetActive(true);
+                iconType3.SetActive(false);
+                BoosterTextType3.gameObject.SetActive(true);
             }
         };
     }

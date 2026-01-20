@@ -30,6 +30,10 @@ public class Board : Singleton<Board>
     [SerializeField] private float _elevatorLineStagger = 0.05f;
     [SerializeField] private float _elevatorCubeScaleDuration = 0.12f;
     [SerializeField] private float _elevatorCubeScaleStagger = 0.02f;
+
+    [SerializeField] private Camera mainCam;
+    [SerializeField] private Camera effectCam;
+    
     [HideInInspector] public GridCell[,] Cells;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
@@ -100,27 +104,25 @@ public class Board : Singleton<Board>
     }
     public void UseHammer()
     {
-        if (CurrentBooster != BoosterType.None)
-        {
-            return;
-        }
-        UseBooster(BoosterType.Hammer);
+        TryUseBooster(BoosterType.Hammer);
     }
     public void UseConveyor()
     {
-        if (CurrentBooster != BoosterType.None)
-        {
-            return;
-        }
-        UseBooster(BoosterType.Conveyor);
+        TryUseBooster(BoosterType.Conveyor);
     }
     public void UseRainbow()
+    {
+        TryUseBooster(BoosterType.Rainbow);
+    }
+
+    private void TryUseBooster(BoosterType type)
     {
         if (CurrentBooster != BoosterType.None)
         {
             return;
         }
-        UseBooster(BoosterType.Rainbow);
+
+        UseBooster(type);
     }
     public void ResetBooster()
     {

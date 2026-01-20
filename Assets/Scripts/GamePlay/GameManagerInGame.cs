@@ -94,6 +94,14 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             _playRoutine = null;
         }
         _playRoutine = StartCoroutine(PlayGame(level));
+
+        SpawnUI();
+    }
+
+    public void SpawnUI()
+    {
+        GameUI.Instance.Get<UITopInGame>().Show();
+        GameUI.Instance.Get<UIBottomInGame>().Show();
     }
 
     public void RestartLevel()
