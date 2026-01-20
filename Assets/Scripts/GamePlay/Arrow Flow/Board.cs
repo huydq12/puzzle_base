@@ -33,7 +33,7 @@ public class Board : Singleton<Board>
 
     [SerializeField] private Camera mainCam;
     [SerializeField] private Camera effectCam;
-    
+
     [HideInInspector] public GridCell[,] Cells;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
@@ -453,7 +453,10 @@ public class Board : Singleton<Board>
 
         return true;
     }
-
+    public GridCell CellTaptInTutorialControl()
+    {
+        return GetCellAt(new Vector2Int(2, 1));
+    }
     private void ActivateElevator(int index)
     {
         var entry = _elevators[index];
@@ -1223,6 +1226,14 @@ public class Board : Singleton<Board>
             Transform child = transform.GetChild(i);
             if (conveyorTemplate != null && child == conveyorTemplate) continue;
             child.SetParent(PoolManager.Instance.transform, false);
+            if (child.TryGetComponent(out Line line))
+            {
+                line.Clear();
+            }
+            else if (child.TryGetComponent(out CubeLine cube))
+            {
+                cube.Clear();
+            }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DebugSetActive(child.gameObject, false, this, "Board.Clear() moved to PoolManager");
 #else

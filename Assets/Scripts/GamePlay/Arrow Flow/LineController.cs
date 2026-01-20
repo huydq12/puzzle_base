@@ -41,6 +41,24 @@ public class LineController : Singleton<LineController>
         {
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
+                if (TutorialManager.Instance.IsInTutorial)
+                {
+                    switch (TutorialManager.Instance.CurrentTutorial.Type)
+                    {
+                        case TutorialType.Control:
+                            {
+                                if (!TutorialManager.Instance.TutorialControlWaitTapLine)
+                                {
+                                    return;
+                                }
+                                else
+                                {
+                                    TutorialManager.Instance.HandleNextStep();
+                                }
+                                break;
+                            }
+                    }
+                }
                 switch (Board.Instance.CurrentBooster)
                 {
                     case BoosterType.None:

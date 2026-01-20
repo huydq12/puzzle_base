@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 
 
 public enum TutorialType
@@ -19,9 +20,8 @@ public class TutorialEntry
 }
 public class TutorialManager : Singleton<TutorialManager>
 {
-    [SerializeField] private GameObject Hand;
     [SerializeField] private List<TutorialEntry> _tutorialEntries;
-
+    [ReadOnly] public bool TutorialControlWaitTapLine;
     private Dictionary<TutorialType, TutorialBase> _tutorialMap;
     public TutorialBase CurrentTutorial { get; private set; }
     public bool IsInTutorial { get; private set; }
@@ -70,7 +70,6 @@ public class TutorialManager : Singleton<TutorialManager>
             IsInTutorial = true;
             return;
         }
-
         Debug.LogWarning($"[TutorialManager] Tutorial not found for type: {type} level={_currentLevel}");
         CurrentTutorial = null;
         IsInTutorial = false;
@@ -109,4 +108,16 @@ public class TutorialManager : Singleton<TutorialManager>
         CurrentTutorial = null;
         IsInTutorial = false;
     }
+    public void HandleNextStep()
+    {
+        if (_tutorialMap.TryGetValue(CurrentTutorial.Type, out var tutorial))
+        {
+            tutorial.GoNextStep();
+        }
+        else
+        {
+            Debug.LogWarning($"No current tutorial to handle next step for type: {CurrentTutorial.Type}");
+        }
+    }
+
 }

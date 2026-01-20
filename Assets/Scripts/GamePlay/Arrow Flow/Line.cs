@@ -43,6 +43,38 @@ public class Line : MonoBehaviour
 
     private GridCell[] _targetsBuffer;
     private bool _hasNotifiedConveyorEnter;
+    public void Clear()
+    {
+        _isMoving = false;
+        _isReverting = false;
+        _waitingForConveyorEnter = false;
+        _reuseGridDirNextMove = false;
+        _hasNotifiedConveyorEnter = false;
+
+        CancelConveyorWait();
+
+        if (_blockingCubeTiltTween != null && _blockingCubeTiltTween.IsActive())
+        {
+            _blockingCubeTiltTween.Kill();
+            _blockingCubeTiltTween = null;
+        }
+
+        _totalSteps = 0;
+        _remainingSteps = 0;
+        _gridDir = Vector2Int.zero;
+        _cellDistance = 0f;
+
+        _history.Clear();
+        _pendingDetach.Clear();
+        _targetsBuffer = null;
+
+        _reservedConveyorBaseIndex = -1;
+        _willDefinitelyRevert = false;
+        _targetConveyorCell = null;
+        _blockingCube = null;
+
+        Cubes.Clear();
+    }
     private void Awake()
     {
         if (_counterText == null)

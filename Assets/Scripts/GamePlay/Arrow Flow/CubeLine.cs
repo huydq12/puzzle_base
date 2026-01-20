@@ -331,4 +331,42 @@ public class CubeLine : SerializedMonoBehaviour
             pair.Value.enabled = enable;
         }
     }
+    public void Clear()
+    {
+        Line = null;
+        Cell = null;
+
+        Type = CubeType.Normal;
+        Color = ObjectColor.Green;
+        ElementType = 0;
+        _elementType3Revealed = false;
+        _baseColor = ObjectColor.Green;
+        _originalColor = ObjectColor.Green;
+
+        transform.localScale = Vector3.one;
+        transform.rotation = Quaternion.identity;
+        _initRotation = Quaternion.identity;
+
+        Cantouch = true;
+        HighlightHead = false;
+        BringToTop = false;
+
+        if (_renderers != null)
+        {
+            foreach (var pair in _renderers)
+            {
+                if (pair.Value != null)
+                    pair.Value.enabled = false;
+            }
+        }
+
+        if (_head != null)
+            _head.enabled = false;
+
+        if (_doubleCube != null)
+            _doubleCube.gameObject.SetActive(false);
+
+        if (_doubleHeadCube != null)
+            _doubleHeadCube.gameObject.SetActive(false);
+    }
 }

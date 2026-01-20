@@ -48,12 +48,15 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             LoadData();
         }
-        StartGame(CurrentLevel);
 
         // SetUpNotification();
     }
-
-    public void PlayVfxWin(){
+    void Start()
+    {
+        StartGame(CurrentLevel);
+    }
+    public void PlayVfxWin()
+    {
         foreach (var effect in _winEffect)
         {
             effect.gameObject.SetActive(true);

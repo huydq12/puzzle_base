@@ -1,19 +1,13 @@
+using System.Collections;
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TutorialControl : TutorialBase
 {
-    [Header("Arrow (3D)")]
-    [SerializeField] private GameObject arrow;
-    [SerializeField] private Transform arrowTransform;
-    [SerializeField] private Vector3 arrowOffset;
-
-    [Header("Target (3D)")]
-    [SerializeField] private Collider targetCollider;
-    [SerializeField] private Camera raycastCamera;
-    [SerializeField] private LayerMask raycastMask = ~0;
-    [SerializeField] private float raycastMaxDistance = 1000f;
-
-    private bool _listening;
+    [SerializeField] private RectTransform _canvasRectTransform;
+    [SerializeField] private Image _handImg;
+    [SerializeField] private Image _circleImg;
 
     public override void Setup()
     {
@@ -22,104 +16,110 @@ public class TutorialControl : TutorialBase
         _tutName = Type.ToString();
     }
 
-    private void OnEnable()
+    public override void GoNextStep()
     {
-        StartListening();
-        RefreshArrowPosition();
-    }
-
-    private void OnDisable()
-    {
-        StopListening();
-    }
-
-    private void StartListening()
-    {
-        if (_listening) return;
-        _listening = true;
-    }
-
-    private void StopListening()
-    {
-        if (!_listening) return;
-        _listening = false;
-    }
-
-    public override void Show()
-    {
-        base.Show();
-        if (arrow != null) arrow.SetActive(true);
-        RefreshArrowPosition();
-    }
-
-    public override void Hide()
-    {
-        if (arrow != null) arrow.SetActive(false);
-        base.Hide();
-    }
-
-    private void Update()
-    {
-        if (!_listening) return;
-
-        if (targetCollider == null) return;
-
-        if (TryGetPointerDown(out Vector2 screenPos))
+        base.GoNextStep();
+        StartCoroutine(GoNextStepCoroutine());
+        IEnumerator GoNextStepCoroutine()
         {
-            Camera cam = raycastCamera != null ? raycastCamera : Camera.main;
-            if (cam == null) return;
 
-            Ray ray = cam.ScreenPointToRay(screenPos);
-            if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, raycastMask, QueryTriggerInteraction.Ignore))
+            switch (_currentStep)
             {
-                if (hit.collider == targetCollider)
-                {
-                    OnCorrectClick();
-                }
+                case 1:
+                    {
+                        _handImg.color = Color.white.With(a: 0);
+                        _circleImg.color = Color.white.With(a: 0);
+
+                        yield return new WaitForSeconds(0.2f);
+                        PlayHandClick();
+                        yield return new WaitForSeconds(0.5f);
+                        TutorialManager.Instance.TutorialControlWaitTapLine = true;
+                        break;
+                    }
+                default:
+                    {
+                        if (IsFinish())
+                        {
+                            TutorialManager.Instance.TutorialControlWaitTapLine = false;
+                            TutorialManager.Instance.TutorialFinish();
+
+                            _circleImg.DOKill();
+                            _handImg.DOKill();
+                            _handImg.rectTransform.DOKill();
+                            _circleImg.rectTransform.DOKill();
+                            this.DOKill();
+                            
+                            Sequence sq = DOTween.Sequence();
+                            sq.Join(_handImg.DOFade(0, 0.5f));
+                            sq.Join(_circleImg.DOFade(0, 0.5f));
+
+                            yield return sq.WaitForCompletion();
+
+                            Hide();
+                        }
+                        break;
+                    }
             }
         }
     }
 
-    private static bool TryGetPointerDown(out Vector2 screenPos)
-    {
-        if (Input.touchCount > 0)
-        {
-            Touch t = Input.GetTouch(0);
-            if (t.phase == TouchPhase.Began)
-            {
-                screenPos = t.position;
-                return true;
-            }
-        }
 
-        if (Input.GetMouseButtonDown(0))
+
+    public override bool IsFinish()
+    {
+        if (_currentStep > 1)
         {
-            screenPos = Input.mousePosition;
             return true;
         }
-
-        screenPos = default;
         return false;
     }
 
-    private void RefreshArrowPosition()
+    private void PlayHandClick()
     {
-        if (arrowTransform == null) arrowTransform = arrow != null ? arrow.transform : null;
-        if (arrowTransform == null) return;
+        GridCell tapCell = Board.Instance.CellTaptInTutorialControl();
 
-        if (targetCollider != null)
+        if (tapCell != null)
         {
-            arrowTransform.position = targetCollider.transform.position + arrowOffset;
-        }
-    }
+            Vector3 screenPosTapCell = Camera.main.WorldToScreenPoint(tapCell.transform.position + new Vector3(0.2f, 0f, 0.2f));
 
-    private void OnCorrectClick()
-    {
-        if (TutorialManager.Instance != null)
-        {
-            TutorialManager.Instance.TutorialFinish();
-        }
+            Vector2 localPointStartInCanvas;
 
-        Hide();
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _canvasRectTransform,
+                new Vector2(screenPosTapCell.x, screenPosTapCell.y),
+                null,
+                out localPointStartInCanvas
+            );
+
+
+            _circleImg.rectTransform.anchoredPosition = localPointStartInCanvas;
+            _handImg.rectTransform.anchoredPosition = localPointStartInCanvas + new Vector2(-70, 30);
+            _handImg.DOFade(1, 0.25f).OnComplete(() =>
+            {
+                _handImg.rectTransform.localScale = Vector3.one;
+
+                var seq = DOTween.Sequence();
+                seq.Append(
+                    _handImg.rectTransform
+                        .DOScale(0.88f, 0.36f)
+                        .SetEase(Ease.OutQuad)
+                );
+                seq.AppendCallback(() =>
+                {
+                    _circleImg.rectTransform.localScale = Vector3.zero;
+                    _circleImg.color = Color.white;
+                    Sequence sq = DOTween.Sequence();
+                    sq.Join(_circleImg.DOFade(0, 0.25f).SetEase(Ease.Linear));
+                    sq.Join(_circleImg.rectTransform.DOScale(1, 0.25f).SetEase(Ease.Linear));
+                });
+                seq.Append(
+                    _handImg.rectTransform
+                        .DOScale(1f, 0.48f)
+                );
+                seq.AppendInterval(1f);
+                seq.SetLoops(-1, LoopType.Restart);
+                seq.SetTarget(this);
+            });
+        }
     }
 }
