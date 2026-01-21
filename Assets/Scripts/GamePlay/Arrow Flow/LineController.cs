@@ -65,7 +65,7 @@ public class LineController : Singleton<LineController>
                 {
                     case BoosterType.None:
                         {
-                            if (cube.Line != null)
+                            if (cube.Line != null && !Board.Instance.IsUsingBooster)
                             {
                                 cube.Line.MoveLine();
                             }
