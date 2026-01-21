@@ -75,8 +75,8 @@ public class BoardManager : Singleton<BoardManager>
 
         Transform root = RootOrSelf();
 
-        for (int i = 0; i < data.arrows.Count; i++)
-        {
+	        for (int i = 0; i < data.arrows.Count; i++)
+	        {
             ArrowData arrow = data.arrows[i];
             Vector3 pos = Vector3.zero;
             if (arrow.unitPositions != null && arrow.unitPositions.Count > 0)
@@ -84,12 +84,11 @@ public class BoardManager : Singleton<BoardManager>
                 UnitPosition u = arrow.unitPositions[0];
                 pos = new Vector3(u.x, 0f, u.y);
             }
-            if (PoolManager.Instance == null) return;
-            GameObject go = PoolManager.Instance.Get(arrowPrefab);
-            if (go == null) continue;
-            go.transform.SetParent(root, false);
-            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
-            spawned.Add(go);
+	            GameObject go = Instantiate(arrowPrefab);
+	            if (go == null) continue;
+	            go.transform.SetParent(root, false);
+	            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
+	            spawned.Add(go);
 
             ApplyMaterial(go, (ObjectColor)arrow.color, true);
         }
@@ -102,18 +101,17 @@ public class BoardManager : Singleton<BoardManager>
 
         Transform root = RootOrSelf();
 
-        for (int i = 0; i < data.shooters.Count; i++)
-        {
+	        for (int i = 0; i < data.shooters.Count; i++)
+	        {
             ShooterData shooter = data.shooters[i];
             Vector3 pos = new Vector3(shooter.position.x, 0f, shooter.position.y);
             Quaternion rot = DirectionToRotation(shooter.direction);
 
-            if (PoolManager.Instance == null) return;
-            GameObject shooterGo = PoolManager.Instance.Get(shooterPrefab);
-            if (shooterGo == null) continue;
-            shooterGo.transform.SetParent(root, false);
-            shooterGo.transform.SetPositionAndRotation(pos, rot);
-            spawned.Add(shooterGo);
+	            GameObject shooterGo = Instantiate(shooterPrefab);
+	            if (shooterGo == null) continue;
+	            shooterGo.transform.SetParent(root, false);
+	            shooterGo.transform.SetPositionAndRotation(pos, rot);
+	            spawned.Add(shooterGo);
 
             if (shooter.shooterUnits == null || shooter.shooterUnits.Count == 0) continue;
             if (shooterUnitPrefab == null) continue;
@@ -128,13 +126,12 @@ public class BoardManager : Singleton<BoardManager>
                 Transform holder = u == 0 ? currentHolder : (u == 1 ? nextHolder : nextNextHolder);
                 if (holder == null) holder = shooterGo.transform;
 
-                if (PoolManager.Instance == null) return;
-                GameObject unitGo = PoolManager.Instance.Get(shooterUnitPrefab);
-                if (unitGo == null) continue;
-                unitGo.transform.SetParent(holder, false);
-                unitGo.transform.SetPositionAndRotation(holder.position, holder.rotation);
-                spawned.Add(unitGo);
-                ApplyMaterial(unitGo, (ObjectColor)unit.color, false);
+	                GameObject unitGo = Instantiate(shooterUnitPrefab);
+	                if (unitGo == null) continue;
+	                unitGo.transform.SetParent(holder, false);
+	                unitGo.transform.SetPositionAndRotation(holder.position, holder.rotation);
+	                spawned.Add(unitGo);
+	                ApplyMaterial(unitGo, (ObjectColor)unit.color, false);
             }
         }
     }
@@ -146,19 +143,18 @@ public class BoardManager : Singleton<BoardManager>
 
         Transform root = RootOrSelf();
 
-        for (int i = 0; i < data.conveyors.Count; i++)
-        {
+	        for (int i = 0; i < data.conveyors.Count; i++)
+	        {
             ConveyorData conveyor = data.conveyors[i];
             if (conveyor.conveyorNodes == null || conveyor.conveyorNodes.Count == 0) continue;
             Vector3 pos = conveyor.conveyorNodes[0].position.ToVector3();
-            if (PoolManager.Instance == null) return;
-            GameObject go = PoolManager.Instance.Get(conveyorPrefab);
-            if (go == null) continue;
-            go.transform.SetParent(root, false);
-            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
-            spawned.Add(go);
-        }
-    }
+	            GameObject go = Instantiate(conveyorPrefab);
+	            if (go == null) continue;
+	            go.transform.SetParent(root, false);
+	            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
+	            spawned.Add(go);
+	        }
+	    }
 
     private void ApplyMaterial(GameObject go, ObjectColor color, bool isCube)
     {

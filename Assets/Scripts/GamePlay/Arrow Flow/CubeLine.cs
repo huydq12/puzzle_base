@@ -107,9 +107,7 @@ public class CubeLine : SerializedMonoBehaviour
     {
         if (_hitEffect == null) return;
 
-        if (PoolManager.Instance == null) return;
-
-        ParticleSystem ps = PoolManager.Instance.Get(_hitEffect, transform.position);
+        ParticleSystem ps = Instantiate(_hitEffect, transform.position, Quaternion.identity);
 
         if (ps == null) return;
 
@@ -124,14 +122,11 @@ public class CubeLine : SerializedMonoBehaviour
             lifetime = main.startLifetime.constant;
 
         float delay = Mathf.Max(0.1f, main.duration + lifetime);
-        if (PoolManager.Instance != null)
+        DOVirtual.DelayedCall(delay, () =>
         {
-            DOVirtual.DelayedCall(delay, () =>
-            {
-                if (ps != null)
-                    ps.gameObject.SetActive(false);
-            });
-        }
+            if (ps != null)
+                Destroy(ps.gameObject);
+        });
     }
     public void SetColor(ObjectColor color)
     {

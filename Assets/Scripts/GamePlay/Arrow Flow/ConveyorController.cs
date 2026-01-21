@@ -66,27 +66,27 @@ public class ConveyorController : Singleton<ConveyorController>
         }
     }
 
-    void SpawnArrowAlongSpline()
-    {
-        float splineLength = _splineComputer.CalculateLength();
+	    void SpawnArrowAlongSpline()
+	    {
+	        if (_arrow == null) return;
+	        float splineLength = _splineComputer.CalculateLength();
 
         int total = Mathf.Max(2, Mathf.RoundToInt(splineLength * 0.35f));
 
         SplineSample sample = new SplineSample();
 
-        for (int i = 0; i < total - 1; i++)
-        {
-            double percent = i / (double)(total - 1);
+	        for (int i = 0; i < total - 1; i++)
+	        {
+	            double percent = i / (double)(total - 1);
 
             _splineComputer.Evaluate(percent, ref sample);
 
-            if (PoolManager.Instance == null) continue;
-            GameObject arrow = PoolManager.Instance.Get(_arrow);
-            if (arrow == null) continue;
-            arrow.transform.SetParent(Board.Instance.transform, false);
-            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
-        }
-    }
+	            GameObject arrow = Instantiate(_arrow);
+	            if (arrow == null) continue;
+	            arrow.transform.SetParent(Board.Instance.transform, false);
+	            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+	        }
+	    }
     public void WinGame()
     {
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)

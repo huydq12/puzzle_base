@@ -65,7 +65,6 @@ public class Shooter : MonoBehaviour
 
     private void Awake()
     {
-        PrewarmBulletPool();
     }
 
     private void OnDisable()
@@ -91,23 +90,13 @@ public class Shooter : MonoBehaviour
 
     private void PrewarmBulletPool()
     {
-        if (PoolManager.Instance == null) return;
-        if (_bulletPrefab == null) return;
-
-        for (int i = 0; i < _bulletPoolSize; i++)
-        {
-            Bullet bullet = PoolManager.Instance.Get(_bulletPrefab);
-            if (bullet == null) continue;
-            bullet.transform.SetParent(transform, false);
-            bullet.gameObject.SetActive(false);
-        }
+        // Pooling disabled: keep method for backward compatibility.
     }
 
     private Bullet GetBullet()
     {
         if (_bulletPrefab == null) return null;
-        if (PoolManager.Instance == null) return null;
-        Bullet bullet = PoolManager.Instance.Get(_bulletPrefab);
+        Bullet bullet = Instantiate(_bulletPrefab);
         if (bullet != null)
         {
             bullet.transform.SetParent(transform, false);
@@ -119,7 +108,7 @@ public class Shooter : MonoBehaviour
     {
         if (bullet == null) return;
         bullet.DOKill();
-        bullet.gameObject.SetActive(false);
+        Destroy(bullet.gameObject);
     }
 
     public void SetRole(ShooterRole role)

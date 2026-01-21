@@ -71,14 +71,16 @@ public class Gate : MonoBehaviour
             _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
         }
 
-        for (int i = 0; i < datas.Count; i++)
-        {
-            if (PoolManager.Instance == null) return;
-            Shooter shoot = PoolManager.Instance.Get(ShooterController.Instance.ShooterPrefab);
-            shoot.ResetForReuse();
-            shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
-            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
+	        for (int i = 0; i < datas.Count; i++)
+	        {
+	            if (ShooterController.Instance == null) continue;
+	            if (ShooterController.Instance.ShooterPrefab == null) continue;
+	            Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
+	            if (shoot == null) continue;
+	            shoot.ResetForReuse();
+	            shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
+	            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+	            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(datas[i].Color);
             shoot.SetType(datas[i].Type);
@@ -211,10 +213,10 @@ public class Gate : MonoBehaviour
 
         Board.Instance?.NotifyShooterDisappeared();
 
-        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
-        {
-            shooter.gameObject.SetActive(false);
-        });
+	        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
+	        {
+	            if (shooter != null) Destroy(shooter.gameObject);
+	        });
 
         // Update NextShooter and QueueShooter references
         NextShooter = (_currentShooterIndex + 1 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 1] : null;

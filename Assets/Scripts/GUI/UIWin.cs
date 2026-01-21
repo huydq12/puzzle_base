@@ -83,15 +83,15 @@ public class UIWin : UIPopup
         }
         slideFillTween = null;
 
-        for (int i = activeFx.Count - 1; i >= 0; i--)
-        {
-            var go = activeFx[i];
-            if (go == null) continue;
-            DOTween.Kill(go.transform, false);
-            go.SetActive(false);
-        }
-        activeFx.Clear();
-    }
+	        for (int i = activeFx.Count - 1; i >= 0; i--)
+	        {
+	            var go = activeFx[i];
+	            if (go == null) continue;
+	            DOTween.Kill(go.transform, false);
+	            Destroy(go);
+	        }
+	        activeFx.Clear();
+	    }
 
     private void ApplyPendingReward()
     {
@@ -249,10 +249,10 @@ public class UIWin : UIPopup
         }
     }
 
-    private void Flying()
-    {
-        GameObject go = PoolManager.Instance != null ? PoolManager.Instance.Get(currencyPrefab) : Instantiate(currencyPrefab);
-        if (go == null) return;
+	private void Flying()
+	{
+	    GameObject go = Instantiate(currencyPrefab);
+	    if (go == null) return;
 
         activeFx.Add(go);
 
@@ -269,13 +269,13 @@ public class UIWin : UIPopup
             go.transform.DORotate(new Vector3(0, 0, 70), 0.3f).SetEase(Ease.Linear);
             go.transform.DOScale(Vector3.zero, 1.7f);
             go.transform.DOMove(target.position, 0.5f).OnComplete(() =>
-            {
-                if (go == null) return;
-                activeFx.Remove(go);
-                go.SetActive(false);
-            });
-        });
-    }
+	            {
+	                if (go == null) return;
+	                activeFx.Remove(go);
+	                Destroy(go);
+	            });
+	        });
+	    }
 
     private void NextGame()
     {

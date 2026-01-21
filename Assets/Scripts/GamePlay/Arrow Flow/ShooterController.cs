@@ -24,20 +24,21 @@ public class ShooterController : Singleton<ShooterController>
         return Quaternion.Euler(0f, y, 0f);
     }
 
-    public void Setup(List<GateData> datas)
-    {
-        Gates = new();
-        foreach (var data in datas)
-        {
-            if (PoolManager.Instance == null) return;
-            var gate = PoolManager.Instance.Get(_gatePrefab);
-            gate.transform.SetParent(Board.Instance.transform, false);
-            gate.transform.localPosition = data.Position;
-            gate.transform.rotation = DirectionToRotation(data.Direction);
-            gate.Setup(data.Shooters);
-            Gates.Add(gate);
-        }
-    }
+	    public void Setup(List<GateData> datas)
+	    {
+	        if (_gatePrefab == null) return;
+	        Gates = new();
+	        foreach (var data in datas)
+	        {
+	            var gate = Instantiate(_gatePrefab);
+	            if (gate == null) continue;
+	            gate.transform.SetParent(Board.Instance.transform, false);
+	            gate.transform.localPosition = data.Position;
+	            gate.transform.rotation = DirectionToRotation(data.Direction);
+	            gate.Setup(data.Shooters);
+	            Gates.Add(gate);
+	        }
+	    }
 
     public void NotifyGateClosed(Gate gate)
     {

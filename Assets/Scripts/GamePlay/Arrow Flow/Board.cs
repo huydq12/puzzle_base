@@ -367,25 +367,24 @@ public class Board : Singleton<Board>
         ShooterController.Instance.Setup(_currentConfig.Shooters);
     }
 
-    private void SetupElevators()
-    {
+	    private void SetupElevators()
+	    {
         _elevators.Clear();
         _nextElevatorCheckTime = 0f;
 
-        if (_currentConfig == null || _currentConfig.Elevators == null || _currentConfig.Elevators.Count == 0)
-            return;
-        if (_elevatorPrefab == null) return;
-        if (PoolManager.Instance == null) return;
+	        if (_currentConfig == null || _currentConfig.Elevators == null || _currentConfig.Elevators.Count == 0)
+	            return;
+	        if (_elevatorPrefab == null) return;
 
-        for (int i = 0; i < _currentConfig.Elevators.Count; i++)
-        {
+	        for (int i = 0; i < _currentConfig.Elevators.Count; i++)
+	        {
             ElevatorData data = _currentConfig.Elevators[i];
             if (data == null) continue;
             if (data.Size.x <= 0 || data.Size.y <= 0) continue;
 
-            Elevator elevator = PoolManager.Instance.Get(_elevatorPrefab);
-            if (elevator == null) continue;
-            elevator.transform.SetParent(transform, false);
+	            Elevator elevator = Instantiate(_elevatorPrefab);
+	            if (elevator == null) continue;
+	            elevator.transform.SetParent(transform, false);
 
             Vector3 center = GetRectCenterWorld(data.Position, data.Size);
             elevator.transform.position = center;
@@ -484,17 +483,16 @@ public class Board : Singleton<Board>
             SpawnAllElevatorLines();
     }
 
-    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
-    {
-        if (line == null || line.Cells == null || line.Cells.Count == 0) return;
-        if (PoolManager.Instance == null) return;
+	    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
+	    {
+	        if (line == null || line.Cells == null || line.Cells.Count == 0) return;
 
-        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
+	        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
 
-        Line lineGo = PoolManager.Instance.Get(_linePrefab);
-        lineGo.transform.SetParent(transform, false);
-        lineGo.transform.localPosition = Vector3.zero;
-        lineGo.transform.localRotation = Quaternion.identity;
+	        Line lineGo = Instantiate(_linePrefab);
+	        lineGo.transform.SetParent(transform, false);
+	        lineGo.transform.localPosition = Vector3.zero;
+	        lineGo.transform.localRotation = Quaternion.identity;
 
         lineGo.Color = line.Color;
         lineGo.InitializeCounter(line.Counter);
@@ -508,13 +506,13 @@ public class Board : Singleton<Board>
             Vector2Int? prev = i > 0 ? line.Cells[i - 1] : (Vector2Int?)null;
             Vector2Int? next = i < last ? line.Cells[i + 1] : (Vector2Int?)null;
 
-            GridCell cell = GetCellAt(curr);
-            if (cell == null) continue;
-            if (cell.CubeOnCell != null) continue;
+	            GridCell cell = GetCellAt(curr);
+	            if (cell == null) continue;
+	            if (cell.CubeOnCell != null) continue;
 
-            CubeLine cube = PoolManager.Instance.Get(_cubePrefab);
-            cube.transform.SetParent(lineGo.transform, false);
-            cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
+	            CubeLine cube = Instantiate(_cubePrefab);
+	            cube.transform.SetParent(lineGo.transform, false);
+	            cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
 
             cube.SetColor(line.Color);
             int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
@@ -779,9 +777,7 @@ public class Board : Singleton<Board>
             List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset);
             if (worldPositions.Count < 2) continue;
 
-            ConveyorTunel tunel = PoolManager.Instance != null
-                ? PoolManager.Instance.Get(_conveyorTunelPrefab)
-                : Instantiate(_conveyorTunelPrefab);
+	            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
 
             tunel.transform.SetParent(transform, false);
             tunel.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -1009,19 +1005,18 @@ public class Board : Singleton<Board>
 
 
 
-    private void SetupLine()
-    {
+	    private void SetupLine()
+	    {
         _iceLines.Clear();
 
-        foreach (var line in _currentConfig.ColorLines)
-        {
-            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
+	        foreach (var line in _currentConfig.ColorLines)
+	        {
+	            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
 
-            if (PoolManager.Instance == null) return;
-            Line lineColor = PoolManager.Instance.Get(_linePrefab);
-            lineColor.transform.SetParent(transform, false);
-            lineColor.transform.localPosition = Vector3.zero;
-            lineColor.transform.localRotation = Quaternion.identity;
+	            Line lineColor = Instantiate(_linePrefab);
+	            lineColor.transform.SetParent(transform, false);
+	            lineColor.transform.localPosition = Vector3.zero;
+	            lineColor.transform.localRotation = Quaternion.identity;
 
             lineColor.Color = line.Color;
             lineColor.InitializeCounter(line.Counter);
@@ -1031,15 +1026,15 @@ public class Board : Singleton<Board>
             var cells = line.Cells;
             int last = cells.Count - 1;
 
-            for (int i = 0; i < cells.Count; i++)
-            {
-                Vector2Int curr = cells[i];
+	            for (int i = 0; i < cells.Count; i++)
+	            {
+	                Vector2Int curr = cells[i];
                 Vector2Int? prev = i > 0 ? cells[i - 1] : (Vector2Int?)null;
-                Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
-                GridCell cell = GetCellAt(curr);
-                CubeLine cube = PoolManager.Instance.Get(_cubePrefab);
-                cube.transform.SetParent(lineColor.transform, false);
-                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
+	                Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
+	                GridCell cell = GetCellAt(curr);
+	                CubeLine cube = Instantiate(_cubePrefab);
+	                cube.transform.SetParent(lineColor.transform, false);
+	                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
 
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
@@ -1120,23 +1115,22 @@ public class Board : Singleton<Board>
         return null;
     }
 
-    private void SetupGrid()
-    {
+	    private void SetupGrid()
+	    {
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
         Vector2 spacing = _spacing;
 
         Cells = new GridCell[columns, rows];
 
-        int expectedChildCount = rows * columns;
-        GridCell[] gridCells = new GridCell[expectedChildCount];
-        if (PoolManager.Instance == null) return;
-        for (int i = 0; i < expectedChildCount; i++)
-        {
-            GridCell cell = PoolManager.Instance.Get(_cellPrefab);
-            cell.transform.SetParent(transform, false);
-            gridCells[i] = cell;
-        }
+	        int expectedChildCount = rows * columns;
+	        GridCell[] gridCells = new GridCell[expectedChildCount];
+	        for (int i = 0; i < expectedChildCount; i++)
+	        {
+	            GridCell cell = Instantiate(_cellPrefab);
+	            cell.transform.SetParent(transform, false);
+	            gridCells[i] = cell;
+	        }
 
         Vector2 offset = new Vector2(
             (columns - 1) * spacing.x / 2f,
@@ -1206,48 +1200,26 @@ public class Board : Singleton<Board>
         return Cells[pos.x, pos.y];
     }
 
-    private void Clear()
-    {
-        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
+	    private void Clear()
+	    {
+	        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
 
-        if (PoolManager.Instance == null)
-        {
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-                Transform child = transform.GetChild(i);
-                if (conveyorTemplate != null && child == conveyorTemplate) continue;
-                Destroy(child.gameObject);
-            }
-            return;
-        }
-
-        for (int i = transform.childCount - 1; i >= 0; i--)
-        {
-            Transform child = transform.GetChild(i);
-            if (conveyorTemplate != null && child == conveyorTemplate) continue;
+	        for (int i = transform.childCount - 1; i >= 0; i--)
+	        {
+	            Transform child = transform.GetChild(i);
+	            if (conveyorTemplate != null && child == conveyorTemplate) continue;
             // Stop any tweens on pooled objects so replay spam can't leave them in a mid-animation state.
             DOTween.Kill(child, false);
             var childTransforms = child.GetComponentsInChildren<Transform>(true);
-            for (int t = 0; t < childTransforms.Length; t++)
-            {
-                DOTween.Kill(childTransforms[t], false);
-            }
-            child.SetParent(PoolManager.Instance.transform, false);
-            if (child.TryGetComponent(out Line line))
-            {
-                line.Clear();
-            }
-            else if (child.TryGetComponent(out CubeLine cube))
-            {
-                cube.Clear();
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            DebugSetActive(child.gameObject, false, this, "Board.Clear() moved to PoolManager");
-#else
-            child.gameObject.SetActive(false);
-#endif
-        }
-    }
+	            for (int t = 0; t < childTransforms.Length; t++)
+	            {
+	                DOTween.Kill(childTransforms[t], false);
+	            }
+	            if (child.TryGetComponent(out Line line)) line.Clear();
+	            else if (child.TryGetComponent(out CubeLine cube)) cube.Clear();
+	            Destroy(child.gameObject);
+	        }
+	    }
     public void SetupLevel(LevelConfig config)
     {
         GameManagerInGame.Instance.SetState(GameStateInGame.Init);

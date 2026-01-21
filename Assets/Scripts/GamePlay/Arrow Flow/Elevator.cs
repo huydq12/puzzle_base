@@ -62,9 +62,9 @@ public class Elevator : MonoBehaviour
 
         if (holdOpenDuration > 0f)
             seq.AppendInterval(holdOpenDuration);
-        seq.AppendCallback(() =>
-        {
-            gameObject.SetActive(false);
-        });
-    }
-}
+	        seq.AppendCallback(() =>
+	        {
+	            Destroy(gameObject);
+	        });
+	    }
+	}
