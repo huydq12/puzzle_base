@@ -5,6 +5,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Sirenix.OdinInspector;
 
 public class UIBottomInGame : UIElement
 {
@@ -92,7 +93,32 @@ public class UIBottomInGame : UIElement
         if (BoosterTextType4 != null) BoosterTextType4.gameObject.SetActive(visible);
         if (iconType4 != null) iconType4.SetActive(visible);
     }
+    [Button]
+    public void CancelBooster()
+    {
+        switch (Board.Instance.CurrentBooster)
+        {
+            case BoosterType.Hammer:
+                Board.Instance.ResetBooster();
+                InventoryManager.Instance.AddBoosterType1(1);
+                break;
 
+            case BoosterType.Conveyor:
+                Board.Instance.ResetBooster();
+                ConveyorController.Instance.BringToTop = false;
+                ConveyorController.Instance.SetAllCubesBringToTop(false);
+                ConveyorController.Instance.ResumeConveyor();
+                InventoryManager.Instance.AddBoosterType2(1);
+                break;
+
+            case BoosterType.Rainbow:
+                break;
+        }
+
+        Board.Instance.CurrentBooster = BoosterType.None;
+
+        RefreshBoosterQuantity();
+    }
     private void TryUseBooster(BoosterType booster, int inventoryBoosterType)
     {
         if (!IsBoosterUnlocked(inventoryBoosterType))
@@ -106,7 +132,7 @@ public class UIBottomInGame : UIElement
             return;
         }
 
-        var board = FindFirstObjectByType<Board>();
+        var board = Board.Instance;
         if (board == null)
         {
             return;
