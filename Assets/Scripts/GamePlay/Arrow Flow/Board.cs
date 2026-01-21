@@ -1225,6 +1225,13 @@ public class Board : Singleton<Board>
         {
             Transform child = transform.GetChild(i);
             if (conveyorTemplate != null && child == conveyorTemplate) continue;
+            // Stop any tweens on pooled objects so replay spam can't leave them in a mid-animation state.
+            DOTween.Kill(child, false);
+            var childTransforms = child.GetComponentsInChildren<Transform>(true);
+            for (int t = 0; t < childTransforms.Length; t++)
+            {
+                DOTween.Kill(childTransforms[t], false);
+            }
             child.SetParent(PoolManager.Instance.transform, false);
             if (child.TryGetComponent(out Line line))
             {

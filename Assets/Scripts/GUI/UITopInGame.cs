@@ -41,7 +41,7 @@ public class UITopInGame : UIElement
         {
             if (GameManagerInGame.Instance != null)
             {
-                GameManagerInGame.Instance.StartGame();
+                GameManagerInGame.Instance.ReplayLevel();
             }
         });
     }

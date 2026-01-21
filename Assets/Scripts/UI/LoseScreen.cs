@@ -12,7 +12,7 @@ public class LoseScreen : MonoBehaviour
     {
         DOTween.KillAll();
         Hide();
-        GameManagerInGame.Instance.StartGame();
+        GameManagerInGame.Instance.ReplayLevel();
     }
     public void Show()
     {

@@ -8,7 +8,7 @@ public class WinScreen : MonoBehaviour
     {
         DOTween.KillAll();
         Hide();
-        GameManagerInGame.Instance.StartGame();
+        GameManagerInGame.Instance.StartNextLevel();
     }
     public void Show()
     {

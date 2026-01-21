@@ -4,6 +4,44 @@ using UnityEngine;
 public class ReturnToMyPool : MonoBehaviour
 {
     public MyPool pool;
+    private Transform[] _cachedTransforms;
+    private Vector3[] _defaultLocalPositions;
+    private Quaternion[] _defaultLocalRotations;
+    private Vector3[] _defaultLocalScales;
+    private bool _hasDefaults;
+
+    public void CacheDefaults()
+    {
+        _cachedTransforms = GetComponentsInChildren<Transform>(true);
+        _defaultLocalPositions = new Vector3[_cachedTransforms.Length];
+        _defaultLocalRotations = new Quaternion[_cachedTransforms.Length];
+        _defaultLocalScales = new Vector3[_cachedTransforms.Length];
+
+        for (int i = 0; i < _cachedTransforms.Length; i++)
+        {
+            Transform t = _cachedTransforms[i];
+            if (t == null) continue;
+            _defaultLocalPositions[i] = t.localPosition;
+            _defaultLocalRotations[i] = t.localRotation;
+            _defaultLocalScales[i] = t.localScale;
+        }
+        _hasDefaults = true;
+    }
+
+    public void ResetToDefaults()
+    {
+        if (!_hasDefaults) CacheDefaults();
+
+        if (_cachedTransforms == null) return;
+        for (int i = 0; i < _cachedTransforms.Length; i++)
+        {
+            Transform t = _cachedTransforms[i];
+            if (t == null) continue;
+            t.localPosition = _defaultLocalPositions[i];
+            t.localRotation = _defaultLocalRotations[i];
+            t.localScale = _defaultLocalScales[i];
+        }
+    }
 
     public void OnDisable()
     {
@@ -32,6 +70,10 @@ public class MyPool
             if (tmp != null)
             {
                 inPool.Remove(tmp);
+                if (tmp.TryGetComponent(out ReturnToMyPool pooled))
+                {
+                    pooled.ResetToDefaults();
+                }
                 tmp.SetActive(true);
                 return tmp;
             } else
@@ -42,6 +84,7 @@ public class MyPool
         tmp = GameObject.Instantiate(baseObj);
         returnPool = tmp.AddComponent<ReturnToMyPool>();
         returnPool.pool = this;
+        returnPool.CacheDefaults();
         return tmp;
     }
 
@@ -49,6 +92,14 @@ public class MyPool
     {
         if (obj == null) return;
         if (inPool.Add(obj) == false) return;
+        if (PoolManager.Instance != null)
+        {
+            obj.transform.SetParent(PoolManager.Instance.transform, false);
+        }
+        if (obj.TryGetComponent(out ReturnToMyPool pooled))
+        {
+            pooled.ResetToDefaults();
+        }
         stack.Push(obj);
     }
 }

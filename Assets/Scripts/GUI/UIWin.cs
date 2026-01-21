@@ -280,7 +280,7 @@ public class UIWin : UIPopup
     private void NextGame()
     {
         CleanupAnimations();
-        GameManagerInGame.Instance.StartGame();
+        GameManagerInGame.Instance.StartNextLevel();
         Hide();
     }
 }

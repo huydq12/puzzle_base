@@ -28,6 +28,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public UserData userData { get; private set; }
     public bool InitLevel = true;
     private Coroutine _playRoutine;
+    private int _levelInPlay = 1;
+    private int _queuedNextLevel = 1;
+    private float _lastStartRequestTime = -999f;
+    private const float StartRequestCooldownSeconds = 0.25f;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
 
@@ -75,7 +79,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void SetWin()
     {
-        CurrentLevel = Mathf.Max(1, CurrentLevel + 1);
+        int completedLevel = Mathf.Max(1, _levelInPlay);
+        CurrentLevel = completedLevel + 1;
+        _queuedNextLevel = CurrentLevel;
         MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
         SaveData();
         // Grant unlock gift for the newly reached level (config unlockLevel matches StartGame level).
@@ -87,6 +93,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
     public void SetLose()
     {
+        _queuedNextLevel = Mathf.Max(1, _levelInPlay);
         SetState(GameStateInGame.Result);
     }
     public void SetState(GameStateInGame state)
@@ -115,6 +122,13 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void StartGame(int level)
     {
         level = Mathf.Max(1, level);
+        // Prevent spam-tapping Replay/Restart from interrupting setup and leaving pooled objects mid-state.
+        if (_playRoutine != null) return;
+        if (Time.unscaledTime - _lastStartRequestTime < StartRequestCooldownSeconds) return;
+        _lastStartRequestTime = Time.unscaledTime;
+
+        _levelInPlay = level;
+        _queuedNextLevel = level;
         CurrentLevel = level;
         MaxLevel = Mathf.Max(MaxLevel, level);
         SaveData();
@@ -141,12 +155,17 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void RestartLevel()
     {
-        StartGame(CurrentLevel);
+        ReplayLevel();
     }
 
     public void StartNextLevel()
     {
-        StartGame(CurrentLevel);
+        StartGame(_queuedNextLevel);
+    }
+
+    public void ReplayLevel()
+    {
+        StartGame(_levelInPlay);
     }
 
     private IEnumerator PlayGame(int level)
@@ -185,8 +204,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void SaveData()
     {
         if (userData == null) return;
-        userData.maxLevel = Mathf.Max(1, MaxLevel);
-        userData.currentLevel = Mathf.Max(1, CurrentLevel);
+        userData.maxLevel = Mathf.Max(1, Mathf.Max(userData.maxLevel, MaxLevel));
+        userData.currentLevel = Mathf.Max(1, Mathf.Max(userData.currentLevel, CurrentLevel));
         userData.Save();
     }
     public void LoadData()

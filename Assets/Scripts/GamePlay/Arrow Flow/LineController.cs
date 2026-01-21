@@ -10,7 +10,9 @@ public class LineController : Singleton<LineController>
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
+#if UNITY_EDITOR
             UnityEditor.EditorApplication.isPaused = true;
+#endif
         }
         if (GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
         {

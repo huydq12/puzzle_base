@@ -32,7 +32,7 @@ public class UILose : UIPopup
     private void NextGame()
     {
         DOTween.KillAll();
-        GameManagerInGame.Instance.StartGame();
+        GameManagerInGame.Instance.StartNextLevel();
         Hide();
     }
 

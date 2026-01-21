@@ -75,6 +75,7 @@ public class Gate : MonoBehaviour
         {
             if (PoolManager.Instance == null) return;
             Shooter shoot = PoolManager.Instance.Get(ShooterController.Instance.ShooterPrefab);
+            shoot.ResetForReuse();
             shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
             shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
             shoot.SetSize(i == 0 ? 0.75f : 0.65f);

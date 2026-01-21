@@ -68,6 +68,27 @@ public class Shooter : MonoBehaviour
         PrewarmBulletPool();
     }
 
+    private void OnDisable()
+    {
+        ResetForReuse();
+    }
+
+    public void ResetForReuse()
+    {
+        transform.DOKill();
+        _hit = default;
+        _lastHit = null;
+        _collectRequested = false;
+        _nextFireTime = 0f;
+        CanShoot = false;
+        Gate = null;
+
+        Total = 0;
+
+        if (_hiddenEffect != null)
+            _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+    }
+
     private void PrewarmBulletPool()
     {
         if (PoolManager.Instance == null) return;
@@ -99,7 +120,6 @@ public class Shooter : MonoBehaviour
         if (bullet == null) return;
         bullet.DOKill();
         bullet.gameObject.SetActive(false);
-        bullet.transform.SetParent(transform, false);
     }
 
     public void SetRole(ShooterRole role)

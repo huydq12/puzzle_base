@@ -333,6 +333,8 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public void Clear()
     {
+        DOTween.Kill(transform, false);
+
         Line = null;
         Cell = null;
 
@@ -346,6 +348,13 @@ public class CubeLine : SerializedMonoBehaviour
         transform.localScale = Vector3.one;
         transform.rotation = Quaternion.identity;
         _initRotation = Quaternion.identity;
+
+        if (_wariningEffect != null)
+            _wariningEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (_warningHeadEffect != null)
+            _warningHeadEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (_meltEffect != null)
+            _meltEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
         Cantouch = true;
         HighlightHead = false;
