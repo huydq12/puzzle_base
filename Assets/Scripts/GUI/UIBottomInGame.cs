@@ -56,6 +56,27 @@ public class UIBottomInGame : UIElement
 
     private Tween _fillTween;
 
+    [Header("Group Booster")]
+    [SerializeField] private GameObject _groupBooster;
+    [SerializeField] private Image _imageBooster;
+    [SerializeField] private TextMeshProUGUI _textBooster;
+    [SerializeField] private TextMeshProUGUI _textBoosterDesp;
+    [SerializeField] private Button _buttonCancelBooster;
+
+    [SerializeField] private Sprite _spriteBoosterHammer;
+    [SerializeField] private Sprite _spriteBoosterConveyor;
+    
+    [SerializeField] private string _textBoosterHammer = "Hammer !";
+    [SerializeField] private string _textBoosterConveyor = "Color Picker !";
+    
+
+    [SerializeField] private string _textDespBoosterHammer = "Pick a color on the \n converyor to destroy!";
+    [SerializeField] private string _textDespBoosterConveyor = "Pick an arrow to \n destroy!";
+
+    private BoosterType _lastBooster = (BoosterType)(-1);
+
+
+
     private void Start()
     {
         // Only 3 boosters are supported in this mode: Hammer / Conveyor / Rainbow.
@@ -63,11 +84,18 @@ public class UIBottomInGame : UIElement
         if (BoosterButtonType1 != null) BoosterButtonType1.onClick.AddListener(UseHammer);
         if (BoosterButtonType2 != null) BoosterButtonType2.onClick.AddListener(UseConveyor);
         if (BoosterButtonType3 != null) BoosterButtonType3.onClick.AddListener(UseRainbow);
+        if (_buttonCancelBooster != null) _buttonCancelBooster.onClick.AddListener(CancelBooster);
 
         SetSwapBoosterVisible(false);
 
         RefreshBoosterLockState();
         RefreshBoosterQuantity();
+        RefreshGroupBoosterUI(force: true);
+    }
+
+    private void Update()
+    {
+        RefreshGroupBoosterUI();
     }
 
     private void OnDisable()
@@ -81,6 +109,7 @@ public class UIBottomInGame : UIElement
         base.Show();
         RefreshBoosterLockState();
         RefreshBoosterQuantity();
+        RefreshGroupBoosterUI(force: true);
     }
 
     public void UseHammer() => TryUseBooster(BoosterType.Hammer, inventoryBoosterType: 1);
@@ -118,6 +147,7 @@ public class UIBottomInGame : UIElement
         Board.Instance.CurrentBooster = BoosterType.None;
 
         RefreshBoosterQuantity();
+        RefreshGroupBoosterUI(force: true);
     }
     private void TryUseBooster(BoosterType booster, int inventoryBoosterType)
     {
@@ -171,6 +201,7 @@ public class UIBottomInGame : UIElement
         }
 
         RefreshBoosterQuantity();
+        RefreshGroupBoosterUI(force: true);
     }
 
     private bool IsBoosterUnlocked(int boosterType)
@@ -315,6 +346,34 @@ public class UIBottomInGame : UIElement
         if (percent <= 50f) return Color.Lerp(_fillColor25To50, _fillColor50To75, (percent - 25f) / 25f);
         if (percent <= 75f) return Color.Lerp(_fillColor50To75, _fillColor75To100, (percent - 50f) / 25f);
         return _fillColor75To100;
+    }
+
+    private void RefreshGroupBoosterUI(bool force = false)
+    {
+        BoosterType current = Board.Instance != null ? Board.Instance.CurrentBooster : BoosterType.None;
+        if (!force && current == _lastBooster) return;
+        _lastBooster = current;
+
+        if (_groupBooster == null) return;
+
+        bool show = current == BoosterType.Hammer || current == BoosterType.Conveyor;
+        _groupBooster.SetActive(show);
+        if (!show) return;
+
+        if (_imageBooster != null)
+        {
+            _imageBooster.sprite = current == BoosterType.Hammer ? _spriteBoosterHammer : _spriteBoosterConveyor;
+        }
+
+        if (_textBooster != null)
+        {
+            _textBooster.text = current == BoosterType.Hammer ? _textBoosterHammer : _textBoosterConveyor;
+        }
+
+        if (_textBoosterDesp != null)
+        {
+            _textBoosterDesp.text = current == BoosterType.Hammer ? _textDespBoosterHammer : _textDespBoosterConveyor;
+        }
     }
 
 }
