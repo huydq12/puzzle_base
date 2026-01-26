@@ -415,6 +415,11 @@ public class Board : Singleton<Board>
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            GameManagerInGame.Instance.SetState(GameStateInGame.Result);
+            GameUI.Instance.Get<UILose>().Show();
+        }
         if (_currentConfig == null) return;
         if (_elevators.Count == 0) return;
         if (Time.time < _nextElevatorCheckTime) return;

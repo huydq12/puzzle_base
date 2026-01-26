@@ -20,6 +20,7 @@ public class UIWin : UIPopup
     [SerializeField] private RectTransform spawnPos;
     [SerializeField] private Transform target;
     [SerializeField] private int fxCount = 10;
+    public Button nEXT;
 
     private readonly List<GameObject> activeFx = new List<GameObject>();
 
@@ -216,6 +217,7 @@ public class UIWin : UIPopup
         base.Start();
         btn_next.onClick.AddListener(NextGame);
         btn_close_hide.onClick.AddListener(NextGame);
+        nEXT.onClick.AddListener(() => AudioManager.Instance.PlaySFX(SFXType.Click));   
     }
 
     private IEnumerator ShowCoinFxMoveToTarget(int fromAmount, int toAmount)

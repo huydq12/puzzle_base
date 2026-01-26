@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using Sirenix.OdinInspector;
 
 public class UIPopup : UIElement
 {
@@ -18,10 +19,12 @@ public class UIPopup : UIElement
     [SerializeField] CanvasGroup _canvasGroup;
 
     [SerializeField] Button btn_close;
+    public RectTransform Logo;
+    public RectTransform Title;
 
     protected virtual void Start()
     {
-        btn_close.onClick.AddListener(Hide);
+        //        btn_close.onClick.AddListener(Hide);
     }
 
     public override void Show()
@@ -35,9 +38,13 @@ public class UIPopup : UIElement
         // Scale animation
         holder.transform.localScale = Vector3.one * scaleFrom;
         holder.transform.DOScale(scaleTo, scaleDuration)
-            .SetEase(Ease.OutBack);
-    }
+            .SetEase(Ease.OutBack).OnComplete(() =>
+            {
+                Logo.DOPunchScale(Vector3.one * 0.15f, 0.4f, 1, 0.5f);
+                Title.DOPunchScale(Vector3.one * 0.15f, 0.4f, 1, 0.5f);
+            });
 
+    }
     public override void Hide()
     {
         // Fade out animation
