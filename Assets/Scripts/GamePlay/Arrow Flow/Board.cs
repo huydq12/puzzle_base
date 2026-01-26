@@ -1233,10 +1233,16 @@ public class Board : Singleton<Board>
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();
-        StartCoroutine(Common.DelayAction(0.5f, () =>
+        Camera.main.orthographicSize = 7.86f;
+        Camera.main.transform.position = new Vector3(0f, 9.01f, 4.59f);
+        Sequence sq = DOTween.Sequence();
+        sq.AppendInterval(1.0f);
+        sq.Append(Camera.main.DOOrthoSize(10.47f, 1.0f));
+        sq.Join(Camera.main.transform.DOMoveZ(6.3f, 1.0f));
+        sq.OnComplete(() =>
         {
-            GameManagerInGame.Instance.SetState(GameStateInGame.Init);
+             GameManagerInGame.Instance.SetState(GameStateInGame.Init);
             GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
-        }));
+        });
     }
 }

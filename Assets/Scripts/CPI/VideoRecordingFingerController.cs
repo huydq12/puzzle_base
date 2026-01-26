@@ -13,7 +13,7 @@ public class VideoRecordingFingerController : MonoBehaviour
     {
         GameManagerInGame.Instance.OnEndLevel += () =>
         {
-            //canvasGroup.DOFade(0, 0.25F);
+            canvasGroup.DOFade(0, 0.25F);
         };
         GameManagerInGame.Instance.OnStartLevel += () =>
         {
