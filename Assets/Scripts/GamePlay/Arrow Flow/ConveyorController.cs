@@ -43,7 +43,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.OnEndLevel += () =>
         {
             _totalLineMoved = 0;
-            _walkAroundSpeed = 12;
+            _walkAroundSpeed = 15;
         };
     }
     private void LoseGame()
@@ -62,7 +62,7 @@ public class ConveyorController : Singleton<ConveyorController>
         _totalLineMoved++;
         if (_totalLineMoved >= Board.Instance.InitLine)
         {
-            _walkAroundSpeed = 20;
+            _walkAroundSpeed = 25;
         }
     }
 
