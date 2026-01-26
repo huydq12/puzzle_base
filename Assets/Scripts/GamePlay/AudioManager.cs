@@ -35,7 +35,7 @@ public class AudioManager : Singleton<AudioManager>
 			SetBGEnabled(userData.musicOn);
 			SetSFXEnabled(userData.soundOn);
 		}
-		PlayBG(BGType.Default);
+	//	PlayBG(BGType.Default);
 	}
 
 	public float GetVolumeBG() => _bgAudioSource.volume;

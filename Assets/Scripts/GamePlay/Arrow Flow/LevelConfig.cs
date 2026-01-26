@@ -66,6 +66,106 @@ public class LevelConfig : SerializedScriptableObject
         }
         Cells = newCells;
     }
+    [Button]
+    public void ChangeColor(ObjectColor colorFrom, ObjectColor colorTo)
+    {
+        foreach (var gate in Shooters)
+        {
+            foreach (var shooter in gate.Shooters)
+            {
+                if (shooter.Color == colorFrom)
+                {
+                    shooter.Color = colorTo;
+                }
+            }
+        }
+        foreach (var line in ColorLines)
+        {
+            if (line.Color == colorFrom)
+            {
+                line.Color = colorTo;
+            }
+        }
+        foreach (var elevator in Elevators)
+        {
+            foreach (var line in elevator.Lines)
+            {
+                if (line.Color == colorFrom)
+                {
+                    line.Color = colorTo;
+                }
+            }
+        }
+    }
+    [Button]
+    public void ChangeSizeBoard(int newColumns, int newRows)
+    {
+        // Tính toán offset để giữ trọng tâm
+        int oldColumns = Columns;
+        int oldRows = Rows;
+        int offsetCol = (newColumns - oldColumns) / 2;
+        int offsetRow = (newRows - oldRows) / 2;
+
+        // Cập nhật Columns và Rows
+        Columns = newColumns;
+        Rows = newRows;
+
+        // Dịch chuyển các cell của ConveyorLine
+        if (ConveyorLine != null && ConveyorLine.Cells != null)
+        {
+            for (int i = 0; i < ConveyorLine.Cells.Count; i++)
+            {
+                ConveyorLine.Cells[i] = new Vector2Int(
+                    ConveyorLine.Cells[i].x + offsetCol,
+                    ConveyorLine.Cells[i].y + offsetRow
+                );
+            }
+        }
+
+        // Dịch chuyển các cell của ColorLines
+        foreach (var line in ColorLines)
+        {
+            for (int i = 0; i < line.Cells.Count; i++)
+            {
+                line.Cells[i] = new Vector2Int(
+                    line.Cells[i].x + offsetCol,
+                    line.Cells[i].y + offsetRow
+                );
+            }
+        }
+
+        // Dịch chuyển các Elevator
+        foreach (var elevator in Elevators)
+        {
+            elevator.Position = new Vector2Int(
+                elevator.Position.x + offsetCol,
+                elevator.Position.y + offsetRow
+            );
+            for (int i = 0; i < elevator.Lines.Count; i++)
+            {
+                for (int j = 0; j < elevator.Lines[i].Cells.Count; j++)
+                {
+                    elevator.Lines[i].Cells[j] = new Vector2Int(
+                        elevator.Lines[i].Cells[j].x + offsetCol,
+                        elevator.Lines[i].Cells[j].y + offsetRow
+                    );
+                }
+            }
+        }
+
+        // Dịch chuyển các GateData (Shooters)
+        foreach (var gate in Shooters)
+        {
+            gate.Position = new Vector3(
+                gate.Position.x + offsetCol,
+                gate.Position.y + offsetRow,
+                gate.Position.z
+            );
+        }
+
+        // Resize lại grid cell
+        ResizeGridCells();
+    }
     void OnEnable()
     {
         ResizeGridCells();

@@ -217,8 +217,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             return;
         }
 
-        MaxLevel = Mathf.Max(1, userData.maxLevel);
-        CurrentLevel = Mathf.Clamp(userData.currentLevel, 1, MaxLevel);
+       // MaxLevel = Mathf.Max(1, userData.maxLevel);
+      //  CurrentLevel = Mathf.Clamp(userData.currentLevel, 1, MaxLevel);
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()
