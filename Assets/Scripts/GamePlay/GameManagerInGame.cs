@@ -8,6 +8,7 @@ using UnityEditor;
 
 using System.Collections;
 using System.Collections.Generic;
+using Gley.Notifications;
 
 public enum GameStateInGame
 {
@@ -52,8 +53,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             LoadData();
         }
-
-        // SetUpNotification();
+        API.Initialize();
     }
     void Start()
     {
@@ -236,12 +236,20 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
 #endif
 
-    // private void SetUpNotification()
-    // {
-    //     API.Initialize();
-    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(1, 0, 0, 0), "icon_1", "icon_0");
-    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(3, 0, 0, 0), "icon_1", "icon_0");
-    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(6, 0, 0, 0), "icon_1", "icon_0");
-    //     API.SendNotification("HEXACOIN!", "Come get your free coins", new System.TimeSpan(9, 0, 0, 0), "icon_1", "icon_0");
-    // }
+    void OnApplicationFocus(bool focus)
+    {
+        if (!focus)
+        {
+            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(0, 5, 0), "icon_0", "icon_1");
+            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(1, 0, 0, 0), "icon_0", "icon_1");
+            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(3, 0, 0, 0), "icon_0", "icon_1");
+            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(6, 0, 0, 0), "icon_0", "icon_1");
+            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(9, 0, 0, 0), "icon_0", "icon_1");
+        }
+        else
+        {
+            API.CancelAllNotifications();
+        }
+    }
+
 }
