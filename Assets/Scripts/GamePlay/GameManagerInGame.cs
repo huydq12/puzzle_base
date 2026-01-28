@@ -171,23 +171,25 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private IEnumerator PlayGame(int level)
     {
         CurrentLevel = level;
-        ResourceRequest soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
-        yield return soRequest;
+        LevelConfig config = null;
+        yield return LevelDatabase.LoadLevelAsync(level, c => config = c);
 
-        LevelConfig config = soRequest.asset as LevelConfig;
-
+        if (config == null)
+        {
 #if UNITY_EDITOR
-        if (config == null)
-        {
-            soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
-            yield return soRequest;
-            config = soRequest.asset as LevelConfig;
-        }
+            config = AssetDatabase.LoadAssetAtPath<LevelConfig>($"Assets/Levels/SO/Level {level}.asset");
 #endif
+            if (config == null)
+            {
+                ResourceRequest soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+                yield return soRequest;
+                config = soRequest.asset as LevelConfig;
+            }
+        }
 
         if (config == null)
         {
-            Debug.LogError($"Failed to load level {level}. Missing `Resources/Levels/SO/Level {level}.asset`.");
+            Debug.LogError($"Failed to load level {level}. Missing secure `StreamingAssets/levels.dat` entry and no fallback asset at `Assets/Levels/SO/Level {level}.asset` (or `Resources/Levels/SO/Level {level}.asset`).");
             _playRoutine = null;
             yield break;
         }
