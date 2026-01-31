@@ -16,10 +16,9 @@ public class UILose : UIPopup
         VibrateManager.Instance.MediumVibrate();
         AudioManager.Instance.PlaySFX(SFXType.Lose);
 
-        int fromAmount = GameManagerInGame.Instance.userData.playerCash;
         if (txt_coin != null)
         {
-            txt_coin.text = fromAmount.ToString();
+          //  txt_coin.text = fromAmount.ToString();
         }
     }
     protected override void Start()
@@ -32,7 +31,6 @@ public class UILose : UIPopup
     private void NextGame()
     {
         DOTween.KillAll();
-        GameManagerInGame.Instance.StartNextLevel();
         Hide();
     }
 

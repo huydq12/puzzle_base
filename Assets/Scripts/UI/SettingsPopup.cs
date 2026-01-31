@@ -26,7 +26,6 @@ public class SettingsPopup : MonoBehaviour
     {
         DOTween.KillAll();
         Hide();
-        GameManagerInGame.Instance.ReplayLevel();
     }
     public void Show()
     {
