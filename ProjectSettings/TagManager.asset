@@ -2,11 +2,15 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
+  serializedVersion: 3
   tags:
   - Missile
   - Hexa
   - PhysicObjectCollider
+  - FireRange
+  - SidesRoute
+  - SidesRoute2
+  - Bullet
   layers:
   - Default
   - TransparentFX
@@ -15,10 +19,10 @@ TagManager:
   - Water
   - UI
   - TilePanel
-  - TargetPanel
+  - FireRange
   - Tile
   - Cube
-  - 
+  - Shooter
   - 
   - CityBuild
   - Top
@@ -44,3 +48,5 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  m_RenderingLayers:
+  - Default

@@ -18,7 +18,6 @@ public class LevelMap : SerializedMonoBehaviour
     private void Update()
     {
         if (Bases.Count == 0) return;
-        Debug.Log("hii");
         float basePercent = Time.time * Board.Instance.Speed % 1f;
         int count = Bases.Count;
 
@@ -232,7 +231,23 @@ public class LevelMap : SerializedMonoBehaviour
             }
         }
     }
-
+    [Button]
+    public void FixColor()
+    {
+        var shooters = GetComponentsInChildren<Shooter>(true);
+        foreach (var shoot in shooters)
+        {
+            var mat = shoot.mat;
+            foreach (var c in _config.ColorList)
+            {
+                if (mat.name.IndexOf(c.Value.Shooter.name) != -1)
+                {
+                    shoot.Color = c.Key;
+                    break;
+                }
+            }
+        }
+    }
     [Button]
     private void ValidShooter()
     {
@@ -244,7 +259,7 @@ public class LevelMap : SerializedMonoBehaviour
             if (TryGetColorFromName(child.name, out ObjectColor color))
             {
                 child.ColorConfig = _config;
-                child.OnValidate();
+                // child.OnValidate();
                 child.Setup(color, 0);
             }
             else
@@ -317,7 +332,7 @@ public class LevelMap : SerializedMonoBehaviour
                 if (colorIndex >= colorCount) break;
 
                 var cube = Instantiate(Board.Instance.CubePrefab, transform);
-                cube.SetUp(ColorsConveyor[colorIndex]);
+                cube.SetUp(ColorsConveyor[colorIndex], newBases[i]);
                 newBases[i].AddCube(cube);
 
                 colorIndex++;

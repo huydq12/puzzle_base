@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2391125963957442693}
   - component: {fileID: 2362462845019623243}
   - component: {fileID: 2354077059102679090}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Shooter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -126,7 +126,8 @@ GameObject:
   - component: {fileID: 2391761781881238208}
   - component: {fileID: 2433956649585372652}
   - component: {fileID: 935882582925563277}
-  m_Layer: 6
+  - component: {fileID: 7320504277396564041}
+  m_Layer: 10
   m_Name: Shooter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -141,7 +142,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2388167691884349442}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.24073625, z: 0, w: 0.9705906}
   m_LocalPosition: {x: 0.3, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -149,7 +150,7 @@ Transform:
   - {fileID: 2391125963957442693}
   - {fileID: 733922025038164553}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
+  m_LocalEulerAnglesHint: {x: 0, y: 27.86, z: -0}
 --- !u!65 &2433956649585372652
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -165,7 +166,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -185,12 +186,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GridPosition: {x: 2, y: 0}
   _renderer: {fileID: 2362462845019623243}
+  _pointShot: {fileID: 2391203754944913717}
+  _bullet: {fileID: 3600985549833765723, guid: 832a3ccd4c39b9649b1ec099b12e794f, type: 3}
   _text: {fileID: 3064536474469559163}
   _animation: {fileID: 2354077059102679090}
-  _outline: {fileID: 0}
+  _outline: {fileID: 7320504277396564041}
+  _collider: {fileID: 2433956649585372652}
+  _bulletSpeed: 10
+  Holder: {fileID: 0}
   Color: 0
   IsMoving: 0
   ColorConfig: {fileID: 11400000, guid: 2427e89443f4b46fdacc9417a3cd1fcc, type: 2}
+--- !u!114 &7320504277396564041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2388167691884349442}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineMode: 0
+  outlineColor: {r: 0, g: 0, b: 0, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
+  Renderers:
+  - {fileID: 2362462845019623243}
+  RenderOnEnable: 1
+  ClearOnDisable: 0
 --- !u!1 &2388460401607596237
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,7 +228,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2391203754944913717}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: PointShot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -233,7 +261,7 @@ GameObject:
   - component: {fileID: 733922025038164553}
   - component: {fileID: 8432565473446117784}
   - component: {fileID: 3064536474469559163}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

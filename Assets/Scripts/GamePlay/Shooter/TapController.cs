@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class TapController : Singleton<TapController>
@@ -43,11 +44,15 @@ public class TapController : Singleton<TapController>
         {
             if (hit.transform.TryGetComponent(out Shooter shooter))
             {
-                if (shooter.OnHolder || shooter.IsMoving || shooter)
+                if (shooter.OnHolder || shooter.IsMoving)
                 {
                     return;
                 }
-
+                var emptyHolder = Board.Instance.CurrentMap.Holders.FirstOrDefault(hol => !hol.IsOccupied);
+                if (emptyHolder != null)
+                {
+                    emptyHolder.AssignShooter(shooter);
+                }
             }
         }
     }
