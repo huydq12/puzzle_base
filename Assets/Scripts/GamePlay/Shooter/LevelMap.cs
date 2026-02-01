@@ -9,95 +9,27 @@ using UnityEngine;
 
 public class LevelMap : SerializedMonoBehaviour
 {
-    [SerializeField] private Cube _cubePrefab;
-    [SerializeField] private Base _basePrefab;
     public List<ObjectColor> ColorsConveyor;
     public List<ObjectColor> ColorsConveyorQueue;
+    public List<Base> Bases;
+    public Holder[] Holders;
+    public SplineComputer Spline;
 
-
-    [Header("TESTING")]
-    public SplineComputer spline;
-    public Transform SplineRoot;
-    public float speed;
-    [Button]
-    public void SetupFollow()
-    {
-        var children = new List<Transform>();
-        foreach (Transform c in SplineRoot)
-            children.Add(c);
-
-        int count = children.Count;
-        if (count == 0) return;
-
-        for (int i = 0; i < count; i++)
-        {
-            Transform child = children[i];
-
-            var follower = child.GetComponent<SplinePositioner>();
-            if (follower == null)
-                follower = child.gameObject.AddComponent<SplinePositioner>();
-
-            follower.spline = spline;
-        }
-    }
     private void Update()
     {
-        float basePercent = (Time.time * speed) % 1f;
-        int count = SplineRoot.childCount;
+        if (Bases.Count == 0) return;
+        Debug.Log("hii");
+        float basePercent = Time.time * Board.Instance.Speed % 1f;
+        int count = Bases.Count;
 
         for (int i = 0; i < count; i++)
         {
             float offset = (float)i / count;
-            Transform child = SplineRoot.GetChild(i);
-            var follower = child.GetComponent<SplinePositioner>();
-            if (follower != null)
-                follower.SetPercent((basePercent + offset) % 1f);
+            var b = Bases[i];
+            b.Positioner.SetPercent((basePercent + offset) % 1f);
         }
     }
-    [Button]
-    public void Build(Transform transform)
-    {
 
-
-        var points = new List<SplinePoint>();
-
-        foreach (Transform child in transform)
-        {
-            Debug.Log("kaka");
-            Vector3 localPos = child.position;
-
-            SplinePoint p = new SplinePoint(localPos);
-            p.type = SplinePoint.Type.SmoothFree; // hoặc Linear nếu muốn góc gắt
-            p.size = 1f;
-
-            points.Add(p);
-        }
-
-        spline.SetPoints(points.ToArray());
-
-        // Đóng spline thành vòng tròn
-        spline.Close();
-
-        spline.Rebuild();
-    }
-    [Button]
-    public void DisableFireRange(Material mat, Material mat2)
-    {
-        List<Renderer> shooters = GetComponentsInChildren<Renderer>(true).Where(go => go != null && go.name.Contains("Block", StringComparison.OrdinalIgnoreCase)).ToList();
-        shooters[0].materials = new Material[] { mat, mat2 };
-    }
-    [Button]
-    public void replaceshooter(GameObject PREFAB)
-    {
-        List<GameObject> shooters = GetComponentsInChildren<Transform>(true).Select(t => t.gameObject)
-        .Where(go => go != null && go.name.Contains("Shooter", StringComparison.OrdinalIgnoreCase) && go.TryGetComponent<BoxCollider>(out _)).ToList();
-
-        foreach (var go in shooters)
-        {
-            PrefabUtility.ConvertToPrefabInstance(go, PREFAB, new ConvertToPrefabInstanceSettings() { }, InteractionMode.UserAction);
-        }
-    }
-    [Button]
     public void RecreateAllHolderPrefabs(
     GameObject holderPrefab)
     {
@@ -156,12 +88,7 @@ public class LevelMap : SerializedMonoBehaviour
 
 
     [SerializeField] private GameColorConfig _config;
-    [SerializeField] private Holder[] _holders;
-    [TableMatrix(
-            DrawElementMethod = nameof(DrawShooterWithPreview),
-            SquareCells = true,
-            RowHeight = 50
-        )]
+    [TableMatrix(DrawElementMethod = nameof(DrawShooterWithPreview), SquareCells = true, RowHeight = 50)]
     [OdinSerialize] public Shooter[,] GridShooter;
 #if UNITY_EDITOR
     private Shooter DrawShooterWithPreview(Rect rect, Shooter value)
@@ -306,21 +233,6 @@ public class LevelMap : SerializedMonoBehaviour
         }
     }
 
-
-
-    [Button]
-    public void ValidLevel()
-    {
-        _holders = GetComponentsInChildren<Holder>(true);
-
-        // 1. Ensure Shooter component + color
-        ValidShooter();
-
-
-        // 3. Build grid từ scene
-        ValidGrid();
-
-    }
     [Button]
     private void ValidShooter()
     {
@@ -356,100 +268,41 @@ public class LevelMap : SerializedMonoBehaviour
         return false;
     }
 
-    [Button]
-    public void ClearInvalidScripts(List<GameObject> gameObjects)
+    public void GenerateBasesOnConveyorQueue()
     {
-        if (gameObjects == null || gameObjects.Count == 0)
-        {
-            EditorUtility.DisplayDialog("Info", "GameObject list is empty!", "OK");
-            return;
-        }
 
-        int totalRemoved = 0;
-
-        foreach (var root in gameObjects)
-        {
-            if (root == null)
-                continue;
-
-            Transform[] allTransforms = root.GetComponentsInChildren<Transform>(true);
-
-            foreach (Transform t in allTransforms)
-            {
-                int removed = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
-                if (removed > 0)
-                {
-                    totalRemoved += removed;
-                    Debug.Log(
-                        $"Removed {removed} missing script(s) from '{t.gameObject.name}'",
-                        t.gameObject
-                    );
-                }
-            }
-        }
-
-        if (totalRemoved > 0)
-        {
-            EditorUtility.DisplayDialog(
-                "Success",
-                $"Removed {totalRemoved} missing script(s) total!",
-                "OK"
-            );
-        }
-        else
-        {
-            EditorUtility.DisplayDialog(
-                "Info",
-                "No missing scripts found!",
-                "OK"
-            );
-        }
     }
-
-
-
-    [Button]
-    public void GenerateBasesFromColorCount()
+    public void GenerateBasesOnConveyor()
     {
         int colorCount = ColorsConveyor.Count;
+        if (colorCount == 0) return;
         int requiredBases = Mathf.CeilToInt((float)colorCount / 5);
 
         List<Base> newBases = new List<Base>();
 
         for (int i = 0; i < requiredBases; i++)
         {
-            var newBase = Instantiate(_basePrefab, SplineRoot);
+            var newBase = Instantiate(Board.Instance.BasePrefab, Spline.transform);
             newBase.name = $"Base_{i:D3}";
             newBases.Add(newBase);
         }
+        Bases = new List<Base>(newBases);
 
-        Debug.Log($"Created {requiredBases} bases");
-
-        // Phân bổ theo arc length (khoảng cách thực tế trên spline)
-        double totalLength = spline.CalculateLength();
 
         for (int i = 0; i < newBases.Count; i++)
         {
-            // Khoảng cách đều theo chiều dài
-            double targetDistance = (totalLength * i) / requiredBases;
+            double percent = (double)i / requiredBases;
 
-            // Tìm percent tương ứng với khoảng cách này
-            double percent = spline.Travel(0, (float)targetDistance, Spline.Direction.Forward);
+            var follower = newBases[i].Positioner;
 
-            var follower = newBases[i].GetComponent<SplinePositioner>();
-            if (follower == null)
-                follower = newBases[i].gameObject.AddComponent<SplinePositioner>();
-
-            follower.spline = spline;
+            follower.spline = Spline;
             follower.SetPercent(percent);
 
-            SplineSample sample = spline.Evaluate(percent);
+            SplineSample sample = Spline.Evaluate(percent);
             newBases[i].transform.position = sample.position;
             newBases[i].transform.rotation = sample.rotation;
         }
 
-
-        // Add cubes vào bases
         int colorIndex = 0;
         int cubePerBase = colorCount / newBases.Count;
         int remainder = colorCount % newBases.Count;
@@ -463,13 +316,12 @@ public class LevelMap : SerializedMonoBehaviour
             {
                 if (colorIndex >= colorCount) break;
 
-                var cube = Instantiate(_cubePrefab, transform);
+                var cube = Instantiate(Board.Instance.CubePrefab, transform);
                 cube.SetUp(ColorsConveyor[colorIndex]);
                 newBases[i].AddCube(cube);
 
                 colorIndex++;
             }
         }
-
     }
 }

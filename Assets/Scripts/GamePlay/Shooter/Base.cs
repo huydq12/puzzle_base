@@ -1,32 +1,25 @@
 using System.Collections.Generic;
+using Dreamteck.Splines;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class Base : MonoBehaviour
 {
     [ReadOnly] public List<Cube> Cubes = new();
+    [SerializeField, OnValueChanged(nameof(RefreshGrid))] private Vector2 _cellSize = new Vector2(1f, 1f); 
 
-    [Title("Grid Settings")]
-    [SerializeField] private int columns = 5;
-    [SerializeField] private int rows = 3;
-    [SerializeField, OnValueChanged(nameof(RefreshGrid))] private Vector2 cellSize = new Vector2(1f, 1f); // x = width, y = depth(Z)
-    [SerializeField, OnValueChanged(nameof(RefreshGrid))] private Vector2 spacing = new Vector2(0.1f, 0.1f);
+    [SerializeField, OnValueChanged(nameof(RefreshGrid))] private float _spacingX = 0.1f;
+    [SerializeField] private SplinePositioner _positioner;
+    public SplinePositioner Positioner => _positioner;
+    private const int COLUMNS = 5;
 
-    [Button("Refresh Grid")]
     public void RefreshGrid()
     {
-        int count = Mathf.Min(Cubes.Count, columns * rows);
+        int count = Mathf.Min(Cubes.Count, COLUMNS);
 
-        float totalWidth =
-            columns * cellSize.x +
-            (columns - 1) * spacing.x;
+        float totalWidth = COLUMNS * _cellSize.x + (COLUMNS - 1) * _spacingX;
 
-        float totalDepth =
-            rows * cellSize.y +
-            (rows - 1) * spacing.y;
-
-        float startX = -totalWidth * 0.5f + cellSize.x * 0.5f;
-        float startZ = totalDepth * 0.5f - cellSize.y * 0.5f;
+        float startX = -totalWidth * 0.5f + _cellSize.x * 0.5f;
 
         for (int i = 0; i < count; i++)
         {
@@ -35,31 +28,25 @@ public class Base : MonoBehaviour
 
             cube.transform.SetParent(transform, false);
 
-            int col = i % columns;
-            int row = i / columns;
+            float x = startX + i * (_cellSize.x + _spacingX);
 
-            float x = startX + col * (cellSize.x + spacing.x);
-            float z = startZ - row * (cellSize.y + spacing.y);
-
-            cube.transform.localPosition = new Vector3(
-                x,
-               0,
-                z
-            );
+            cube.transform.localPosition = new Vector3(x, 0f, 0f);
         }
     }
 
-    [Button]
     public void AddCube(Cube cube)
     {
-        if (Cubes.Contains(cube)) return;
+        if (cube == null || Cubes.Contains(cube)) return;
+
         Cubes.Add(cube);
         RefreshGrid();
     }
-    [Button]
+
     public void RemoveCube(Cube cube)
     {
-        if (!Cubes.Remove(cube)) return;
-        RefreshGrid();
+        if (cube == null) return;
+
+        if (Cubes.Remove(cube))
+            RefreshGrid();
     }
 }

@@ -27,7 +27,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private new void Awake()
     {
         base.Awake();
-        LoadData();
+      //  LoadData();
         API.Initialize();
     }
     void Start()
