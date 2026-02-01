@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dreamteck.Splines;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEditor;
@@ -8,10 +9,81 @@ using UnityEngine;
 
 public class LevelMap : SerializedMonoBehaviour
 {
+    [SerializeField] private Cube _cubePrefab;
+    [SerializeField] private Base _basePrefab;
+    public List<ObjectColor> ColorsConveyor;
+    public List<ObjectColor> ColorsConveyorQueue;
+
+
+    [Header("TESTING")]
+    public SplineComputer spline;
+    public Transform SplineRoot;
+    public float speed;
+    [Button]
+    public void SetupFollow()
+    {
+        var children = new List<Transform>();
+        foreach (Transform c in SplineRoot)
+            children.Add(c);
+
+        int count = children.Count;
+        if (count == 0) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            Transform child = children[i];
+
+            var follower = child.GetComponent<SplinePositioner>();
+            if (follower == null)
+                follower = child.gameObject.AddComponent<SplinePositioner>();
+
+            follower.spline = spline;
+        }
+    }
+    private void Update()
+    {
+        float basePercent = (Time.time * speed) % 1f;
+        int count = SplineRoot.childCount;
+
+        for (int i = 0; i < count; i++)
+        {
+            float offset = (float)i / count;
+            Transform child = SplineRoot.GetChild(i);
+            var follower = child.GetComponent<SplinePositioner>();
+            if (follower != null)
+                follower.SetPercent((basePercent + offset) % 1f);
+        }
+    }
+    [Button]
+    public void Build(Transform transform)
+    {
+
+
+        var points = new List<SplinePoint>();
+
+        foreach (Transform child in transform)
+        {
+            Debug.Log("kaka");
+            Vector3 localPos = child.position;
+
+            SplinePoint p = new SplinePoint(localPos);
+            p.type = SplinePoint.Type.SmoothFree; // hoặc Linear nếu muốn góc gắt
+            p.size = 1f;
+
+            points.Add(p);
+        }
+
+        spline.SetPoints(points.ToArray());
+
+        // Đóng spline thành vòng tròn
+        spline.Close();
+
+        spline.Rebuild();
+    }
     [Button]
     public void DisableFireRange(Material mat, Material mat2)
     {
- List<Renderer> shooters = GetComponentsInChildren<Renderer>(true).Where(go => go != null && go.name.Contains("Block", StringComparison.OrdinalIgnoreCase)).ToList();
+        List<Renderer> shooters = GetComponentsInChildren<Renderer>(true).Where(go => go != null && go.name.Contains("Block", StringComparison.OrdinalIgnoreCase)).ToList();
         shooters[0].materials = new Material[] { mat, mat2 };
     }
     [Button]
@@ -85,11 +157,11 @@ public class LevelMap : SerializedMonoBehaviour
 
     [SerializeField] private GameColorConfig _config;
     [SerializeField] private Holder[] _holders;
-[TableMatrix(
-        DrawElementMethod = nameof(DrawShooterWithPreview),
-        SquareCells = true,
-        RowHeight = 50
-    )]
+    [TableMatrix(
+            DrawElementMethod = nameof(DrawShooterWithPreview),
+            SquareCells = true,
+            RowHeight = 50
+        )]
     [OdinSerialize] public Shooter[,] GridShooter;
 #if UNITY_EDITOR
     private Shooter DrawShooterWithPreview(Rect rect, Shooter value)
@@ -102,17 +174,17 @@ public class LevelMap : SerializedMonoBehaviour
                 // Preview chiếm 80% chiều cao
                 Rect previewRect = new Rect(rect.x + 2, rect.y + 2, rect.width - 4, rect.height * 0.8f);
                 GUI.DrawTexture(previewRect, preview, ScaleMode.ScaleToFit);
-                
+
                 // Tên ngắn phía dưới (20% chiều cao còn lại)
                 Rect labelRect = new Rect(rect.x, rect.y + rect.height * 0.8f, rect.width, rect.height * 0.2f);
-                GUI.Label(labelRect, value.name, new GUIStyle() 
-                { 
+                GUI.Label(labelRect, value.name, new GUIStyle()
+                {
                     alignment = TextAnchor.MiddleCenter,
                     fontSize = 9
                 });
             }
         }
-        
+
         // Drag & drop
         Event evt = Event.current;
         if (evt.type == EventType.DragUpdated || evt.type == EventType.DragPerform)
@@ -120,7 +192,7 @@ public class LevelMap : SerializedMonoBehaviour
             if (rect.Contains(evt.mousePosition))
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                
+
                 if (evt.type == EventType.DragPerform)
                 {
                     DragAndDrop.AcceptDrag();
@@ -136,7 +208,7 @@ public class LevelMap : SerializedMonoBehaviour
                 }
             }
         }
-        
+
         return value;
     }
 #endif
@@ -332,5 +404,72 @@ public class LevelMap : SerializedMonoBehaviour
                 "OK"
             );
         }
+    }
+
+
+
+    [Button]
+    public void GenerateBasesFromColorCount()
+    {
+        int colorCount = ColorsConveyor.Count;
+        int requiredBases = Mathf.CeilToInt((float)colorCount / 5);
+
+        List<Base> newBases = new List<Base>();
+
+        for (int i = 0; i < requiredBases; i++)
+        {
+            var newBase = Instantiate(_basePrefab, SplineRoot);
+            newBase.name = $"Base_{i:D3}";
+            newBases.Add(newBase);
+        }
+
+        Debug.Log($"Created {requiredBases} bases");
+
+        // Phân bổ theo arc length (khoảng cách thực tế trên spline)
+        double totalLength = spline.CalculateLength();
+
+        for (int i = 0; i < newBases.Count; i++)
+        {
+            // Khoảng cách đều theo chiều dài
+            double targetDistance = (totalLength * i) / requiredBases;
+
+            // Tìm percent tương ứng với khoảng cách này
+            double percent = spline.Travel(0, (float)targetDistance, Spline.Direction.Forward);
+
+            var follower = newBases[i].GetComponent<SplinePositioner>();
+            if (follower == null)
+                follower = newBases[i].gameObject.AddComponent<SplinePositioner>();
+
+            follower.spline = spline;
+            follower.SetPercent(percent);
+
+            SplineSample sample = spline.Evaluate(percent);
+            newBases[i].transform.position = sample.position;
+            newBases[i].transform.rotation = sample.rotation;
+        }
+
+
+        // Add cubes vào bases
+        int colorIndex = 0;
+        int cubePerBase = colorCount / newBases.Count;
+        int remainder = colorCount % newBases.Count;
+
+        for (int i = 0; i < newBases.Count; i++)
+        {
+            int cubesForThisBase = cubePerBase + (remainder > 0 ? 1 : 0);
+            if (remainder > 0) remainder--;
+
+            for (int j = 0; j < cubesForThisBase; j++)
+            {
+                if (colorIndex >= colorCount) break;
+
+                var cube = Instantiate(_cubePrefab, transform);
+                cube.SetUp(ColorsConveyor[colorIndex]);
+                newBases[i].AddCube(cube);
+
+                colorIndex++;
+            }
+        }
+
     }
 }

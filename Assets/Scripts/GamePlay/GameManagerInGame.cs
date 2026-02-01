@@ -27,7 +27,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private new void Awake()
     {
         base.Awake();
-
+        LoadData();
         API.Initialize();
     }
     void Start()
@@ -68,15 +68,17 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
     public void StartGame(int level)
     {
-      
+        var map = Instantiate(Resources.Load<LevelMap>("Levels/Level" + level.ToString("D2")));
+        Board.Instance.SetupLevel(level, map);
     }
     public void SaveData()
     {
-      
+
     }
     public void LoadData()
     {
-      
+        CurrentLevel = PlayerPrefs.GetInt("MaxLevel", 1);
+        MaxLevel = PlayerPrefs.GetInt("MaxLevel", 1);
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()

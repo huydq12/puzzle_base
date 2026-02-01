@@ -1,4 +1,5 @@
 
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 public enum BoosterType
@@ -10,9 +11,10 @@ public enum BoosterType
 }
 public class Board : Singleton<Board>
 {
+    [ReadOnly] public int CurrentLevelIndex;
+    [ReadOnly] public LevelMap CurrentMap;
     [SerializeField] private GameColorConfig _colorConfig;
     public GameColorConfig ColorConfig => _colorConfig;
-    private LevelConfig _currentConfig;
 
 
 
@@ -21,7 +23,7 @@ public class Board : Singleton<Board>
         base.Awake();
     }
 
-    
+
 
     private static Camera FindMainCameraFallback()
     {
@@ -51,12 +53,13 @@ public class Board : Singleton<Board>
         return null;
     }
 
-   
-    public void SetupLevel(LevelConfig config)
+
+    public void SetupLevel(int level, LevelMap map)
     {
         GameManagerInGame.Instance.SetState(GameStateInGame.Init);
-        _currentConfig = config;
-      
+        CurrentLevelIndex = level;
+        CurrentMap = map;
+        map.transform.eulerAngles = new Vector3(0, 180, 0);
         GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
     }
 }
