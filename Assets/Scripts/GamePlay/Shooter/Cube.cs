@@ -31,10 +31,10 @@ public class Cube : MonoBehaviour
     {
         if (((1 << other.gameObject.layer) & _fireLayer.value) != 0)
         {
-            var holder = Board.Instance.CurrentMap.Holders.FirstOrDefault(b => b.IsOccupied && b.ShooterOnholder.Color == Color);
+            var holder = Board.Instance.CurrentMap.Holders.FirstOrDefault(b => b.IsOccupied && b.ShooterOnholder.Color == Color && !b.ShooterOnholder.IsMoving);
             if (holder != null)
             {
-                holder.ShooterOnholder.Shoot(Base.Cubes[Random.Range(0, Base.Cubes.Count)]);
+                holder.ShooterOnholder.Shoot(Base);
                 Base.DestroyLine();
             }
         }

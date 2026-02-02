@@ -1,3 +1,4 @@
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -10,8 +11,17 @@ public class Holder : MonoBehaviour
     public void AssignShooter(Shooter shooter)
     {
         ShooterOnholder = shooter;
-        ShooterOnholder.transform.SetParent(_spawnPos);
-        ShooterOnholder.transform.localPosition = Vector3.zero;
-        shooter.Holder = this;
+        if (shooter != null)
+        {
+            ShooterOnholder.transform.SetParent(_spawnPos);
+            ShooterOnholder.IsMoving = true;
+            ShooterOnholder.transform.DOLocalJump(Vector3.zero, 1.2f, 1, 0.45f).SetEase(Ease.OutQuad)
+            .OnComplete(() =>
+            {
+                ShooterOnholder.IsMoving = false;
+                ShooterOnholder.ShowRemaining = true;
+            });
+            shooter.Holder = this;
+        }
     }
 }

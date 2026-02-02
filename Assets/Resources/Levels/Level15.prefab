@@ -87,7 +87,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4000854905661495}
   m_Layer: 6
-  m_Name: Wall_r3_c1
+  m_Name: Wall (4,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -149,7 +149,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4873040639805226}
   m_Layer: 6
-  m_Name: Wall_r0_c4
+  m_Name: Wall (1,5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -211,7 +211,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4277774012816890}
   m_Layer: 6
-  m_Name: Wall_r3_c0
+  m_Name: Wall (5,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -273,7 +273,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4600212848061617}
   m_Layer: 6
-  m_Name: Wall_r4_c2
+  m_Name: Wall (3,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -304,7 +304,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4121654354271920}
   m_Layer: 6
-  m_Name: Wall_r1_c0
+  m_Name: Wall (5,4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -335,7 +335,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4294203757384846}
   m_Layer: 6
-  m_Name: Wall_r2_c-1
+  m_Name: Wall (6,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -434,7 +434,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4500035947492380}
   m_Layer: 6
-  m_Name: Wall_r1_c1
+  m_Name: Wall (4,4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -496,7 +496,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4927313423903215}
   m_Layer: 6
-  m_Name: Wall_r1_c-1
+  m_Name: Wall (6,4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -558,7 +558,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4233129368425499}
   m_Layer: 6
-  m_Name: Wall_r2_c5
+  m_Name: Wall (0,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -589,7 +589,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4972903408937662}
   m_Layer: 6
-  m_Name: Wall_r2_c0
+  m_Name: Wall (5,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -620,7 +620,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4353552204192724}
   m_Layer: 6
-  m_Name: Wall_r4_c-1
+  m_Name: Wall (6,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -682,7 +682,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4135922521225376}
   m_Layer: 6
-  m_Name: Wall_r4_c1
+  m_Name: Wall (4,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -713,7 +713,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4064481256031983}
   m_Layer: 6
-  m_Name: Wall_r0_c5
+  m_Name: Wall (0,5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -775,7 +775,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4840287786808184}
   m_Layer: 6
-  m_Name: Wall_r5_c3
+  m_Name: Wall (2,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1227,7 +1227,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4923267250761054}
   m_Layer: 6
-  m_Name: Wall_r3_c5
+  m_Name: Wall (0,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1342,33 +1342,519 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: GridShooter
+    - Name: Grid
       Entry: 7
-      Data: 0|Shooter[,], Assembly-CSharp
+      Data: 0|CellData[,], Assembly-CSharp
     - Name: 
       Entry: 12
-      Data: 6
+      Data: 42
     - Name: ranks
       Entry: 1
-      Data: 3|2
+      Data: 7|6
     - Name: 
-      Entry: 10
-      Data: 0
-    - Name: 
-      Entry: 10
-      Data: 1
-    - Name: 
-      Entry: 10
-      Data: 2
-    - Name: 
-      Entry: 10
-      Data: 3
-    - Name: 
+      Entry: 7
+      Data: 1|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
       Entry: 6
       Data: 
     - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 2|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 3|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 4|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 5|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 6|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 7|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 8|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 9|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 10|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 11|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 12|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 13|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 14|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 15|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 16|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 17|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: false
+    - Name: Shooter
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 18|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: false
+    - Name: Shooter
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 19|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 20|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 21|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 22|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 23|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: false
+    - Name: Shooter
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 24|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: false
+    - Name: Shooter
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 25|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 26|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 27|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 28|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 29|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 30|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: false
+    - Name: Shooter
       Entry: 10
       Data: 4
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 31|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 32|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 33|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 34|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 35|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 36|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 37|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 38|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 39|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 40|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 41|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 42|CellData, Assembly-CSharp
+    - Name: IsWall
+      Entry: 5
+      Data: true
+    - Name: Shooter
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -1384,7 +1870,6 @@ MonoBehaviour:
   - {fileID: 4033739924982670503}
   - {fileID: 8233141191852770387}
   Spline: {fileID: 6685309317365260089}
-  _config: {fileID: 11400000, guid: 2427e89443f4b46fdacc9417a3cd1fcc, type: 2}
 --- !u!1 &1511659528221793
 GameObject:
   m_ObjectHideFlags: 0
@@ -1395,7 +1880,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4211208467033970}
   m_Layer: 6
-  m_Name: Wall_r2_c3
+  m_Name: Wall (2,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1464,7 +1949,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4964406942587806}
   m_Layer: 6
-  m_Name: Wall_r5_c0
+  m_Name: Wall (5,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1495,7 +1980,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4836545840295068}
   m_Layer: 6
-  m_Name: Wall_r5_c-1
+  m_Name: Wall (6,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1526,7 +2011,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4266438060800164}
   m_Layer: 6
-  m_Name: Wall_r4_c0
+  m_Name: Wall (5,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1653,7 +2138,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4393330460203990}
   m_Layer: 6
-  m_Name: Wall_r5_c4
+  m_Name: Wall (1,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1684,7 +2169,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4164795364604958}
   m_Layer: 6
-  m_Name: Wall_r2_c2
+  m_Name: Wall (3,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1715,7 +2200,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4164238440034780}
   m_Layer: 6
-  m_Name: Wall_r0_c0
+  m_Name: Wall (5,5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1746,7 +2231,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4711032238152569}
   m_Layer: 6
-  m_Name: Wall_r3_c3
+  m_Name: Wall (2,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1777,7 +2262,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4628644997238150}
   m_Layer: 6
-  m_Name: Wall_r2_c1
+  m_Name: Wall (4,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1808,7 +2293,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4195200526100226}
   m_Layer: 6
-  m_Name: Wall_r3_c2
+  m_Name: Wall (3,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1839,7 +2324,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4078299250194468}
   m_Layer: 6
-  m_Name: Wall_r0_c-1
+  m_Name: Wall (6,5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3971,7 +4456,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4558457252906492}
   m_Layer: 6
-  m_Name: Wall_r1_c5
+  m_Name: Wall (0,4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4033,7 +4518,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4777548828913304}
   m_Layer: 6
-  m_Name: Wall_r4_c5
+  m_Name: Wall (0,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4095,7 +4580,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4490942283900440}
   m_Layer: 6
-  m_Name: Wall_r3_c4
+  m_Name: Wall (1,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4126,7 +4611,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4988927243873829}
   m_Layer: 6
-  m_Name: Wall_r5_c2
+  m_Name: Wall (3,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4157,7 +4642,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4699523430008773}
   m_Layer: 6
-  m_Name: Wall_r1_c4
+  m_Name: Wall (1,4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4188,7 +4673,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4163735201996974}
   m_Layer: 6
-  m_Name: Wall_r4_c4
+  m_Name: Wall (1,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4219,7 +4704,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4029864939087643}
   m_Layer: 6
-  m_Name: Wall_r3_c-1
+  m_Name: Wall (6,2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4459,7 +4944,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4843982812574412}
   m_Layer: 6
-  m_Name: Wall_r2_c4
+  m_Name: Wall (1,3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4490,7 +4975,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4921538682990313}
   m_Layer: 6
-  m_Name: Wall_r4_c3
+  m_Name: Wall (2,1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4552,7 +5037,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4068926611506121}
   m_Layer: 6
-  m_Name: Wall_r5_c1
+  m_Name: Wall (4,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4583,7 +5068,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4605545217186712}
   m_Layer: 6
-  m_Name: Wall_r5_c5
+  m_Name: Wall (0,0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4995,12 +5480,12 @@ PrefabInstance:
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.x
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.y
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2362462845019623243, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5015,7 +5500,7 @@ PrefabInstance:
     - target: {fileID: 2388167691884349442, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: m_Name
-      value: Shooter (1,1)
+      value: Shooter (3,5)
       objectReference: {fileID: 0}
     - target: {fileID: 2391761781881238208, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5106,12 +5591,12 @@ PrefabInstance:
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.x
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.y
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2362462845019623243, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5126,7 +5611,7 @@ PrefabInstance:
     - target: {fileID: 2388167691884349442, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: m_Name
-      value: Shooter (0,1)
+      value: Shooter (2,5)
       objectReference: {fileID: 0}
     - target: {fileID: 2391761781881238208, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5394,7 +5879,12 @@ PrefabInstance:
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.x
-      value: 1
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
+        type: 3}
+      propertyPath: GridPosition.y
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2362462845019623243, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5409,7 +5899,7 @@ PrefabInstance:
     - target: {fileID: 2388167691884349442, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: m_Name
-      value: Shooter (1,0)
+      value: Shooter (3,4)
       objectReference: {fileID: 0}
     - target: {fileID: 2391761781881238208, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5504,13 +5994,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
+      propertyPath: GridPosition.x
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
+        type: 3}
       propertyPath: GridPosition.y
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2388167691884349442, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: m_Name
-      value: Shooter (2,1)
+      value: Shooter (4,5)
       objectReference: {fileID: 0}
     - target: {fileID: 2391761781881238208, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5692,7 +6187,12 @@ PrefabInstance:
     - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: GridPosition.x
-      value: 0
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 935882582925563277, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
+        type: 3}
+      propertyPath: GridPosition.y
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2362462845019623243, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
@@ -5707,7 +6207,7 @@ PrefabInstance:
     - target: {fileID: 2388167691884349442, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}
       propertyPath: m_Name
-      value: Shooter (0,0)
+      value: Shooter (2,4)
       objectReference: {fileID: 0}
     - target: {fileID: 2391761781881238208, guid: 39ce3e767dd5d48fbb7c8a98bf9ac8fa,
         type: 3}

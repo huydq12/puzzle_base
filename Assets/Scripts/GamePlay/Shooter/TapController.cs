@@ -48,11 +48,17 @@ public class TapController : Singleton<TapController>
                 {
                     return;
                 }
+                if (!Board.Instance.CurrentMap.CheckCanMove(shooter.GridPosition))
+                {
+                    shooter.Shake();
+                    return;
+                }
                 var emptyHolder = Board.Instance.CurrentMap.Holders.FirstOrDefault(hol => !hol.IsOccupied);
                 if (emptyHolder != null)
                 {
                     emptyHolder.AssignShooter(shooter);
-                    Board.Instance.CurrentMap.GridShooter[shooter.GridPosition.x, shooter.GridPosition.y] = null;
+                    Board.Instance.CurrentMap.Grid[shooter.GridPosition.x, shooter.GridPosition.y].Shooter = null;
+                    Board.Instance.CurrentMap.CheckAllShootersCanMove();
                 }
             }
         }
