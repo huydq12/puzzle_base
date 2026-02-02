@@ -52,6 +52,7 @@ public class TapController : Singleton<TapController>
                 if (emptyHolder != null)
                 {
                     emptyHolder.AssignShooter(shooter);
+                    Board.Instance.CurrentMap.GridShooter[shooter.GridPosition.x, shooter.GridPosition.y] = null;
                 }
             }
         }

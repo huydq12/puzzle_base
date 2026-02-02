@@ -14,7 +14,66 @@ public class LevelMap : SerializedMonoBehaviour
     public List<Base> Bases;
     public Holder[] Holders;
     public SplineComputer Spline;
+    [SerializeField] private GameColorConfig _config;
+    [TableMatrix(DrawElementMethod = nameof(DrawShooterWithPreview), SquareCells = true, RowHeight = 50)]
+    [OdinSerialize] public Shooter[,] GridShooter;
+    [TableMatrix(SquareCells = true)]
+    [OdinSerialize] public bool[,] IsWall;
+    [Button]
+    public bool CheckCanMove(Vector2Int shooterPos)
+    {
+        if (GridShooter == null || IsWall == null) return false;
 
+        int cols = GridShooter.GetLength(0);
+        int rows = GridShooter.GetLength(1);
+        int x = shooterPos.x;
+        int y = shooterPos.y;
+
+        // Kiểm tra vị trí hợp lệ và có shooter
+        if (x < 0 || x >= cols || y < 0 || y >= rows) return false;
+        if (GridShooter[x, y] == null) return false;
+
+        // BFS tìm đường ra ngoài grid (row >= rows)
+        var visited = new bool[cols, rows];
+        var queue = new Queue<Vector2Int>();
+        queue.Enqueue(shooterPos);
+        visited[x, y] = true;
+
+        // 4 hướng: lên, xuống, trái, phải
+        int[] dx = { 0, 0, -1, 1 };
+        int[] dy = { -1, 1, 0, 0 };
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = current.x + dx[i];
+                int ny = current.y + dy[i];
+
+                // Nếu ra ngoài grid phía dưới (row >= rows) → tìm được đường ra
+                if (ny >= rows)
+                {
+                    return true;
+                }
+
+                // Bỏ qua nếu ra ngoài biên khác hoặc đã visited
+                if (nx < 0 || nx >= cols || ny < 0) continue;
+                if (visited[nx, ny]) continue;
+
+                // Không đi được nếu là tường hoặc có shooter khác chặn
+                if (IsWall[nx, ny]) continue;
+                if (GridShooter[nx, ny] != null) continue;
+
+                // Ô trống, có thể đi qua
+                visited[nx, ny] = true;
+                queue.Enqueue(new Vector2Int(nx, ny));
+            }
+        }
+
+        return false; // Không tìm được đường ra
+    }
     private void Update()
     {
         if (Bases.Count == 0) return;
@@ -86,9 +145,6 @@ public class LevelMap : SerializedMonoBehaviour
     }
 
 
-    [SerializeField] private GameColorConfig _config;
-    [TableMatrix(DrawElementMethod = nameof(DrawShooterWithPreview), SquareCells = true, RowHeight = 50)]
-    [OdinSerialize] public Shooter[,] GridShooter;
 #if UNITY_EDITOR
     private Shooter DrawShooterWithPreview(Rect rect, Shooter value)
     {

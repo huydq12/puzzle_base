@@ -12,5 +12,6 @@ public class Holder : MonoBehaviour
         ShooterOnholder = shooter;
         ShooterOnholder.transform.SetParent(_spawnPos);
         ShooterOnholder.transform.localPosition = Vector3.zero;
+        shooter.Holder = this;
     }
 }
