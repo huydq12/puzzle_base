@@ -14,9 +14,12 @@ public class LevelMap : SerializedMonoBehaviour
 {
     public List<ObjectColor> ColorsConveyor;
     public List<ObjectColor> ColorsConveyorQueue;
+    public List<Transform> QueuePoints;
     public List<Base> Bases;
+    public List<Base> BasesQueue;
     public Holder[] Holders;
     public SplineComputer Spline;
+    public SplineComputer SplineQueue;
     [TableMatrix(DrawElementMethod = nameof(DrawCellDataWithPreview), SquareCells = true, RowHeight = 50)]
     public CellData[,] Grid;
     [Button]
@@ -241,16 +244,20 @@ public class LevelMap : SerializedMonoBehaviour
     }
     private void Update()
     {
-        if (Bases.Count == 0) return;
-        float basePercent = Time.time * Board.Instance.Speed % 1f;
-        int count = Bases.Count;
-
-        for (int i = 0; i < count; i++)
+        // Di chuyển Bases trên Spline chính
+        if (Bases.Count > 0)
         {
-            float offset = (float)i / count;
-            var b = Bases[i];
-            b.Positioner.SetPercent((basePercent + offset) % 1f);
+            float basePercent = Time.time * Board.Instance.Speed % 1f;
+            int count = Bases.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                float offset = (float)i / count;
+                var b = Bases[i];
+                b.Positioner.SetPercent((basePercent + offset) % 1f);
+            }
         }
+
     }
 
     public void RecreateAllHolderPrefabs(
@@ -506,9 +513,111 @@ public class LevelMap : SerializedMonoBehaviour
         return false;
     }
 
+    [Button]
+    public void GenerateSplineFromQueuePoints()
+    {
+        if (QueuePoints == null || QueuePoints.Count < 2)
+        {
+            Debug.LogWarning("Cần ít nhất 2 QueuePoints để tạo Spline!");
+            return;
+        }
+
+        // Tạo hoặc lấy SplineQueue
+        if (SplineQueue == null)
+        {
+            var splineGO = new GameObject("SplineQueue");
+            splineGO.transform.SetParent(transform);
+            SplineQueue = splineGO.AddComponent<SplineComputer>();
+        }
+
+        // Tạo các SplinePoint từ QueuePoints
+        var points = new SplinePoint[QueuePoints.Count];
+        for (int i = 0; i < QueuePoints.Count; i++)
+        {
+            points[i] = new SplinePoint
+            {
+                position = QueuePoints[i].position,
+                normal = Vector3.up,
+                size = 1f,
+                color = Color.white
+            };
+        }
+
+        SplineQueue.SetPoints(points);
+        SplineQueue.type = Spline.type;
+
+        Debug.Log($"Đã tạo SplineQueue với {points.Length} điểm");
+    }
+
+    [SerializeField] private float _queueBaseOffset = 2f; // Khoảng cách giữa các Base trong queue
+
+    [Button]
     public void GenerateBasesOnConveyorQueue()
     {
+        if (SplineQueue == null)
+        {
+            Debug.LogWarning("SplineQueue chưa được tạo! Hãy chạy GenerateSplineFromQueuePoints trước.");
+            return;
+        }
 
+        int colorCount = ColorsConveyorQueue.Count;
+        if (colorCount == 0) return;
+
+        // Rebuild spline để đảm bảo tính toán chính xác
+        SplineQueue.Rebuild();
+
+        int requiredBases = Mathf.CeilToInt((float)colorCount / 5);
+        float splineLength = SplineQueue.CalculateLength();
+
+        Debug.Log($"SplineQueue length: {splineLength}, requiredBases: {requiredBases}, offset: {_queueBaseOffset}");
+
+        List<Base> newBases = new List<Base>();
+
+        for (int i = 0; i < requiredBases; i++)
+        {
+            // Parent là transform của LevelMap, không phải SplineQueue
+            var newBase = Instantiate(Board.Instance.BasePrefab, transform);
+            newBase.name = $"BaseQueue_{i:D3}";
+            newBases.Add(newBase);
+        }
+        BasesQueue = new List<Base>(newBases);
+
+        // Base đầu tiên ở cuối spline (percent = 1), các base tiếp theo lùi về phía đầu
+        for (int i = 0; i < newBases.Count; i++)
+        {
+            // Tính khoảng cách từ cuối spline
+            float distanceFromEnd = i * _queueBaseOffset;
+            // Chuyển sang percent (1 = cuối, 0 = đầu)
+            double percent = 1.0 - (distanceFromEnd / splineLength);
+            percent = Math.Max(0, percent); // Đảm bảo không âm
+
+            SplineSample sample = SplineQueue.Evaluate(percent);
+            newBases[i].transform.position = sample.position;
+            newBases[i].transform.rotation = sample.rotation;
+
+            Debug.Log($"Base {i}: percent={percent:F3}, pos={sample.position}");
+        }
+
+        int colorIndex = 0;
+        int cubePerBase = colorCount / newBases.Count;
+        int remainder = colorCount % newBases.Count;
+
+        for (int i = 0; i < newBases.Count; i++)
+        {
+            int cubesForThisBase = cubePerBase + (remainder > 0 ? 1 : 0);
+            if (remainder > 0) remainder--;
+
+            for (int j = 0; j < cubesForThisBase; j++)
+            {
+                if (colorIndex >= colorCount) break;
+
+                var cube = Instantiate(Board.Instance.CubePrefab, transform);
+                cube.SetUp(ColorsConveyorQueue[colorIndex], newBases[i]);
+                newBases[i].AddCube(cube);
+
+                colorIndex++;
+            }
+        }
     }
     public void GenerateBasesOnConveyor()
     {

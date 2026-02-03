@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5805621519262675290}
   - component: {fileID: 6478819433004875700}
   - component: {fileID: 1806282888034387468}
+  - component: {fileID: 6560340588659099742}
   m_Layer: 0
   m_Name: Base
   m_TagString: Untagged
@@ -49,6 +50,13 @@ MonoBehaviour:
   _cellSize: {x: 0.2, y: 0.2}
   _spacingX: 0.01
   _positioner: {fileID: 1806282888034387468}
+  _fireLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  _routeLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  _collider: {fileID: 6560340588659099742}
 --- !u!114 &1806282888034387468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,3 +156,24 @@ MonoBehaviour:
   _followTargetDirection: -1
   _position: 0
   _mode: 0
+--- !u!65 &6560340588659099742
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5807871619133797662}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.0568216, y: 0.2290038, z: 0.2194362}
+  m_Center: {x: -0.002755933, y: 0.0076784566, z: -0.004759422}
