@@ -25,7 +25,7 @@ public class LevelMap : SerializedMonoBehaviour
     [Button]
     public void addcolor(ObjectColor color, int total)
     {
-        for(int i = 1; i <= total; i++)
+        for (int i = 1; i <= total; i++)
         {
             ColorsConveyor.Add(color);
         }
@@ -575,22 +575,28 @@ public class LevelMap : SerializedMonoBehaviour
 
         for (int i = 0; i < requiredBases; i++)
         {
-            // Parent là transform của LevelMap, không phải SplineQueue
-            var newBase = Instantiate(Board.Instance.BasePrefab, transform);
+            // ✅ Parent nên là SplineQueue.transform (giống như GenerateBasesOnConveyor)
+            var newBase = Instantiate(Board.Instance.BasePrefab, SplineQueue.transform);
             newBase.name = $"BaseQueue_{i:D3}";
             newBases.Add(newBase);
         }
         BasesQueue = new List<Base>(newBases);
 
-        // Base đầu tiên ở cuối spline (percent = 1), các base tiếp theo lùi về phía đầu
+        // Gán vị trí cho các base
         for (int i = 0; i < newBases.Count; i++)
         {
             // Tính khoảng cách từ cuối spline
             float distanceFromEnd = i * _queueBaseOffset;
             // Chuyển sang percent (1 = cuối, 0 = đầu)
             double percent = 1.0 - (distanceFromEnd / splineLength);
-            percent = Math.Max(0, percent); // Đảm bảo không âm
+            percent = Math.Max(0, percent);
 
+            // ✅ GÁN SPLINE CHO POSITIONER (đây là phần bị thiếu!)
+            var follower = newBases[i].Positioner;
+            follower.spline = SplineQueue;
+            follower.SetPercent(percent);
+
+            // Cập nhật transform
             SplineSample sample = SplineQueue.Evaluate(percent);
             newBases[i].transform.position = sample.position;
             newBases[i].transform.rotation = sample.rotation;
@@ -598,6 +604,7 @@ public class LevelMap : SerializedMonoBehaviour
             Debug.Log($"Base {i}: percent={percent:F3}, pos={sample.position}");
         }
 
+        // Tạo cubes
         int colorIndex = 0;
         int cubePerBase = colorCount / newBases.Count;
         int remainder = colorCount % newBases.Count;
