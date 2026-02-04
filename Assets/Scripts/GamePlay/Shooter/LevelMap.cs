@@ -23,15 +23,16 @@ public class LevelMap : SerializedMonoBehaviour
     public Holder[] Holders;
     [ReadOnly] public List<Base> Bases;
     public SplineComputer Spline;
-    [TableList]public List<QueueLane> QueueLanes = new List<QueueLane>();
+    [TableList] public List<QueueLane> QueueLanes = new List<QueueLane>();
     [TableMatrix(DrawElementMethod = nameof(DrawCellDataWithPreview), SquareCells = true, RowHeight = 50)]
     public CellData[,] Grid;
     private Dictionary<Base, float> _queueBaseCurrentDistances = new();
 
     [Button]
-    public void addcolorqueue(ObjectColor color, int total, int index){
-        for(int i = 1 ; i <= total; i++)
-        QueueLanes[index].ColorsConveyorQueue.Add(color);
+    public void addcolorqueue(ObjectColor color, int total, int index)
+    {
+        for (int i = 1; i <= total; i++)
+            QueueLanes[index].ColorsConveyorQueue.Add(color);
     }
     [Button]
     public void Addcolor(ObjectColor color, int total)
@@ -150,7 +151,9 @@ public class LevelMap : SerializedMonoBehaviour
         // Di chuyển Bases trên Spline chính
         if (Bases != null && Bases.Count > 0)
         {
-            float basePercent = Time.time * Board.Instance.Speed % 1f;
+            float splineLength = Spline != null ? Spline.CalculateLength() : 0f;
+            float percentPerSecond = splineLength > 0.0001f ? (Board.Instance.Speed / splineLength) : 0f;
+            float basePercent = Time.time * percentPerSecond % 1f;
             int count = Bases.Count;
 
             for (int i = 0; i < count; i++)
@@ -251,8 +254,7 @@ public class LevelMap : SerializedMonoBehaviour
     }
     private float GetQueueSmoothTime(float currentDist, float targetDist, float splineLength)
     {
-        float speedPercentPerSec = Mathf.Max(Board.Instance.Speed, 0.0001f);
-        float speedDistPerSec = speedPercentPerSec * splineLength;
+        float speedDistPerSec = Mathf.Max(Board.Instance.Speed, 0.0001f);
         float distance = Mathf.Abs(targetDist - currentDist);
         float duration = distance / Mathf.Max(speedDistPerSec, 0.0001f);
         return Mathf.Max(duration, 0.0001f);

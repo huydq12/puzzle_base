@@ -18,7 +18,10 @@ public class Slot : MonoBehaviour
         }
         else
         {
-            cube.transform.DOLocalMove(Vector3.zero, 0.25f);
+            float baseDuration = 0.125f;
+            float speed = Board.Instance != null ? Board.Instance.Speed : 1f;
+            float duration = baseDuration / Mathf.Max(speed, 0.0001f);
+            cube.transform.DOLocalMove(Vector3.zero, duration);
         }
     }
 }
