@@ -810,14 +810,20 @@ MonoBehaviour:
       Entry: 8
       Data: 
   ColorsConveyor: 
-  ColorsConveyorQueue: 
-  Bases: []
   Holders:
   - {fileID: 2295089225605223165}
   - {fileID: 2495758973715429507}
   - {fileID: 7135905578788339244}
   - {fileID: 4048558754037143853}
+  Bases: []
   Spline: {fileID: 6392000363816708864}
+  QueueLanes:
+  - SplineQueue: {fileID: 0}
+    ColorsConveyorQueue: 
+    BasesQueue: []
+  - SplineQueue: {fileID: 0}
+    ColorsConveyorQueue: 
+    BasesQueue: []
 --- !u!1 &1148274169979450
 GameObject:
   m_ObjectHideFlags: 0
@@ -1195,7 +1201,8 @@ GameObject:
   - component: {fileID: 33848709944646521}
   - component: {fileID: 23154000835760763}
   - component: {fileID: 54055586642538525}
-  m_Layer: 7
+  - component: {fileID: 2795999681243871530}
+  m_Layer: 11
   m_Name: TriggerSlideRoute (1)
   m_TagString: SidesRoute
   m_Icon: {fileID: 0}
@@ -1318,6 +1325,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &2795999681243871530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1300637297938027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c68a38eb1fd234f6484a72e4fe7948cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SplineQueue: {fileID: 0}
 --- !u!1 &1309538666030948
 GameObject:
   m_ObjectHideFlags: 0
@@ -2409,7 +2429,8 @@ GameObject:
   - component: {fileID: 33917039259895940}
   - component: {fileID: 23499349393196662}
   - component: {fileID: 54617120794718570}
-  m_Layer: 7
+  - component: {fileID: 5952787241662040306}
+  m_Layer: 11
   m_Name: TriggerSlideRouteL (1)
   m_TagString: SidesRoute2
   m_Icon: {fileID: 0}
@@ -2532,6 +2553,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &5952787241662040306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797064574988540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c68a38eb1fd234f6484a72e4fe7948cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SplineQueue: {fileID: 0}
 --- !u!1 &1824418900007846
 GameObject:
   m_ObjectHideFlags: 0

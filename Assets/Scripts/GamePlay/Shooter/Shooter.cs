@@ -5,12 +5,14 @@ using DG.Tweening;
 using UnityEngine.Pool;
 using System;
 using System.Linq;
+
 public enum ShooterState
 {
     None,
     Hide,
     Show,
 }
+
 public class Shooter : MonoBehaviour
 {
     [ReadOnly] public Vector2Int GridPosition;
@@ -28,6 +30,7 @@ public class Shooter : MonoBehaviour
     [ReadOnly] public Holder Holder;
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public bool IsMoving;
+    
     public int Remaining
     {
         get => _remaining;
@@ -51,16 +54,20 @@ public class Shooter : MonoBehaviour
         get => _text.enabled;
         set => _text.enabled = value;
     }
+    
     public bool CanTrigger
     {
         get => _collider.enabled;
         set => _collider.enabled = value;
     }
+    
     public bool OnHolder => Holder != null;
+    
     private void UpdateRemaining()
     {
         _text.text = _remaining.ToString();
     }
+    
     private void Awake()
     {
         _bulletPool = new ObjectPool<Bullet>(
@@ -77,6 +84,7 @@ public class Shooter : MonoBehaviour
         UpdateRemaining();
         CanTrigger = true;
     }
+    
     private void Destroy()
     {
         if (Holder != null) Holder.AssignShooter(null);
@@ -109,7 +117,6 @@ public class Shooter : MonoBehaviour
           ).SetEase(Ease.Linear)
       );
 
-
         seq.OnComplete(() =>
         {
             Destroy(gameObject);
@@ -118,15 +125,19 @@ public class Shooter : MonoBehaviour
 
     public void Shoot(Base targetBase)
     {
-        if (targetBase == null || targetBase.Cubes.Count == 0) return;
+        if (targetBase == null || targetBase.IsEmpty()) return;
 
         _resetLooksq?.Kill();
 
-        // Lấy 2 cube random từ base (hoặc ít hơn nếu base không đủ cube)
-        int shotCount = Mathf.Min(2, targetBase.Cubes.Count);
-        var cubesToShoot = targetBase.Cubes.OrderBy(x => UnityEngine.Random.value).Take(shotCount).ToList();
+        // Lấy tất cả cubes từ slots
+        var allCubes = targetBase.GetAllCubes();
+        if (allCubes.Count == 0) return;
 
-        // Quay về phía base (lấy vị trí trung tâm của base hoặc cube đầu tiên)
+        // Lấy 2 cube random (hoặc ít hơn nếu base không đủ cube)
+        int shotCount = allCubes.Count;
+        var cubesToShoot = allCubes;
+
+        // Quay về phía base
         Vector3 baseCenter = targetBase.transform.position;
         Vector3 dir = baseCenter - transform.position;
         dir.y = 0f;
@@ -158,7 +169,7 @@ public class Shooter : MonoBehaviour
                 .OnComplete(() =>
                 {
                     // Xử lý khi đạn chạm cube
-                    OnBulletHitCube(bullet, cube);
+                    OnBulletHitCube(bullet, cube, targetBase);
                     _bulletPool.Release(bullet);
 
                     completedBullets++;
@@ -205,10 +216,13 @@ public class Shooter : MonoBehaviour
     }
 
     // Xử lý khi đạn chạm cube
-    private void OnBulletHitCube(Bullet bullet, Cube cube)
+    private void OnBulletHitCube(Bullet bullet, Cube cube, Base targetBase)
     {
-        // Thêm logic xử lý khi đạn chạm cube
-        // Ví dụ: cube.TakeDamage(), PlayHitEffect(), etc.
+        // Xóa cube khỏi slot của base
+        targetBase.RemoveCube(cube);
+        
+        // TODO: Thêm logic khác nếu cần
+        // Ví dụ: PlayHitEffect(), AddScore(), etc.
     }
 
     private void OnDestroy()
@@ -222,12 +236,13 @@ public class Shooter : MonoBehaviour
         if (State == ShooterState.Show) return;
         State = ShooterState.Show;
         _animation.Play("Show", PlayMode.StopAll);
-
     }
+    
     public void Shake()
     {
         _animation.Play("TouchLock", PlayMode.StopAll);
     }
+    
     public void Hide()
     {
         if (State == ShooterState.Hide) return;

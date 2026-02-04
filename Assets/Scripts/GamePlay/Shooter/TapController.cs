@@ -48,7 +48,7 @@ public class TapController : Singleton<TapController>
                 {
                     return;
                 }
-                if (!Board.Instance.CurrentMap.CheckCanMove(shooter.GridPosition))
+                if (!Board.Instance.CurrentMap.CanMove(shooter.GridPosition))
                 {
                     shooter.Shake();
                     return;
