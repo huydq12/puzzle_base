@@ -15,6 +15,7 @@ public enum ShooterState
 
 public class Shooter : MonoBehaviour
 {
+    private Tween _recoilTween;
     [ReadOnly] public Vector2Int GridPosition;
     [SerializeField] private Renderer _renderer;
     [SerializeField] private Transform _pointShot;
@@ -26,11 +27,12 @@ public class Shooter : MonoBehaviour
     [SerializeField] private int _remaining;
     [SerializeField] private float _bulletSpeed;
     public ShooterState State;
+    private Quaternion _lookRotation;
 
     [ReadOnly] public Holder Holder;
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public bool IsMoving;
-    
+
     public int Remaining
     {
         get => _remaining;
@@ -45,8 +47,31 @@ public class Shooter : MonoBehaviour
             }
         }
     }
+    private void PlayShootRecoil()
+    {
+        _recoilTween?.Kill();
 
+        Quaternion startRot = _lookRotation;
+
+        Vector3 recoilAxis = _lookRotation * Vector3.right;
+
+        Quaternion kickRot =
+            Quaternion.AngleAxis(-6, recoilAxis) * startRot;
+
+        Sequence sq = DOTween.Sequence();
+
+        sq.Append(
+            transform.DORotateQuaternion(kickRot, 0.06f)
+        ).SetEase(Ease.OutQuad);
+
+        sq.Append(
+            transform.DORotateQuaternion(startRot, 0.12f)
+        ).SetEase(Ease.OutBack);
+
+        _recoilTween = sq;
+    }
     private Sequence _resetLooksq;
+    private Sequence _shootSeq;
     private ObjectPool<Bullet> _bulletPool;
 
     public bool ShowRemaining
@@ -54,20 +79,20 @@ public class Shooter : MonoBehaviour
         get => _text.enabled;
         set => _text.enabled = value;
     }
-    
+
     public bool CanTrigger
     {
         get => _collider.enabled;
         set => _collider.enabled = value;
     }
-    
+
     public bool OnHolder => Holder != null;
-    
+
     private void UpdateRemaining()
     {
         _text.text = _remaining.ToString();
     }
-    
+
     private void Awake()
     {
         _bulletPool = new ObjectPool<Bullet>(
@@ -84,11 +109,12 @@ public class Shooter : MonoBehaviour
         UpdateRemaining();
         CanTrigger = true;
     }
-    
+
     private void Destroy()
     {
         if (Holder != null) Holder.AssignShooter(null);
         _resetLooksq?.Kill();
+        _shootSeq?.Kill();
         CanTrigger = false;
         float jumpHeight = 0.25f;
         float jumpUpDuration = 0.2f;
@@ -128,121 +154,116 @@ public class Shooter : MonoBehaviour
         if (targetBase == null || targetBase.IsEmpty()) return;
 
         _resetLooksq?.Kill();
+        _animation.Stop("Idle_Deck");
 
-        // Lấy tất cả cubes từ slots
-        var allCubes = targetBase.GetAllCubes();
-        if (allCubes.Count == 0) return;
 
-        // Lấy 2 cube random (hoặc ít hơn nếu base không đủ cube)
-        int shotCount = allCubes.Count;
-        var cubesToShoot = allCubes;
+        var cubesToShoot = targetBase.GetAllCubes();
+        if (cubesToShoot.Count == 0) return;
 
-        // Quay về phía base
-        Vector3 baseCenter = targetBase.transform.position;
-        Vector3 dir = baseCenter - transform.position;
-        dir.y = 0f;
+        _shootSeq = DOTween.Sequence();
 
-        if (dir.sqrMagnitude > 0.0001f)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(dir) * Quaternion.Euler(0, 180f, 0);
-            transform.rotation = targetRot;
-        }
-
-        // Đếm số viên đạn đã hoàn thành
-        int completedBullets = 0;
-
-        // Bắn đồng thời vào tất cả các cube
         foreach (var cube in cubesToShoot)
         {
             if (cube == null) continue;
 
-            // Lấy bullet từ pool
-            Bullet bullet = _bulletPool.Get();
+            Vector3 targetPos = cube.transform.position + Vector3.up * 0.025f;
+            float waitTime = Vector3.Distance(_pointShot.position, targetPos) / _bulletSpeed;
 
-            // Tính khoảng cách và thời gian di chuyển
-            float distance = Vector3.Distance(_pointShot.position, cube.transform.position);
-            float duration = distance / _bulletSpeed;
+            _shootSeq.AppendCallback(() =>
+            {
+                if (this == null || _pointShot == null) return;
 
-            // Di chuyển bullet đến cube bằng DOTween
-            bullet.transform.DOMove(cube.transform.position, duration)
-                .SetEase(Ease.Linear)
-                .OnComplete(() =>
+                Vector3 dir = targetPos - transform.position;
+                dir.y = 0f;
+
+                if (dir.sqrMagnitude > 0.0001f)
                 {
-                    // Xử lý khi đạn chạm cube
-                    OnBulletHitCube(bullet, cube, targetBase);
-                    _bulletPool.Release(bullet);
+                    _lookRotation = Quaternion.LookRotation(dir) * Quaternion.Euler(0, 180f, 0);
+                    transform.rotation = _lookRotation;
+                }
 
-                    completedBullets++;
+                PlayShootRecoil();
 
-                    // Chỉ giảm remaining và reset rotation khi TẤT CẢ viên đạn đã bay xong
-                    if (completedBullets >= shotCount)
+                Bullet bullet = _bulletPool.Get();
+
+                float distance = Vector3.Distance(_pointShot.position, targetPos);
+                float duration = distance / _bulletSpeed;
+                Remaining--;
+                bullet.transform.DOMove(targetPos, duration).SetEase(Ease.Linear)
+                    .OnComplete(() =>
                     {
-                        Remaining--;
-
-                        if (Remaining > 0)
+                        if (cube != null)
                         {
-                            _resetLooksq = DOTween.Sequence();
-                            _resetLooksq.AppendInterval(1.5f);
-                            _resetLooksq.Append(transform.DORotate(new Vector3(0, 180, 0), 0.25f));
-                            _resetLooksq.OnComplete(() => _resetLooksq = null);
+                            OnBulletHitCube(cube, targetBase);
                         }
-                    }
-                });
+                        _bulletPool.Release(bullet);
+                    });
+            });
+
+            _shootSeq.AppendInterval(waitTime);
         }
+
+        _shootSeq.OnComplete(() =>
+        {
+            if (Remaining > 0)
+            {
+                _resetLooksq = DOTween.Sequence();
+                _resetLooksq.AppendInterval(1.5f);
+                _resetLooksq.Append(transform.DORotateQuaternion(Quaternion.Euler(0, 180, 0), 0.25f));
+                _resetLooksq.OnComplete(() =>
+                {
+                    Idle();
+                    _resetLooksq = null;
+                });
+            }
+        });
     }
 
-    // Tạo bullet mới
     private Bullet CreateBullet()
     {
         Bullet newBullet = Instantiate(_bullet);
         return newBullet;
     }
 
-    // Khi lấy bullet từ pool
     private void OnGetBullet(Bullet bullet)
     {
-        bullet.transform.SetParent(_pointShot);
-        bullet.transform.localPosition = Vector3.zero;
-        bullet.transform.localRotation = Quaternion.identity;
+        bullet.transform.position = _pointShot.transform.position;
         bullet.gameObject.SetActive(true);
     }
 
-    // Khi trả bullet về pool
     private void OnReleaseBullet(Bullet bullet)
     {
-        bullet.transform.DOKill(); // Dừng mọi tween đang chạy
+        bullet.transform.DOKill();
         bullet.gameObject.SetActive(false);
-        bullet.transform.SetParent(transform); // Hoặc có thể để null
     }
 
-    // Xử lý khi đạn chạm cube
-    private void OnBulletHitCube(Bullet bullet, Cube cube, Base targetBase)
+    private void OnBulletHitCube(Cube cube, Base targetBase)
     {
-        // Xóa cube khỏi slot của base
         targetBase.RemoveCube(cube);
-        
-        // TODO: Thêm logic khác nếu cần
-        // Ví dụ: PlayHitEffect(), AddScore(), etc.
     }
 
     private void OnDestroy()
     {
-        // Clear pool khi destroy object
+        _shootSeq?.Kill();
         _bulletPool?.Clear();
     }
-
+    public void Idle()
+    {
+        _animation["Idle_Deck"].speed = 0.35f; 
+        _animation.Play("Idle_Deck", PlayMode.StopAll );
+    }
     public void Show()
     {
         if (State == ShooterState.Show) return;
         State = ShooterState.Show;
-        _animation.Play("Show", PlayMode.StopAll);
+        _animation.Play("ShooterAppear", PlayMode.StopAll);
     }
-    
+
     public void Shake()
     {
         _animation.Play("TouchLock", PlayMode.StopAll);
     }
-    
+
     public void Hide()
     {
         if (State == ShooterState.Hide) return;

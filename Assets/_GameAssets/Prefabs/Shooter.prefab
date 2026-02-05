@@ -186,6 +186,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f09b36939fe4a0781b93ae50e3b265, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _recoilAngle: 6
+  _recoilKickTime: 0.06
+  _recoilReturnTime: 0.12
+  _recoilKickEase: 6
+  _recoilReturnEase: 27
   GridPosition: {x: 2, y: 0}
   _renderer: {fileID: 2362462845019623243}
   _pointShot: {fileID: 2391203754944913717}
@@ -194,11 +199,12 @@ MonoBehaviour:
   _animation: {fileID: 2354077059102679090}
   _outline: {fileID: 7320504277396564041}
   _collider: {fileID: 2433956649585372652}
-  _bulletSpeed: 10
+  _remaining: 0
+  _bulletSpeed: 5
+  State: 0
   Holder: {fileID: 0}
   Color: 0
   IsMoving: 0
-  ColorConfig: {fileID: 11400000, guid: 2427e89443f4b46fdacc9417a3cd1fcc, type: 2}
 --- !u!114 &7320504277396564041
 MonoBehaviour:
   m_ObjectHideFlags: 0

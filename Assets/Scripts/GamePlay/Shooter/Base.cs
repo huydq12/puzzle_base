@@ -14,13 +14,13 @@ public class Base : MonoBehaviour
     [SerializeField] private LayerMask _fireLayer;
     [SerializeField] private LayerMask _routeLayer;
     [SerializeField] private Collider _collider;
-    
+
     public bool CanTrigger
     {
         get => _collider.enabled;
         set => _collider.enabled = value;
     }
-    
+
     public SplinePositioner Positioner => _positioner;
     private const int COLUMNS = 5;
 
@@ -30,19 +30,16 @@ public class Base : MonoBehaviour
         return Slots.Where(s => s.IsOccupied).Select(s => s.CubeOnSlot).ToList();
     }
 
-    // Kiểm tra base có rỗng không
     public bool IsEmpty()
     {
         return !Slots.Any(s => s.IsOccupied);
     }
 
-    // Kiểm tra base đã đầy chưa
     public bool IsFull()
     {
         return Slots.All(s => s.IsOccupied);
     }
 
-    // Đếm số cube hiện có
     public int GetCubeCount()
     {
         return Slots.Count(s => s.IsOccupied);
@@ -52,8 +49,8 @@ public class Base : MonoBehaviour
     {
         var cubes = GetAllCubes();
         if (cubes.Count == 0) return;
-        
-       // CanTrigger = false;
+
+        // CanTrigger = false;
         Sequence sq = DOTween.Sequence();
         float delay = 0f;
 
@@ -97,7 +94,6 @@ public class Base : MonoBehaviour
     {
         if (cube == null) return;
 
-        // Tìm slot trống đầu tiên
         var emptySlot = Slots.FirstOrDefault(slot => !slot.IsOccupied);
         if (emptySlot != null)
         {
@@ -121,101 +117,93 @@ public class Base : MonoBehaviour
         }
     }
 
-void OnTriggerEnter(Collider other)
-{
-    if (((1 << other.gameObject.layer) & _fireLayer.value) != 0)
+    void OnTriggerEnter(Collider other)
     {
-        var cubes = GetAllCubes();
-        if (cubes.Count == 0) return;
-
-        var firstCube = cubes[0];
-        var holder = Board.Instance.CurrentMap.Holders
-            .FirstOrDefault(h => h.IsOccupied && 
-                           h.ShooterOnholder.Color == firstCube.Color && 
-                           !h.ShooterOnholder.IsMoving);
-        
-        if (holder != null)
+        if (((1 << other.gameObject.layer) & _fireLayer.value) != 0)
         {
-            holder.ShooterOnholder.Shoot(this);
-            DestroyLine();
-        }
-    }
+            var cubes = GetAllCubes();
+            if (cubes.Count == 0) return;
 
-    // Khi Base rỗng va chạm với route layer → lấy Cubes từ queue
-    if (((1 << other.gameObject.layer) & _routeLayer.value) != 0)
-    {
-        if (IsEmpty() && !_isTransferring)
-        {
-            _isTransferring = true;
-            var route = other.GetComponent<Route>() ?? other.GetComponentInParent<Route>();
-            if (route == null || route.SplineQueue == null)
+            var firstCube = cubes[0];
+            var holder = Board.Instance.CurrentMap.Holders.FirstOrDefault(h => h.IsOccupied &&
+                               h.ShooterOnholder.Color == firstCube.Color &&
+                               !h.ShooterOnholder.IsMoving && h.ShooterOnholder.Remaining > 0);
+
+            if (holder != null)
             {
-                Debug.LogWarning("Route hoặc SplineQueue bị thiếu trên collider route!");
-                _isTransferring = false;
-                return;
+                holder.ShooterOnholder.Shoot(this);
+                DestroyLine();
             }
-            TransferCubesFromQueue(route.SplineQueue);
-            
-            // Reset flag sau một khoảng thời gian
-            DOVirtual.DelayedCall(1f, () => _isTransferring = false);
+        }
+
+        if (((1 << other.gameObject.layer) & _routeLayer.value) != 0)
+        {
+            if (IsEmpty() && !_isTransferring)
+            {
+                _isTransferring = true;
+                var route = other.GetComponent<Route>() ?? other.GetComponentInParent<Route>();
+                if (route == null || route.SplineQueue == null)
+                {
+                    _isTransferring = false;
+                    return;
+                }
+                TransferCubesFromQueue(route.SplineQueue);
+
+                DOVirtual.DelayedCall(1f, () => _isTransferring = false);
+            }
         }
     }
-}
 
- private void TransferCubesFromQueue(SplineComputer splineQueue)
-{
-    var levelMap = Board.Instance.CurrentMap;
-    
-    if (splineQueue == null)
+    private void TransferCubesFromQueue(SplineComputer splineQueue)
     {
-        Debug.LogWarning("SplineQueue null, không thể transfer!");
-        return;
-    }
+        var levelMap = Board.Instance.CurrentMap;
 
-    var lane = levelMap.GetQueueLane(splineQueue);
-    if (lane == null || lane.BasesQueue == null || lane.BasesQueue.Count == 0)
-    {
-        Debug.LogWarning("Queue rỗng, không có base nào để transfer!");
-        return;
-    }
+        if (splineQueue == null)
+        {
+            return;
+        }
 
-    // Lấy base đầu tiên trong queue
-    Base firstQueueBase = lane.BasesQueue[0];
-    
-    if (firstQueueBase == null)
-    {
-        Debug.LogWarning("Base đầu tiên trong queue null!");
-        return;
-    }
+        var lane = levelMap.GetQueueLane(splineQueue);
+        if (lane == null || lane.BasesQueue == null || lane.BasesQueue.Count == 0)
+        {
+            return;
+        }
 
-    // Lấy tất cả cubes từ base queue
-    var cubesToTransfer = firstQueueBase.GetAllCubes();
-    
-    if (cubesToTransfer.Count == 0)
-    {
-        Debug.LogWarning("Base queue không có cube nào!");
+        // Lấy base đầu tiên trong queue
+        Base firstQueueBase = lane.BasesQueue[0];
+
+        if (firstQueueBase == null)
+        {
+            return;
+        }
+
+        // Lấy tất cả cubes từ base queue
+        var cubesToTransfer = firstQueueBase.GetAllCubes();
+
+        if (cubesToTransfer.Count == 0)
+        {
+            levelMap.RemoveFirstBaseFromQueue(splineQueue);
+            return;
+        }
+
+        // Transfer từng cube sang base hiện tại
+        foreach (var cube in cubesToTransfer)
+        {
+            if (cube == null) continue;
+
+            // Xóa cube khỏi slot của queue base
+            firstQueueBase.RemoveCube(cube);
+
+            // Setup lại cube cho base mới (có thể cần update color, parent, etc.)
+            // cube.SetUp(cube.Color, this); // Nếu cần
+
+            // Gán vào slot của base hiện tại với animation
+            AddCube(cube, immediate: false);
+        }
+
+        // Sau khi transfer xong, xóa base queue đầu tiên và đẩy các base khác lên
         levelMap.RemoveFirstBaseFromQueue(splineQueue);
-        return;
     }
-
-    // Transfer từng cube sang base hiện tại
-    foreach (var cube in cubesToTransfer)
-    {
-        if (cube == null) continue;
-
-        // Xóa cube khỏi slot của queue base
-        firstQueueBase.RemoveCube(cube);
-        
-        // Setup lại cube cho base mới (có thể cần update color, parent, etc.)
-        // cube.SetUp(cube.Color, this); // Nếu cần
-        
-        // Gán vào slot của base hiện tại với animation
-        AddCube(cube, immediate: false);
-    }
-
-    // Sau khi transfer xong, xóa base queue đầu tiên và đẩy các base khác lên
-    levelMap.RemoveFirstBaseFromQueue(splineQueue);
-}
-private bool _isTransferring = false; // Flag để tránh trigger nhiều lần
+    private bool _isTransferring = false; // Flag để tránh trigger nhiều lần
 
 }
