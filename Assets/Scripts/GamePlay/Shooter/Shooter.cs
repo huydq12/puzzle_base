@@ -40,11 +40,6 @@ public class Shooter : MonoBehaviour
         {
             _remaining = Math.Max(0, value);
             UpdateRemaining();
-            if (value == 0)
-            {
-                ShowRemaining = false;
-                Destroy();
-            }
         }
     }
     private void PlayShootRecoil()
@@ -56,16 +51,16 @@ public class Shooter : MonoBehaviour
         Vector3 recoilAxis = _lookRotation * Vector3.right;
 
         Quaternion kickRot =
-            Quaternion.AngleAxis(-6, recoilAxis) * startRot;
+            Quaternion.AngleAxis(10, recoilAxis) * startRot;
 
         Sequence sq = DOTween.Sequence();
 
         sq.Append(
-            transform.DORotateQuaternion(kickRot, 0.06f)
+            _renderer.transform.DORotateQuaternion(kickRot, 0.1f)
         ).SetEase(Ease.OutQuad);
 
         sq.Append(
-            transform.DORotateQuaternion(startRot, 0.12f)
+             _renderer.transform.DORotateQuaternion(startRot, 0.15f)
         ).SetEase(Ease.OutBack);
 
         _recoilTween = sq;
@@ -73,6 +68,7 @@ public class Shooter : MonoBehaviour
     private Sequence _resetLooksq;
     private Sequence _shootSeq;
     private ObjectPool<Bullet> _bulletPool;
+    public bool IsShooting => _shootSeq != null && _shootSeq.IsActive() && _shootSeq.IsPlaying();
 
     public bool ShowRemaining
     {
@@ -112,6 +108,7 @@ public class Shooter : MonoBehaviour
 
     private void Destroy()
     {
+        ShowRemaining = false;
         if (Holder != null) Holder.AssignShooter(null);
         _resetLooksq?.Kill();
         _shootSeq?.Kill();
@@ -151,6 +148,7 @@ public class Shooter : MonoBehaviour
 
     public void Shoot(Base targetBase)
     {
+        if (IsShooting || !targetBase.CanTrigger) return;
         if (targetBase == null || targetBase.IsEmpty()) return;
 
         _resetLooksq?.Kill();
@@ -159,14 +157,14 @@ public class Shooter : MonoBehaviour
 
         var cubesToShoot = targetBase.GetAllCubes();
         if (cubesToShoot.Count == 0) return;
-
+        targetBase.CanTrigger = false;
         _shootSeq = DOTween.Sequence();
-
+        cubesToShoot.Reverse();
         foreach (var cube in cubesToShoot)
         {
             if (cube == null) continue;
 
-            Vector3 targetPos = cube.transform.position + Vector3.up * 0.025f;
+            Vector3 targetPos = cube.transform.position;
             float waitTime = Vector3.Distance(_pointShot.position, targetPos) / _bulletSpeed;
 
             _shootSeq.AppendCallback(() =>
@@ -189,18 +187,16 @@ public class Shooter : MonoBehaviour
                 float distance = Vector3.Distance(_pointShot.position, targetPos);
                 float duration = distance / _bulletSpeed;
                 Remaining--;
-                bullet.transform.DOMove(targetPos, duration).SetEase(Ease.Linear)
+                bullet.transform.SetParent(cube.transform.parent);
+                bullet.transform.DOLocalMove(Vector3.zero + Vector3.up * 0.03f, duration).SetEase(Ease.Linear)
                     .OnComplete(() =>
                     {
-                        if (cube != null)
-                        {
-                            OnBulletHitCube(cube, targetBase);
-                        }
+                        OnBulletHitCube(cube, targetBase);
                         _bulletPool.Release(bullet);
                     });
             });
 
-            _shootSeq.AppendInterval(waitTime);
+            _shootSeq.AppendInterval(0.025f);
         }
 
         _shootSeq.OnComplete(() =>
@@ -215,6 +211,10 @@ public class Shooter : MonoBehaviour
                     Idle();
                     _resetLooksq = null;
                 });
+            }
+            else
+            {
+                Destroy();
             }
         });
     }
@@ -240,6 +240,7 @@ public class Shooter : MonoBehaviour
     private void OnBulletHitCube(Cube cube, Base targetBase)
     {
         targetBase.RemoveCube(cube);
+        cube.Destroy();
     }
 
     private void OnDestroy()
@@ -249,8 +250,8 @@ public class Shooter : MonoBehaviour
     }
     public void Idle()
     {
-        _animation["Idle_Deck"].speed = 0.35f; 
-        _animation.Play("Idle_Deck", PlayMode.StopAll );
+        _animation["Idle_Deck"].speed = 0.35f;
+        _animation.Play("Idle_Deck", PlayMode.StopAll);
     }
     public void Show()
     {

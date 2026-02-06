@@ -16,6 +16,6 @@ public class Cube : MonoBehaviour
     }
     public Tween Destroy()
     {
-        return transform.DOScale(0, 0.15f).OnComplete(() => Destroy(gameObject));
+        return transform.DOScale(0, 0.25f).OnComplete(() => Destroy(gameObject));
     }
 }

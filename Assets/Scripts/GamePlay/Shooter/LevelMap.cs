@@ -21,12 +21,15 @@ public class LevelMap : SerializedMonoBehaviour
 {
     public List<ObjectColor> ColorsConveyor;
     public Holder[] Holders;
-    [ReadOnly] public List<Base> Bases;
+    [ReadOnly] public List<Base> Bases = new();
+    [ReadOnly] public List<Base> BasesOnFireRange = new();
     public SplineComputer Spline;
     [TableList] public List<QueueLane> QueueLanes = new List<QueueLane>();
     [TableMatrix(DrawElementMethod = nameof(DrawCellDataWithPreview), SquareCells = true, RowHeight = 50)]
     public CellData[,] Grid;
     private Dictionary<Base, float> _queueBaseCurrentDistances = new();
+    private readonly Dictionary<Base, Shooter> _activeShots = new();
+    private readonly List<Base> _shotsToRemove = new();
 
     [Button]
     public void addcolorqueue(ObjectColor color, int total, int index)
@@ -41,6 +44,22 @@ public class LevelMap : SerializedMonoBehaviour
         {
             ColorsConveyor.Add(color);
         }
+
+    }
+    public void AddBaseSorted(Base newBase)
+    {
+        float x = newBase.transform.position.x;
+
+        int index = BasesOnFireRange.BinarySearch(
+            newBase,
+            Comparer<Base>.Create((a, b) =>
+                a.transform.position.x.CompareTo(b.transform.position.x))
+        );
+
+        if (index < 0)
+            index = ~index; 
+
+        BasesOnFireRange.Insert(index, newBase);
     }
     void Start()
     {
@@ -165,6 +184,7 @@ public class LevelMap : SerializedMonoBehaviour
         }
 
         UpdateQueueBasesMovement();
+        TryShootBasesInRange();
     }
 
     private bool _isQueueAnimating = false;
@@ -263,6 +283,89 @@ public class LevelMap : SerializedMonoBehaviour
     {
         if (splineQueue == null || QueueLanes == null) return null;
         return QueueLanes.FirstOrDefault(lane => lane != null && lane.SplineQueue == splineQueue);
+    }
+
+    private void TryShootBasesInRange()
+    {
+        if (BasesOnFireRange == null || BasesOnFireRange.Count == 0) return;
+        if (Holders == null || Holders.Length == 0) return;
+
+        CleanupActiveShots();
+
+        for (int i = BasesOnFireRange.Count - 1; i >= 0; i--)
+        {
+            Base baseObj = BasesOnFireRange[i];
+            if (baseObj == null) continue;
+            if (_activeShots.ContainsKey(baseObj)) continue;
+
+            Cube firstCube = GetFirstCube(baseObj);
+            if (firstCube == null) continue;
+
+            Shooter shooter = FindAvailableShooter(firstCube.Color);
+            if (shooter == null) continue;
+
+            _activeShots[baseObj] = shooter;
+            shooter.Shoot(baseObj);
+        }
+    }
+
+    private void CleanupActiveShots()
+    {
+        if (_activeShots.Count == 0) return;
+
+        _shotsToRemove.Clear();
+        foreach (var kvp in _activeShots)
+        {
+            Base baseObj = kvp.Key;
+            Shooter shooter = kvp.Value;
+
+            if (baseObj == null || baseObj.IsEmpty() || shooter == null || !shooter.IsShooting)
+            {
+                _shotsToRemove.Add(baseObj);
+            }
+        }
+
+        for (int i = 0; i < _shotsToRemove.Count; i++)
+        {
+            _activeShots.Remove(_shotsToRemove[i]);
+        }
+        _shotsToRemove.Clear();
+    }
+
+    private Shooter FindAvailableShooter(ObjectColor color)
+    {
+        for (int i = 0; i < Holders.Length; i++)
+        {
+            Holder holder = Holders[i];
+            if (holder == null || !holder.IsOccupied) continue;
+
+            Shooter shooter = holder.ShooterOnholder;
+            if (shooter == null) continue;
+            if (shooter.IsMoving) continue;
+            if (shooter.Remaining <= 0) continue;
+            if (shooter.Color != color) continue;
+            if (shooter.IsShooting) continue;
+
+            return shooter;
+        }
+
+        return null;
+    }
+
+    private static Cube GetFirstCube(Base baseObj)
+    {
+        if (baseObj == null || baseObj.Slots == null) return null;
+
+        for (int i = 0; i < baseObj.Slots.Count; i++)
+        {
+            Slot slot = baseObj.Slots[i];
+            if (slot != null && slot.IsOccupied)
+            {
+                return slot.CubeOnSlot;
+            }
+        }
+
+        return null;
     }
     public QueueLane GetQueueLane(SplineComputer splineQueue)
     {

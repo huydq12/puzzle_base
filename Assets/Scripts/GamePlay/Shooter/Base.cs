@@ -45,32 +45,6 @@ public class Base : MonoBehaviour
         return Slots.Count(s => s.IsOccupied);
     }
 
-    public void DestroyLine()
-    {
-        var cubes = GetAllCubes();
-        if (cubes.Count == 0) return;
-
-        // CanTrigger = false;
-        Sequence sq = DOTween.Sequence();
-        float delay = 0f;
-
-        for (int i = cubes.Count - 1; i >= 0; i--)
-        {
-            Cube cube = cubes[i];
-            if (cube == null) continue;
-
-            sq.Insert(delay += 0.1f, cube.Destroy());
-        }
-
-        sq.OnComplete(() =>
-        {
-            // Clear tất cả slots
-            foreach (var slot in Slots)
-            {
-                slot.CubeOnSlot = null;
-            }
-        });
-    }
 
     public void RefreshSlots()
     {
@@ -116,14 +90,22 @@ public class Base : MonoBehaviour
             slot.CubeOnSlot = null;
         }
     }
+    void OnTriggerExit(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & _fireLayer.value) != 0)
+        {
+            Board.Instance.CurrentMap.BasesOnFireRange.Remove(this);
 
+        }
+    }
     void OnTriggerEnter(Collider other)
     {
         if (((1 << other.gameObject.layer) & _fireLayer.value) != 0)
         {
+            Board.Instance.CurrentMap.AddBaseSorted(this);
             var cubes = GetAllCubes();
             if (cubes.Count == 0) return;
-
+            /*
             var firstCube = cubes[0];
             var holder = Board.Instance.CurrentMap.Holders.FirstOrDefault(h => h.IsOccupied &&
                                h.ShooterOnholder.Color == firstCube.Color &&
@@ -134,6 +116,7 @@ public class Base : MonoBehaviour
                 holder.ShooterOnholder.Shoot(this);
                 DestroyLine();
             }
+            */
         }
 
         if (((1 << other.gameObject.layer) & _routeLayer.value) != 0)
