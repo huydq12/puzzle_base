@@ -197,7 +197,7 @@ namespace Dreamteck.Splines
             if (!input.isKinematic)
             {
 #if UNITY_6000_0_OR_NEWER
-                input.linearVelocity = HandleVelocity(input.linearVelocity);
+                input.velocity = HandleVelocity(input.velocity);
 #else
                 input.velocity = HandleVelocity(input.velocity);
 #endif
@@ -234,9 +234,9 @@ namespace Dreamteck.Splines
             if (!input.isKinematic)
             {
 #if UNITY_6000_OR_NEWER
-            input.linearVelocity = HandleVelocity(input.linearVelocity);
+            input.velocity = HandleVelocity(input.velocity);
 #else
-                input.linearVelocity = HandleVelocity(input.linearVelocity);
+                input.velocity = HandleVelocity(input.velocity);
 #endif
             }
             input.rotation = GetRotation(Quaternion.Euler(0f, 0f, input.rotation)).eulerAngles.z;

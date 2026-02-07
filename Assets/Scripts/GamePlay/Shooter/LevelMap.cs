@@ -32,7 +32,15 @@ public class LevelMap : SerializedMonoBehaviour
     private readonly List<Base> _shotsToRemove = new();
     private List<SplinePositioner> _arrows = new();
 
-
+    [Button]
+    public void fixfire()
+    {
+        var objs = GetComponentsInChildren<Transform>(true).Where(obj => obj.gameObject.name.Contains("TriggerSlideRoute"));
+        foreach(var obj in objs)
+        {
+            obj.GetComponent<BoxCollider>().size = Vector3.one;
+        }
+    }
     [Button]
     public void addcolorqueue(ObjectColor color, int total, int index)
     {
