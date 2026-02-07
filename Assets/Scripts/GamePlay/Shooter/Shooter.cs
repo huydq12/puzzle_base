@@ -4,7 +4,6 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.Pool;
 using System;
-using System.Linq;
 
 public enum ShooterState
 {
@@ -15,23 +14,29 @@ public enum ShooterState
 
 public class Shooter : MonoBehaviour
 {
-    private Tween _recoilTween;
+    [SerializeField, DisableInPlayMode, MinValue(1), DisableIn(PrefabKind.PrefabAsset)] private int _remaining;
     [ReadOnly] public Vector2Int GridPosition;
-    [SerializeField] private Renderer _renderer;
-    [SerializeField] private Transform _pointShot;
-    [SerializeField] private Bullet _bullet;
-    [SerializeField] private TextMeshPro _text;
-    [SerializeField] private Animation _animation;
-    [SerializeField] private Outline _outline;
-    [SerializeField] private Collider _collider;
-    [SerializeField] private int _remaining;
-    [SerializeField] private float _bulletSpeed;
-    public ShooterState State;
-    private Quaternion _lookRotation;
-
     [ReadOnly] public Holder Holder;
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public bool IsMoving;
+    [ReadOnly] public ShooterState State;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Renderer _renderer;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Transform _pointShot;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Bullet _bullet;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private TextMeshPro _text;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Animation _animation;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Outline _outline;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Collider _collider;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private ParticleSystem _muzzleEffect;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private ParticleSystem _collectEffect;
+
+    private Tween _recoilTween;
+    private Sequence _resetLooksq;
+    private Sequence _shootSeq;
+    private ObjectPool<Bullet> _bulletPool;
+    private Quaternion _lookRotation;
+    private Transform _rendererTransform;
+    private AnimationState _idleState;
 
     public int Remaining
     {
@@ -39,195 +44,185 @@ public class Shooter : MonoBehaviour
         set
         {
             _remaining = Math.Max(0, value);
-            UpdateRemaining();
+            UpdateRemainingText();
         }
     }
-    private void PlayShootRecoil()
-    {
-        _recoilTween?.Kill();
-
-        Quaternion startRot = _lookRotation;
-
-        Vector3 recoilAxis = _lookRotation * Vector3.right;
-
-        Quaternion kickRot =
-            Quaternion.AngleAxis(10, recoilAxis) * startRot;
-
-        Sequence sq = DOTween.Sequence();
-
-        sq.Append(
-            _renderer.transform.DORotateQuaternion(kickRot, 0.1f)
-        ).SetEase(Ease.OutQuad);
-
-        sq.Append(
-             _renderer.transform.DORotateQuaternion(startRot, 0.15f)
-        ).SetEase(Ease.OutBack);
-
-        _recoilTween = sq;
-    }
-    private Sequence _resetLooksq;
-    private Sequence _shootSeq;
-    private ObjectPool<Bullet> _bulletPool;
-    public bool IsShooting => _shootSeq != null && _shootSeq.IsActive() && _shootSeq.IsPlaying();
-
-    public bool ShowRemaining
-    {
-        get => _text.enabled;
-        set => _text.enabled = value;
-    }
-
-    public bool CanTrigger
-    {
-        get => _collider.enabled;
-        set => _collider.enabled = value;
-    }
-
-    public bool OnHolder => Holder != null;
-
-    private void UpdateRemaining()
+    private void UpdateRemainingText()
     {
         _text.text = _remaining.ToString();
+#if UNITY_EDITOR
+        _text.enabled = true;
+#endif
     }
+    void OnValidate()
+    {
+        UpdateRemainingText();
+    }
+
+    public bool IsShooting => _shootSeq != null && _shootSeq.IsActive();
+    public bool ShowRemaining { get => _text.enabled; set => _text.enabled = value; }
+    public bool CanTrigger { get => _collider.enabled; set => _collider.enabled = value; }
+    public bool OnHolder => Holder != null;
 
     private void Awake()
     {
+        _rendererTransform = _renderer.transform;
+        _idleState = _animation["Idle_Deck"];
+
         _bulletPool = new ObjectPool<Bullet>(
-            createFunc: () => CreateBullet(),
-            actionOnGet: (bullet) => OnGetBullet(bullet),
-            actionOnRelease: (bullet) => OnReleaseBullet(bullet),
-            actionOnDestroy: (bullet) => Destroy(bullet.gameObject),
+            createFunc: CreateBullet,
+            actionOnGet: OnGetBullet,
+            actionOnRelease: OnReleaseBullet,
+            actionOnDestroy: bullet => Destroy(bullet.gameObject),
             collectionCheck: false,
             defaultCapacity: 10,
             maxSize: 50
         );
+
         State = ShooterState.None;
         ShowRemaining = false;
-        UpdateRemaining();
+        _text.text = _remaining.ToString();
         CanTrigger = true;
     }
 
-    private void Destroy()
+    public void OnShooterOnHolder()
     {
-        ShowRemaining = false;
-        if (Holder != null) Holder.AssignShooter(null);
-        _resetLooksq?.Kill();
-        _shootSeq?.Kill();
-        CanTrigger = false;
-        float jumpHeight = 0.25f;
-        float jumpUpDuration = 0.2f;
-        float scaleDuration = 0.2f;
-
-        Vector3 startPos = transform.position;
-        Vector3 topPos = startPos + Vector3.up * jumpHeight;
-
-        Sequence seq = DOTween.Sequence();
-
-        seq.Append(
-            transform.DOMove(topPos, jumpUpDuration)
-                .SetEase(Ease.OutQuad)
-        );
-
-        seq.Append(
-            transform.DOScale(Vector3.zero, scaleDuration)
-                .SetEase(Ease.InBack)
-        );
-
-        seq.Join(
-          transform.DORotate(
-              new Vector3(0, 360, 0),
-              scaleDuration,
-              RotateMode.LocalAxisAdd
-          ).SetEase(Ease.Linear)
-      );
-
-        seq.OnComplete(() =>
-        {
-            Destroy(gameObject);
-        });
+        Idle();
+        _outline.OutlineColor = Board.Instance.ColorConfig.GetShooterOutlineColor(Color);
     }
 
     public void Shoot(Base targetBase)
     {
-        if (IsShooting || !targetBase.CanTrigger) return;
-        if (targetBase == null || targetBase.IsEmpty()) return;
-
-        _resetLooksq?.Kill();
-        _animation.Stop("Idle_Deck");
-
+        if (IsShooting || targetBase == null || targetBase.IsKill || targetBase.IsEmpty())
+            return;
 
         var cubesToShoot = targetBase.GetAllCubes();
         if (cubesToShoot.Count == 0) return;
-        targetBase.CanTrigger = false;
+        AudioManager.Instance.PlaySFX(SFXType.Shoot);
+        targetBase.IsKill = true;
+        KillTweens();
+        _animation.Stop("Idle_Deck");
+
+        if (!_muzzleEffect.isPlaying)
+            _muzzleEffect.Play();
+
         _shootSeq = DOTween.Sequence();
         cubesToShoot.Reverse();
+
         foreach (var cube in cubesToShoot)
         {
             if (cube == null) continue;
 
             Vector3 targetPos = cube.transform.position;
-            float waitTime = Vector3.Distance(_pointShot.position, targetPos) / _bulletSpeed;
+            Transform cubeParent = cube.transform.parent;
 
-            _shootSeq.AppendCallback(() =>
-            {
-                if (this == null || _pointShot == null) return;
-
-                Vector3 dir = targetPos - transform.position;
-                dir.y = 0f;
-
-                if (dir.sqrMagnitude > 0.0001f)
-                {
-                    _lookRotation = Quaternion.LookRotation(dir) * Quaternion.Euler(0, 180f, 0);
-                    transform.rotation = _lookRotation;
-                }
-
-                PlayShootRecoil();
-
-                Bullet bullet = _bulletPool.Get();
-
-                float distance = Vector3.Distance(_pointShot.position, targetPos);
-                float duration = distance / _bulletSpeed;
-                Remaining--;
-                bullet.transform.SetParent(cube.transform.parent);
-                bullet.transform.DOLocalMove(Vector3.zero + Vector3.up * 0.03f, duration).SetEase(Ease.Linear)
-                    .OnComplete(() =>
-                    {
-                        OnBulletHitCube(cube, targetBase);
-                        _bulletPool.Release(bullet);
-                    });
-            });
-
+            _shootSeq.AppendCallback(() => ShootBulletAtCube(cube, targetPos, cubeParent, targetBase));
             _shootSeq.AppendInterval(0.025f);
         }
 
-        _shootSeq.OnComplete(() =>
-        {
-            if (Remaining > 0)
+        _shootSeq.OnComplete(() => OnShootComplete());
+    }
+
+    private void ShootBulletAtCube(Cube cube, Vector3 targetPos, Transform cubeParent, Base targetBase)
+    {
+        if (this == null || _pointShot == null) return;
+
+        RotateTowardsTarget(targetPos);
+        PlayShootRecoil();
+
+        Bullet bullet = _bulletPool.Get();
+        Remaining--;
+
+        float distance = Vector3.Distance(_pointShot.position, targetPos);
+        float duration = distance / Defines.BULLET_SPEED;
+
+        bullet.transform.SetParent(cubeParent);
+        bullet.transform.DOLocalMove(Vector3.up * 0.1f, duration)
+            .SetEase(Ease.Linear)
+            .OnComplete(() =>
             {
-                _resetLooksq = DOTween.Sequence();
-                _resetLooksq.AppendInterval(1.5f);
-                _resetLooksq.Append(transform.DORotateQuaternion(Quaternion.Euler(0, 180, 0), 0.25f));
-                _resetLooksq.OnComplete(() =>
+                targetBase.RemoveCube(cube);
+                cube.Destroy();
+                _bulletPool.Release(bullet);
+            });
+    }
+
+    private void RotateTowardsTarget(Vector3 targetPos)
+    {
+        Vector3 dir = targetPos - _rendererTransform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            _lookRotation = Quaternion.LookRotation(dir) * Quaternion.Euler(0, 180f, 0);
+            _rendererTransform.rotation = _lookRotation;
+        }
+    }
+
+    private void PlayShootRecoil()
+    {
+        _recoilTween?.Kill();
+
+        Quaternion kickRot = Quaternion.AngleAxis(10, _lookRotation * Vector3.right) * _lookRotation;
+
+        _recoilTween = DOTween.Sequence()
+            .Append(_rendererTransform.DORotateQuaternion(kickRot, 0.1f).SetEase(Ease.OutQuad))
+            .Append(_rendererTransform.DORotateQuaternion(_lookRotation, 0.15f).SetEase(Ease.OutBack));
+    }
+
+    private void OnShootComplete()
+    {
+        _muzzleEffect.Stop();
+
+        if (Remaining > 0)
+        {
+            _resetLooksq = DOTween.Sequence()
+                .AppendInterval(1.5f)
+                .Append(_rendererTransform.DORotateQuaternion(Quaternion.Euler(0, 180, 0), 0.25f))
+                .OnComplete(() =>
                 {
                     Idle();
                     _resetLooksq = null;
                 });
-            }
-            else
-            {
-                Destroy();
-            }
-        });
+        }
+        else
+        {
+            DestroyShooter();
+        }
     }
 
-    private Bullet CreateBullet()
+    private void DestroyShooter()
     {
-        Bullet newBullet = Instantiate(_bullet);
-        return newBullet;
+        ShowRemaining = false;
+        KillTweens();
+        CanTrigger = false;
+
+        Vector3 topPos = _rendererTransform.position + Vector3.up * 0.25f;
+
+        DOTween.Sequence()
+            .Append(_rendererTransform.DOMove(topPos, 0.2f).SetEase(Ease.OutQuad))
+            .Append(_rendererTransform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack))
+            .Join(_rendererTransform.DORotate(new Vector3(0, 360, 0), 0.2f, RotateMode.LocalAxisAdd).SetEase(Ease.Linear))
+            .OnComplete(() =>
+            {
+                Destroy(gameObject);
+                Holder?.Clear();
+            });
+
+        _collectEffect.Play();
     }
+
+    private void KillTweens()
+    {
+        _resetLooksq?.Kill();
+        _shootSeq?.Kill();
+    }
+
+    private Bullet CreateBullet() => Instantiate(_bullet);
 
     private void OnGetBullet(Bullet bullet)
     {
-        bullet.transform.position = _pointShot.transform.position;
+        bullet.transform.position = _pointShot.position;
         bullet.gameObject.SetActive(true);
     }
 
@@ -237,22 +232,12 @@ public class Shooter : MonoBehaviour
         bullet.gameObject.SetActive(false);
     }
 
-    private void OnBulletHitCube(Cube cube, Base targetBase)
-    {
-        targetBase.RemoveCube(cube);
-        cube.Destroy();
-    }
-
-    private void OnDestroy()
-    {
-        _shootSeq?.Kill();
-        _bulletPool?.Clear();
-    }
     public void Idle()
     {
-        _animation["Idle_Deck"].speed = 0.35f;
+        _idleState.speed = 0.25f;
         _animation.Play("Idle_Deck", PlayMode.StopAll);
     }
+
     public void Show()
     {
         if (State == ShooterState.Show) return;
@@ -270,5 +255,18 @@ public class Shooter : MonoBehaviour
         if (State == ShooterState.Hide) return;
         State = ShooterState.Hide;
         _animation.Play("Hide", PlayMode.StopSameLayer);
+    }
+
+    private void OnDestroy()
+    {
+        _shootSeq?.Kill();
+        _bulletPool?.Clear();
+    }
+    [Button, DisableInPlayMode, DisableIn(PrefabKind.PrefabAsset)]
+    public void SetColor(ObjectColor color)
+    {
+        Color = color;
+        var config = Resources.Load<GameColorConfig>("Color game Config");
+        _renderer.sharedMaterials = new Material[] { config.GetShooterColor(color), config.GetShooterEye(color) };
     }
 }

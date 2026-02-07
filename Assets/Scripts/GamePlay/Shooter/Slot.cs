@@ -6,7 +6,7 @@ public class Slot : MonoBehaviour
 {
     [ReadOnly] public Cube CubeOnSlot;
     public bool IsOccupied => CubeOnSlot != null;
-    public void AssignCube(Cube cube, bool inmediate)
+    public Tween AssignCube(Cube cube, bool inmediate)
     {
         CubeOnSlot = cube;
         cube.transform.SetParent(transform);
@@ -15,13 +15,14 @@ public class Slot : MonoBehaviour
         if (inmediate)
         {
             cube.transform.localPosition = Vector3.zero;
+            return null;
         }
         else
         {
             float baseDuration = 0.125f;
-            float speed = Board.Instance != null ? Board.Instance.Speed : 1f;
-            float duration = baseDuration / Mathf.Max(speed, 0.0001f);
-            cube.transform.DOLocalMove(Vector3.zero, duration);
+            float speed = Board.Instance.Speed;
+            float duration = baseDuration / speed;
+            return cube.transform.DOLocalMove(Vector3.zero, duration);
         }
     }
 }

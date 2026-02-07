@@ -14,6 +14,7 @@ public class Board : Singleton<Board>
     [SerializeField] private float _speed = 1f;
     [SerializeField] private Cube _cubePrefab;
     [SerializeField] private Base _basePrefab;
+    [SerializeField] private GameObject _arrowPrefab;
     [SerializeField] private GameColorConfig _colorConfig;
 
     [ReadOnly] public int CurrentLevelIndex;
@@ -58,5 +59,6 @@ public class Board : Singleton<Board>
         map.transform.eulerAngles = new Vector3(0, 180, 0);
         map.GenerateBasesOnConveyor();
         map.GenerateBasesOnConveyorQueue();
+        map.SpawnArrowAlongSpline(_arrowPrefab);
     }
 }

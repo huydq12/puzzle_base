@@ -30,6 +30,8 @@ public class LevelMap : SerializedMonoBehaviour
     private Dictionary<Base, float> _queueBaseCurrentDistances = new();
     private readonly Dictionary<Base, Shooter> _activeShots = new();
     private readonly List<Base> _shotsToRemove = new();
+    private List<SplinePositioner> _arrows = new();
+
 
     [Button]
     public void addcolorqueue(ObjectColor color, int total, int index)
@@ -46,6 +48,61 @@ public class LevelMap : SerializedMonoBehaviour
         }
 
     }
+    public void SpawnArrowAlongSpline(GameObject arrowPrefab)
+    {
+        if (Spline == null) return;
+
+        foreach (var arrow in _arrows)
+        {
+            if (arrow != null) Destroy(arrow.gameObject);
+        }
+        _arrows.Clear();
+
+        float splineLength = Spline.CalculateLength();
+        int total = Mathf.Max(3, Mathf.RoundToInt(splineLength * 3f));
+
+        for (int i = 0; i < total; i++)
+        {
+            double percent = i / (double)total;
+
+            GameObject arrow = Instantiate(arrowPrefab);
+            if (arrow == null) continue;
+            arrow.transform.SetParent(Board.Instance.transform, false);
+
+            var follower = arrow.GetComponent<SplinePositioner>();
+            if (follower != null)
+            {
+                follower.spline = Spline;
+                follower.SetPercent(percent);
+                _arrows.Add(follower); 
+            }
+            else
+            {
+                SplineSample sample = Spline.Evaluate(percent);
+                arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+            }
+        }
+    }
+    private void UpdateArrowsMovement()
+    {
+        if (_arrows == null || _arrows.Count == 0 || Spline == null) return;
+
+        float splineLength = Spline.CalculateLength();
+        if (splineLength < 0.0001f) return;
+
+        float percentPerSecond = Board.Instance.Speed / splineLength;
+        float basePercent = Time.time * percentPerSecond % 1f;
+        int count = _arrows.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            var arrow = _arrows[i];
+            if (arrow == null) continue;
+
+            float offset = (float)i / count;
+            arrow.SetPercent((basePercent + offset) % 1f);
+        }
+    }
     public void AddBaseSorted(Base newBase)
     {
         float x = newBase.transform.position.x;
@@ -57,7 +114,7 @@ public class LevelMap : SerializedMonoBehaviour
         );
 
         if (index < 0)
-            index = ~index; 
+            index = ~index;
 
         BasesOnFireRange.Insert(index, newBase);
     }
@@ -167,7 +224,7 @@ public class LevelMap : SerializedMonoBehaviour
     }
     private void Update()
     {
-        // Di chuyển Bases trên Spline chính
+        UpdateArrowsMovement();
         if (Bases != null && Bases.Count > 0)
         {
             float splineLength = Spline != null ? Spline.CalculateLength() : 0f;
@@ -585,7 +642,6 @@ public class LevelMap : SerializedMonoBehaviour
                 var cube = Instantiate(Board.Instance.CubePrefab, transform);
                 cube.SetUp(ColorsConveyor[colorIndex], newBases[i]);
 
-                // Sử dụng AddCube
                 newBases[i].AddCube(cube, immediate: true);
 
                 colorIndex++;

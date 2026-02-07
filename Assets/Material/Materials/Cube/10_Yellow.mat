@@ -10,10 +10,13 @@ Material:
   m_Name: 10_Yellow
   m_Shader: {fileID: -6465566751694194690, guid: edd7abf643fa4bc4e8561d4c280c97cf,
     type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - TCP2_RAMP_BANDS
   - TCP2_REFLECTIONS_FRESNEL
   - TCP2_RIM_LIGHTING_LIGHTMASK
+  - TCP2_SHADOW_TEXTURE
   - TCP2_SPECULAR
   - _RECEIVE_SHADOWS_OFF
   m_InvalidKeywords:
@@ -25,6 +28,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -187,7 +191,7 @@ Material:
     - _UseReflections: 0
     - _UseRim: 0
     - _UseRimLightMask: 1
-    - _UseShadowTexture: 0
+    - _UseShadowTexture: 1
     - _UseSpecular: 1
     - _WorkflowMode: 0
     - _ZWrite: 1
@@ -204,6 +208,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SpecularColor: {r: 0.564, g: 0.564, b: 0.564, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &2719579668487608436
 MonoBehaviour:
   m_ObjectHideFlags: 11

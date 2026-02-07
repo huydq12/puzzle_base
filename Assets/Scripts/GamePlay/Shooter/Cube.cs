@@ -6,7 +6,8 @@ public class Cube : MonoBehaviour
 {
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public Base Base;
-    [SerializeField] private Renderer _renderer;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private Renderer _renderer;
+    [SerializeField, DisableIn(PrefabKind.PrefabInstance)] private ParticleSystem _impactEffect;
 
     public void SetUp(ObjectColor color, Base bs)
     {
@@ -16,6 +17,7 @@ public class Cube : MonoBehaviour
     }
     public Tween Destroy()
     {
+        Instantiate(_impactEffect, transform.position, Quaternion.identity);
         return transform.DOScale(0, 0.25f).OnComplete(() => Destroy(gameObject));
     }
 }
