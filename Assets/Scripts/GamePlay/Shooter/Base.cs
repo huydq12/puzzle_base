@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DG.Tweening;
 using Dreamteck.Splines;
 using Sirenix.OdinInspector;
@@ -20,14 +19,37 @@ public class Base : MonoBehaviour
     public SplinePositioner Positioner => _positioner;
     private const int COLUMNS = 5;
 
-    public List<Cube> GetAllCubes()
+    private static readonly List<Cube> _cubeBuffer = new();
+
+    public List<Cube> GetAllCubes(bool reverse = false)
     {
-        return Slots.Where(s => s.IsOccupied).Select(s => s.CubeOnSlot).ToList();
+        _cubeBuffer.Clear();
+        if (reverse)
+        {
+            for (int i = Slots.Count - 1; i >= 0; i--)
+            {
+                if (Slots[i].IsOccupied)
+                    _cubeBuffer.Add(Slots[i].CubeOnSlot);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < Slots.Count; i++)
+            {
+                if (Slots[i].IsOccupied)
+                    _cubeBuffer.Add(Slots[i].CubeOnSlot);
+            }
+        }
+        return _cubeBuffer;
     }
 
     public bool IsEmpty()
     {
-        return !Slots.Any(s => s.IsOccupied);
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].IsOccupied) return false;
+        }
+        return true;
     }
 
     public void RefreshSlots()
@@ -52,26 +74,25 @@ public class Base : MonoBehaviour
     {
         if (cube == null) return null;
 
-        var emptySlot = Slots.FirstOrDefault(slot => !slot.IsOccupied);
-        if (emptySlot != null)
+        for (int i = 0; i < Slots.Count; i++)
         {
-            return emptySlot.AssignCube(cube, immediate);
+            if (!Slots[i].IsOccupied)
+                return Slots[i].AssignCube(cube, immediate);
         }
-        else
-        {
-            return null;
-        }
+        return null;
     }
 
     public void RemoveCube(Cube cube)
     {
         if (cube == null) return;
 
-        // Tìm slot chứa cube này
-        var slot = Slots.FirstOrDefault(s => s.CubeOnSlot == cube);
-        if (slot != null)
+        for (int i = 0; i < Slots.Count; i++)
         {
-            slot.CubeOnSlot = null;
+            if (Slots[i].CubeOnSlot == cube)
+            {
+                Slots[i].CubeOnSlot = null;
+                return;
+            }
         }
     }
     void OnTriggerExit(Collider other)

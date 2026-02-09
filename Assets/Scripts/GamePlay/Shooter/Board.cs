@@ -25,11 +25,6 @@ public class Board : Singleton<Board>
     public Base BasePrefab => _basePrefab;
     public Cube CubePrefab => _cubePrefab;
 
-    protected override void Awake()
-    {
-        base.Awake();
-    }
-
     public void SetupLevel(int level, LevelMap map)
     {
         if (map == null)

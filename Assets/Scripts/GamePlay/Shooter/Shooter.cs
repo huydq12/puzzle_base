@@ -96,7 +96,7 @@ public class Shooter : MonoBehaviour
         if (IsShooting || targetBase == null || targetBase.IsKill || targetBase.IsEmpty())
             return;
 
-        var cubesToShoot = targetBase.GetAllCubes();
+        var cubesToShoot = targetBase.GetAllCubes(true);
         if (cubesToShoot.Count == 0) return;
         AudioManager.Instance.PlaySFX(SFXType.Shoot);
         targetBase.IsKill = true;
@@ -107,7 +107,6 @@ public class Shooter : MonoBehaviour
             _muzzleEffect.Play();
 
         _shootSeq = DOTween.Sequence();
-        cubesToShoot.Reverse();
 
         foreach (var cube in cubesToShoot)
         {
@@ -120,7 +119,7 @@ public class Shooter : MonoBehaviour
             _shootSeq.AppendInterval(0.025f);
         }
 
-        _shootSeq.OnComplete(() => OnShootComplete());
+        _shootSeq.OnComplete(OnShootComplete);
     }
 
     private void ShootBulletAtCube(Cube cube, Vector3 targetPos, Transform cubeParent, Base targetBase)
@@ -247,6 +246,7 @@ public class Shooter : MonoBehaviour
 
     public void Shake()
     {
+        AudioManager.Instance.PlaySFX(SFXType.SelectWrong);
         _animation.Play("TouchLock", PlayMode.StopAll);
     }
 
@@ -259,6 +259,8 @@ public class Shooter : MonoBehaviour
 
     private void OnDestroy()
     {
+        _recoilTween?.Kill();
+        _resetLooksq?.Kill();
         _shootSeq?.Kill();
         _bulletPool?.Clear();
     }

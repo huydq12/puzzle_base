@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Dreamteck.Splines;
 using Sirenix.OdinInspector;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 public class CellData
 {
@@ -31,18 +33,10 @@ public class LevelMap : SerializedMonoBehaviour
     private readonly Dictionary<Base, Shooter> _activeShots = new();
     private readonly List<Base> _shotsToRemove = new();
     private List<SplinePositioner> _arrows = new();
+    private bool[,] _bfsVisited;
 
     [Button]
-    public void fixfire()
-    {
-        var objs = GetComponentsInChildren<Transform>(true).Where(obj => obj.gameObject.name.Contains("TriggerSlideRoute"));
-        foreach(var obj in objs)
-        {
-            obj.GetComponent<BoxCollider>().size = Vector3.one;
-        }
-    }
-    [Button]
-    public void addcolorqueue(ObjectColor color, int total, int index)
+    public void Addcolorqueue(ObjectColor color, int total, int index)
     {
         for (int i = 1; i <= total; i++)
             QueueLanes[index].ColorsConveyorQueue.Add(color);
@@ -91,14 +85,10 @@ public class LevelMap : SerializedMonoBehaviour
             }
         }
     }
-    private void UpdateArrowsMovement()
+    private void UpdateArrowsMovement(float splineLength, float percentPerSecond)
     {
-        if (_arrows == null || _arrows.Count == 0 || Spline == null) return;
+        if (_arrows == null || _arrows.Count == 0) return;
 
-        float splineLength = Spline.CalculateLength();
-        if (splineLength < 0.0001f) return;
-
-        float percentPerSecond = Board.Instance.Speed / splineLength;
         float basePercent = Time.time * percentPerSecond % 1f;
         int count = _arrows.Count;
 
@@ -141,9 +131,6 @@ public class LevelMap : SerializedMonoBehaviour
         int cols = Grid.GetLength(0);
         int rows = Grid.GetLength(1);
 
-        List<Shooter> canMoveShooters = new List<Shooter>();
-        List<Shooter> cannotMoveShooters = new List<Shooter>();
-
         for (int c = 0; c < cols; c++)
         {
             for (int r = 0; r < rows; r++)
@@ -152,19 +139,10 @@ public class LevelMap : SerializedMonoBehaviour
 
                 if (cell.Shooter != null)
                 {
-                    Vector2Int pos = new Vector2Int(c, r);
-
-                    if (CanMove(pos))
-                    {
-                        canMoveShooters.Add(cell.Shooter);
+                    if (CanMove(new Vector2Int(c, r)))
                         cell.Shooter.Show();
-                    }
                     else
-                    {
-                        cannotMoveShooters.Add(cell.Shooter);
-
                         cell.Shooter.Hide();
-                    }
                 }
             }
         }
@@ -186,10 +164,14 @@ public class LevelMap : SerializedMonoBehaviour
         if (Grid[x, y].Shooter == null) return false;
 
         // BFS tìm đường ra ngoài grid (row >= rows) - tức là đi xuống ra khỏi board
-        var visited = new bool[cols, rows];
+        if (_bfsVisited == null || _bfsVisited.GetLength(0) != cols || _bfsVisited.GetLength(1) != rows)
+            _bfsVisited = new bool[cols, rows];
+        else
+            System.Array.Clear(_bfsVisited, 0, _bfsVisited.Length);
+
         var queue = new Queue<Vector2Int>();
         queue.Enqueue(shooterPos);
-        visited[x, y] = true;
+        _bfsVisited[x, y] = true;
 
         // 4 hướng: lên, xuống, trái, phải
         int[] dx = { 0, 0, -1, 1 };
@@ -212,7 +194,7 @@ public class LevelMap : SerializedMonoBehaviour
 
                 // Bỏ qua nếu ra ngoài biên khác hoặc đã visited
                 if (nx < 0 || nx >= cols || ny < 0) continue;
-                if (visited[nx, ny]) continue;
+                if (_bfsVisited[nx, ny]) continue;
 
                 CellData nextCell = Grid[nx, ny];
 
@@ -223,7 +205,7 @@ public class LevelMap : SerializedMonoBehaviour
                 if (nextCell.Shooter != null) continue;
 
                 // ✅ Ô trống → có thể đi qua
-                visited[nx, ny] = true;
+                _bfsVisited[nx, ny] = true;
                 queue.Enqueue(new Vector2Int(nx, ny));
             }
         }
@@ -232,11 +214,13 @@ public class LevelMap : SerializedMonoBehaviour
     }
     private void Update()
     {
-        UpdateArrowsMovement();
+        float splineLength = Spline != null ? Spline.CalculateLength() : 0f;
+        float percentPerSecond = splineLength > 0.0001f ? (Board.Instance.Speed / splineLength) : 0f;
+
+        UpdateArrowsMovement(splineLength, percentPerSecond);
+
         if (Bases != null && Bases.Count > 0)
         {
-            float splineLength = Spline != null ? Spline.CalculateLength() : 0f;
-            float percentPerSecond = splineLength > 0.0001f ? (Board.Instance.Speed / splineLength) : 0f;
             float basePercent = Time.time * percentPerSecond % 1f;
             int count = Bases.Count;
 
@@ -252,55 +236,60 @@ public class LevelMap : SerializedMonoBehaviour
         TryShootBasesInRange();
     }
 
+    private const float QUEUE_SNAP_THRESHOLD = 0.01f;
     private bool _isQueueAnimating = false;
-    private Dictionary<Base, float> _queueBaseVelocities = new();
+    private readonly Dictionary<Base, float> _queueBaseVelocities = new();
+    private readonly Dictionary<SplineComputer, float> _queueSplineLengths = new();
     private void UpdateQueueBasesMovement()
     {
-        if (QueueLanes == null || QueueLanes.Count == 0)
-        {
-            return;
-        }
+        if (QueueLanes == null || QueueLanes.Count == 0) return;
+        if (!_isQueueAnimating) return;
 
         bool allAtTarget = true;
         foreach (var lane in QueueLanes)
         {
             if (lane == null || lane.SplineQueue == null || lane.BasesQueue == null || lane.BasesQueue.Count == 0)
-            {
                 continue;
-            }
 
-            float splineLength = lane.SplineQueue.CalculateLength();
+            if (!_queueSplineLengths.TryGetValue(lane.SplineQueue, out float splineLength))
+            {
+                splineLength = lane.SplineQueue.CalculateLength();
+                _queueSplineLengths[lane.SplineQueue] = splineLength;
+            }
 
             for (int i = 0; i < lane.BasesQueue.Count; i++)
             {
                 Base baseObj = lane.BasesQueue[i];
                 if (baseObj == null) continue;
 
-                // Vị trí mục tiêu dựa trên index hiện tại
                 float targetDistanceFromStart = Mathf.Clamp(
                     splineLength - (i * Defines.QUEUE_BASE_OFFSET),
                     0f,
                     splineLength
                 );
 
-                float distanceFromStart;
-
-                // ✅ Khởi tạo vị trí ban đầu nếu chưa có
-                if (!_queueBaseCurrentDistances.ContainsKey(baseObj))
+                if (!_queueBaseCurrentDistances.TryGetValue(baseObj, out float currentDist))
                 {
-                    float approxDist = (float)(baseObj.Positioner.GetPercent() * splineLength);
-                    _queueBaseCurrentDistances[baseObj] = approxDist;
+                    currentDist = (float)(baseObj.Positioner.GetPercent() * splineLength);
+                    _queueBaseCurrentDistances[baseObj] = currentDist;
                 }
 
-                if (_isQueueAnimating)
-                {
-                    float currentDist = _queueBaseCurrentDistances[baseObj];
-                    if (!_queueBaseVelocities.TryGetValue(baseObj, out float velocity))
-                    {
-                        velocity = 0f;
-                    }
+                float distanceFromStart;
+                float gap = Mathf.Abs(currentDist - targetDistanceFromStart);
 
-                    float smoothTime = GetQueueSmoothTime(currentDist, targetDistanceFromStart, splineLength);
+                if (gap < QUEUE_SNAP_THRESHOLD)
+                {
+                    distanceFromStart = targetDistanceFromStart;
+                    _queueBaseVelocities.Remove(baseObj);
+                }
+                else
+                {
+                    allAtTarget = false;
+
+                    if (!_queueBaseVelocities.TryGetValue(baseObj, out float velocity))
+                        velocity = 0f;
+
+                    float smoothTime = GetQueueSmoothTime(currentDist, targetDistanceFromStart);
                     distanceFromStart = Mathf.SmoothDamp(
                         currentDist,
                         targetDistanceFromStart,
@@ -311,40 +300,29 @@ public class LevelMap : SerializedMonoBehaviour
                     );
 
                     _queueBaseVelocities[baseObj] = velocity;
-                    if (Mathf.Abs(distanceFromStart - targetDistanceFromStart) > 0)
-                    {
-                        allAtTarget = false;
-                    }
-                }
-                else
-                {
-                    distanceFromStart = targetDistanceFromStart;
-                    _queueBaseVelocities[baseObj] = 0f;
                 }
 
-                // ✅ Cập nhật vị trí hiện tại trong dictionary
                 _queueBaseCurrentDistances[baseObj] = distanceFromStart;
 
-                // Chuyển distance thành percent
                 double percent = lane.SplineQueue.Travel(0, distanceFromStart);
                 baseObj.Positioner.SetPercent(percent);
             }
         }
 
-        if (_isQueueAnimating && allAtTarget)
+        if (allAtTarget)
         {
             _isQueueAnimating = false;
             _queueBaseVelocities.Clear();
         }
     }
-    private float GetQueueSmoothTime(float currentDist, float targetDist, float splineLength)
+    private float GetQueueSmoothTime(float currentDist, float targetDist)
     {
         float speedDistPerSec = Mathf.Max(Board.Instance.Speed, 0.0001f);
         float distance = Mathf.Abs(targetDist - currentDist);
-        float duration = distance / Mathf.Max(speedDistPerSec, 0.0001f);
+        float duration = distance / speedDistPerSec;
         return Mathf.Max(duration, 0.0001f);
     }
-    private QueueLane FindQueueLane(SplineComputer splineQueue)
+    public QueueLane GetQueueLane(SplineComputer splineQueue)
     {
         if (splineQueue == null || QueueLanes == null) return null;
         return QueueLanes.FirstOrDefault(lane => lane != null && lane.SplineQueue == splineQueue);
@@ -432,70 +410,10 @@ public class LevelMap : SerializedMonoBehaviour
 
         return null;
     }
-    public QueueLane GetQueueLane(SplineComputer splineQueue)
-    {
-        return FindQueueLane(splineQueue);
-    }
-    public void RecreateAllHolderPrefabs(
-    GameObject holderPrefab)
-    {
-        List<GameObject> holders = GetComponentsInChildren<Transform>(true)
-     .Select(t => t.gameObject)
-     .Where(go =>
-         go != null &&
-         go.name.Contains("Shooter", StringComparison.OrdinalIgnoreCase) &&
-         go.TryGetComponent<BoxCollider>(out _))
-     .ToList();
-
-        foreach (var go in holders)
-        {
-            if (go == null)
-                continue;
-
-            // --- Lưu transform ---
-            Transform parent = go.transform.parent;
-            int siblingIndex = go.transform.GetSiblingIndex();
-            Vector3 localPos = go.transform.localPosition;
-            Quaternion localRot = go.transform.localRotation;
-            Vector3 localScale = go.transform.localScale;
-            string oldName = go.name;
-            // --- Destroy old ---
-            Undo.DestroyObjectImmediate(go);
-
-            // --- Instantiate prefab ---
-            GameObject newHolder =
-                (GameObject)PrefabUtility.InstantiatePrefab(holderPrefab);
-
-            Undo.RegisterCreatedObjectUndo(newHolder, "Recreate Holder");
-
-            newHolder.transform.SetParent(parent, false);
-            newHolder.transform.SetSiblingIndex(siblingIndex);
-            newHolder.transform.localPosition = localPos;
-            newHolder.transform.localRotation = localRot;
-            newHolder.transform.localScale = localScale;
-
-            newHolder.name = oldName;
-        }
-
-    }
-    private Transform FindChildContainName(Transform parent, string keyword)
-    {
-        foreach (Transform child in parent)
-        {
-            if (child.name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                return child;
-
-            Transform found = FindChildContainName(child, keyword);
-            if (found != null)
-                return found;
-        }
-        return null;
-    }
-
 
     public void RemoveFirstBaseFromQueue(SplineComputer splineQueue)
     {
-        QueueLane lane = FindQueueLane(splineQueue);
+        QueueLane lane = GetQueueLane(splineQueue);
         if (lane == null || lane.BasesQueue == null || lane.BasesQueue.Count == 0)
         {
             Debug.LogWarning("BasesQueue trống hoặc chưa được khởi tạo!");
@@ -504,14 +422,8 @@ public class LevelMap : SerializedMonoBehaviour
 
         Base firstBase = lane.BasesQueue[0];
 
-        if (_queueBaseCurrentDistances.ContainsKey(firstBase))
-        {
-            _queueBaseCurrentDistances.Remove(firstBase);
-        }
-        if (_queueBaseVelocities.ContainsKey(firstBase))
-        {
-            _queueBaseVelocities.Remove(firstBase);
-        }
+        _queueBaseCurrentDistances.Remove(firstBase);
+        _queueBaseVelocities.Remove(firstBase);
 
         lane.BasesQueue.RemoveAt(0);
 
@@ -550,6 +462,7 @@ public class LevelMap : SerializedMonoBehaviour
 
         int requiredBases = Mathf.CeilToInt((float)colorCount / 5);
         float splineLength = lane.SplineQueue.CalculateLength();
+        _queueSplineLengths[lane.SplineQueue] = splineLength;
 
         _queueBaseCurrentDistances.Clear();
 
@@ -576,8 +489,7 @@ public class LevelMap : SerializedMonoBehaviour
             follower.SetPercent(percent);
 
             SplineSample sample = lane.SplineQueue.Evaluate(percent);
-            newBases[i].transform.position = sample.position;
-            newBases[i].transform.rotation = sample.rotation;
+            newBases[i].transform.SetPositionAndRotation(sample.position, sample.rotation);
 
             _queueBaseCurrentDistances[newBases[i]] = distanceFromStart;
 
@@ -630,8 +542,7 @@ public class LevelMap : SerializedMonoBehaviour
             follower.SetPercent(percent);
 
             SplineSample sample = Spline.Evaluate(percent);
-            newBases[i].transform.position = sample.position;
-            newBases[i].transform.rotation = sample.rotation;
+            newBases[i].transform.SetPositionAndRotation(sample.position, sample.rotation);
         }
 
         int colorIndex = 0;
