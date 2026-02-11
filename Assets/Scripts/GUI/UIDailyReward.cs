@@ -28,6 +28,8 @@ public class UIDailyReward : UIPopup
 
     [SerializeField] private Text userCoinTxt;
 
+    private readonly List<GameObject> activeFx = new List<GameObject>();
+
     private void Start()
     {
         if (!GameManager.Instance.userData.isFirstClaimDailyReward)
@@ -137,22 +139,57 @@ public class UIDailyReward : UIPopup
 
     private void Flying()
     {
-        GameObject go = Instantiate(m_CurrencyPrefab, bubblePos.transform);
-        go.transform.position = bubblePos.transform.position;
-        go.transform.DORotate(new Vector3(0, 0, Random.Range(0, 180)), .5f).SetEase(Ease.Linear);
-        go.transform.DOLocalMove(new Vector3(Random.Range(-300, 300), Random.Range(-300, 300), 0), .5f).OnComplete(() =>
-        {
-            //AudioManager.instance.PlaySfx("filppaper", 1f);
-            go.transform.DORotate(new Vector3(0, 0, 70), .3f).SetEase(Ease.Linear);
-            go.transform.DOScale(new Vector3(0, 0, 0), 1.7f);
-            go.transform.DOMove(target.position, .5f)
-            .OnComplete(() =>
-            {
+        if (m_CurrencyPrefab == null || bubblePos == null || target == null) return;
 
-            });
+        GameObject go = Instantiate(m_CurrencyPrefab, bubblePos.transform);
+        if (go == null) return;
+
+        activeFx.Add(go);
+
+        go.transform.position = bubblePos.transform.position;
+        DOTween.Kill(go.transform, false);
+
+        go.transform.DORotate(new Vector3(0, 0, Random.Range(0, 180)), 0.5f).SetEase(Ease.Linear);
+        go.transform.DOLocalMove(new Vector3(Random.Range(-300, 300), Random.Range(-300, 300), 0), 0.5f).OnComplete(() =>
+        {
+            if (go == null || !go.activeInHierarchy) return;
+            go.transform.DORotate(new Vector3(0, 0, 70), 0.3f).SetEase(Ease.Linear);
+            go.transform.DOScale(Vector3.zero, 1.7f);
+            go.transform.DOMove(target.position, 0.5f)
+                .OnComplete(() =>
+                {
+                    if (go == null) return;
+                    DOTween.Kill(go.transform, false);
+                    activeFx.Remove(go);
+                    Destroy(go);
+                });
         });
     }
 
+    public override void Hide()
+    {
+        CleanupFx();
+        StopAllCoroutines();
+        base.Hide();
+    }
+
+    protected override void OnDestroy()
+    {
+        CleanupFx();
+        base.OnDestroy();
+    }
+
+    private void CleanupFx()
+    {
+        for (int i = activeFx.Count - 1; i >= 0; i--)
+        {
+            var go = activeFx[i];
+            if (go == null) continue;
+            DOTween.Kill(go.transform, false);
+            Destroy(go);
+        }
+        activeFx.Clear();
+    }
 }
 
 

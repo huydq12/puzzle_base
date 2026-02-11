@@ -65,8 +65,9 @@ public class UIHome : UIElement
         GameUI.Instance.Get<UIDailyReward>().Show();
     }
     
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         Game.Update.RemoveTask(UpdateHeatCountdown);
 
         var heatManager = HeatManager.TryGetInstance();

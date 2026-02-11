@@ -39,8 +39,9 @@ public class UIPopupNoHeat : UIPopup
         Game.Update.RemoveTask(UpdateCountdown);
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         Game.Update.RemoveTask(UpdateCountdown);
     }
     

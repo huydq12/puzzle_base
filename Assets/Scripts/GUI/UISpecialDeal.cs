@@ -234,8 +234,9 @@ public class UISpecialDeal : UIPopup
         );
     }
     
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         if (btn_buy != null)
         {
             btn_buy.onClick.RemoveListener(OnBuyClicked);

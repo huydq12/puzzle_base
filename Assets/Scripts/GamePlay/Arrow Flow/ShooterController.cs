@@ -129,4 +129,22 @@ public class ShooterController : Singleton<ShooterController>
         chosen.SetRainbow();
         return true;
     }
+
+    public bool CanConvertRandomShooterToRainbow()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            var gate = Gates[i];
+            if (gate == null || gate.IsClosed) continue;
+
+            var shooter = gate.CurrentShooter;
+            if (shooter == null) continue;
+            if (shooter.Total <= 0) continue;
+            return true;
+        }
+
+        return false;
+    }
 }

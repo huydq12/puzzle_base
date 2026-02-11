@@ -652,8 +652,9 @@ public class UIProfile : UIPopup
         return 1;
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         if (btn_changeName != null)
             btn_changeName.onClick.RemoveAllListeners();
         if (btn_tabAvatar != null)

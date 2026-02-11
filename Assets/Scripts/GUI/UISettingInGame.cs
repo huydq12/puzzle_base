@@ -26,7 +26,15 @@ public class UISettingInGame : UIPopup
     protected override void Start()
     {
         base.Start();
-       // userData = GameManagerInGame.Instance.userData;
+        var gameManagerInGame = GameManagerInGame.Instance;
+        if (gameManagerInGame != null)
+        {
+            userData = gameManagerInGame.userData;
+        }
+        else if (GameManager.Instance != null)
+        {
+            userData = GameManager.Instance.userData;
+        }
 
         // Đăng ký sự kiện click cho các button
         btnSFX.onClick.AddListener(ToggleSound);
@@ -83,6 +91,7 @@ public class UISettingInGame : UIPopup
 
     private void UpdateUI()
     {
+        if (userData == null) return;
         UpdateSoundUI();
         UpdateMusicUI();
         UpdateVibrateUI();
@@ -90,6 +99,7 @@ public class UISettingInGame : UIPopup
 
     private void UpdateSoundUI()
     {
+        if (userData == null) return;
         if (soundOnIcon != null && soundOffIcon != null)
         {
             soundOnIcon.SetActive(userData.soundOn);
@@ -99,6 +109,7 @@ public class UISettingInGame : UIPopup
 
     private void UpdateMusicUI()
     {
+        if (userData == null) return;
         if (musicOnIcon != null && musicOffIcon != null)
         {
             musicOnIcon.SetActive(userData.musicOn);
@@ -108,6 +119,7 @@ public class UISettingInGame : UIPopup
 
     private void UpdateVibrateUI()
     {
+        if (userData == null) return;
         if (vibrateOnIcon != null && vibrateOffIcon != null)
         {
             vibrateOnIcon.SetActive(userData.vibrateOn);

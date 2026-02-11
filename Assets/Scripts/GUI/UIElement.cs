@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using DG.Tweening;
 
 public abstract class UIElement : MonoBehaviour
 {
@@ -8,6 +9,20 @@ public abstract class UIElement : MonoBehaviour
     public abstract bool DestroyOnHide { get; }
     public abstract bool UseBehindPanel { get; }
     [SerializeField] public GameObject holder;
+
+    protected void KillTweensInHierarchy(bool complete = false)
+    {
+        this.DOKill(complete);
+
+        var transforms = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            var t = transforms[i];
+            if (t == null) continue;
+            t.DOKill(complete);
+        }
+    }
+
     public virtual void Show(Action hidden)
     {
         onHidden = hidden;
@@ -15,12 +30,14 @@ public abstract class UIElement : MonoBehaviour
     }
     public virtual void Show()
     {
+        KillTweensInHierarchy(false);
         GameUI.Instance.Submit(this);
         if (holder != null)
             holder?.SetActive(true);
     }
     public virtual void Hide()
     {
+        KillTweensInHierarchy(false);
         GameUI.Instance.Unsubmit(this);
         onHidden?.Invoke();
         if (DestroyOnHide)
@@ -43,5 +60,10 @@ public abstract class UIElement : MonoBehaviour
     protected virtual void Awake()
     {
         GameUI.Instance.Register(this);
+    }
+
+    protected virtual void OnDestroy()
+    {
+        KillTweensInHierarchy(false);
     }
 }

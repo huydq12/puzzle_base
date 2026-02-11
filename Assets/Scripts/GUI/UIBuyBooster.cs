@@ -9,6 +9,9 @@ public class UIBuyBooster : UIPopup
     [SerializeField] private TextMeshProUGUI txt_coin;
 
     [SerializeField] private Button btn_buy;
+    [SerializeField] private Image img_buy;
+    [SerializeField] private Sprite spriteBuy;
+    [SerializeField] private Sprite spriteBuyDisabled;
     [SerializeField] private TextMeshProUGUI txt_title;
     [SerializeField] private TextMeshProUGUI txt_price;
     [SerializeField] private Image img_booster;
@@ -28,6 +31,8 @@ public class UIBuyBooster : UIPopup
     [SerializeField] private int priceBooster3 = 200;
     [SerializeField] private int priceBooster4 = 250;
 
+
+    [SerializeField] private TextMeshProUGUI txt_amountPerBuy;
     [SerializeField] private int amountPerBuy = 1;
 
     protected override void Start()
@@ -53,7 +58,9 @@ public class UIBuyBooster : UIPopup
 
     private void RefreshView()
     {
-        int price = GetPrice();
+        int price = GetPrice() * amountPerBuy;
+
+        txt_amountPerBuy.text = "x" + amountPerBuy.ToString();
 
         if (txt_coin != null)
         {
@@ -72,7 +79,8 @@ public class UIBuyBooster : UIPopup
 
         if (btn_buy != null)
         {
-            btn_buy.interactable = InventoryManager.Instance != null && InventoryManager.Instance.HasEnoughCoin(price);
+            // btn_buy.interactable = InventoryManager.Instance != null && InventoryManager.Instance.HasEnoughCoin(price);
+            img_buy.sprite = InventoryManager.Instance.HasEnoughCoin(price) ? spriteBuy : spriteBuyDisabled;
         }
 
         if (img_booster != null)

@@ -175,6 +175,34 @@ public class Board : Singleton<Board>
         TryUseBooster(BoosterType.Rainbow);
     }
 
+    public bool CanActivateBooster(BoosterType type)
+    {
+        switch (type)
+        {
+            case BoosterType.Hammer:
+                if (Cells == null) return false;
+                int w = Cells.GetLength(0);
+                int h = Cells.GetLength(1);
+                for (int x = 0; x < w; x++)
+                {
+                    for (int y = 0; y < h; y++)
+                    {
+                        if (Cells[x, y].IsOccupied) return true;
+                    }
+                }
+                return false;
+
+            case BoosterType.Conveyor:
+                return ConveyorController.Instance != null && ConveyorController.Instance.HasAnyCubeOnConveyor();
+
+            case BoosterType.Rainbow:
+                return ShooterController.Instance != null && ShooterController.Instance.CanConvertRandomShooterToRainbow();
+
+            default:
+                return true;
+        }
+    }
+
     private void TryUseBooster(BoosterType type)
     {
         if (CurrentBooster != BoosterType.None)

@@ -173,6 +173,12 @@ public class UIBottomInGame : UIElement
             return;
         }
 
+        if (!board.CanActivateBooster(booster))
+        {
+            ShowCannotUseBoosterToast(booster);
+            return;
+        }
+
         bool used = inventoryBoosterType switch
         {
             1 => InventoryManager.Instance.UseBoosterType1(),
@@ -202,6 +208,29 @@ public class UIBottomInGame : UIElement
 
         RefreshBoosterQuantity();
         RefreshGroupBoosterUI(force: true);
+    }
+
+    private void ShowCannotUseBoosterToast(BoosterType booster)
+    {
+        string msg = booster switch
+        {
+            BoosterType.Hammer => "No blocks to destroy",
+            BoosterType.Conveyor => "No blocks on conveyor",
+            BoosterType.Rainbow => "No shooters available",
+            _ => "Can't use booster right now"
+        };
+
+        if (GameUI.Instance != null)
+        {
+            var toast = GameUI.Instance.Get<UINotification>();
+            if (toast != null)
+            {
+                toast.ShowToast(msg);
+                return;
+            }
+        }
+
+        Debug.Log(msg);
     }
 
     private bool IsBoosterUnlocked(int boosterType)
