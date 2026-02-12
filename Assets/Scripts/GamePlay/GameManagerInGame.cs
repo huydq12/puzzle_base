@@ -161,6 +161,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;
         _playRoutine = StartCoroutine(PlayGame(level));
+        SetState(GameStateInGame.Init);
 
         SpawnUI();
         var tutorialManager = TutorialManager.Instance;

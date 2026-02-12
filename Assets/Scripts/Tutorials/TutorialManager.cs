@@ -30,6 +30,7 @@ public class TutorialEntry
 public class TutorialManager : Singleton<TutorialManager>
 {
 	[SerializeField] private List<TutorialEntry> _tutorialEntries;
+	[SerializeField] private bool _debugLogs;
 	[ReadOnly] public bool TutorialControlWaitTapLine;
 	private Dictionary<TutorialType, TutorialBase> _tutorialMap;
 	public TutorialBase CurrentTutorial { get; private set; }
@@ -45,11 +46,22 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	private int _currentLevel;
 
+	private void Log(string message)
+	{
+		if (!_debugLogs) return;
+		Debug.Log($"[TutorialManager] {message}");
+	}
+
 	protected override void Awake()
 	{
 		base.Awake();
 		_tutorialMap = new Dictionary<TutorialType, TutorialBase>();
-		if (_tutorialEntries == null) return;
+		if (_tutorialEntries == null)
+		{
+			Log("Awake: _tutorialEntries is null");
+			return;
+		}
+		Log($"Awake: entries={_tutorialEntries.Count}");
 
 		for (int i = 0; i < _tutorialEntries.Count; i++)
 		{
@@ -58,6 +70,7 @@ public class TutorialManager : Singleton<TutorialManager>
 			if (_tutorialMap.ContainsKey(entry.Type)) continue;
 			_tutorialMap.Add(entry.Type, entry.Tutorial);
 		}
+		Log($"Awake: mapCount={_tutorialMap.Count}");
 	}
 
 	private void Update()
@@ -100,32 +113,46 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	public void TryShowTutorial(int levelIndex)
 	{
-		if (!HasTutorial(levelIndex)) return;
+		bool hasTutorial = HasTutorial(levelIndex);
+		Log($"TryShowTutorial: level={levelIndex} hasTutorial={hasTutorial}");
+		if (!hasTutorial) return;
 		SetupTutorial(levelIndex);
 		ShowTutorial();
 	}
 	public void ShowTutorialPopup(Sprite icon, string title, string description)
 	{
-		if (!AllowTutorialPopups()) return;
+		bool allow = AllowTutorialPopups();
+		Log($"ShowTutorialPopup: allow={allow} title='{title}'");
+		if (!allow) return;
 		if (_gameUI == null) _gameUI = GameUI.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
 		if (_uiTutorial == null) _uiTutorial = _gameUI.Get<UITutorial>();
 
-		if (_uiTutorial == null) return;
+		if (_uiTutorial == null)
+		{
+			Log("ShowTutorialPopup: _uiTutorial null");
+			return;
+		}
 		_uiTutorial.ShowBoosterTutorial(icon, title, description);
 		HideBottomForPopup();
 		_wasAnyPopupVisible = true;
 	}
 	public void ShowBoosterUnlockTutorial(int boosterType)
 	{
-		if (!AllowTutorialPopups()) return;
+		bool allow = AllowTutorialPopups();
+		Log($"ShowBoosterUnlockTutorial: allow={allow} boosterType={boosterType}");
+		if (!allow) return;
 		if (_gameUI == null) _gameUI = GameUI.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
 		if (_uiTutorialBotter == null) _uiTutorialBotter = _gameUI.Get<UITutorialBotter>();
 
-		if (_uiTutorialBotter == null) return;
+		if (_uiTutorialBotter == null)
+		{
+			Log("ShowBoosterUnlockTutorial: _uiTutorialBotter null");
+			return;
+		}
 		_uiTutorialBotter.ShowForBooster(boosterType);
 		HideBottomForPopup();
 		_wasAnyPopupVisible = true;
@@ -134,9 +161,11 @@ public class TutorialManager : Singleton<TutorialManager>
 	public void SetupTutorial(int currentLevel)
 	{
 		_currentLevel = Mathf.Max(1, currentLevel);
+		Log($"SetupTutorial: level={_currentLevel}");
 
 		if (!HasTutorial(_currentLevel))
 		{
+			Log($"SetupTutorial: HasTutorial=false for level={_currentLevel}");
 			if (CurrentTutorial != null) CurrentTutorial.Hide();
 			CurrentTutorial = null;
 			IsInTutorial = false;
@@ -144,11 +173,13 @@ public class TutorialManager : Singleton<TutorialManager>
 		}
 
 		var type = (TutorialType)_currentLevel;
+		Log($"SetupTutorial: type={type}");
 		if (_tutorialMap != null && _tutorialMap.TryGetValue(type, out var tutorial) && tutorial != null)
 		{
 			CurrentTutorial = tutorial;
 			CurrentTutorial.Setup();
 			IsInTutorial = true;
+			Log($"SetupTutorial: mapped tutorial found for type={type} name={tutorial.name}");
 			return;
 		}
 		Debug.LogWarning($"[TutorialManager] Tutorial not found for type: {type} level={_currentLevel}");
@@ -164,9 +195,19 @@ public class TutorialManager : Singleton<TutorialManager>
 	private bool AllowTutorialPopups()
 	{
 		if (_gameManagerInGame == null) _gameManagerInGame = GameManagerInGame.Instance;
-		if (_gameManagerInGame == null) return false;
-		if (_gameManagerInGame.CurrentGameStateInGame == GameStateInGame.Result) return false;
-		return _gameManagerInGame.CurrentLevel > 1;
+		if (_gameManagerInGame == null)
+		{
+			Log("AllowTutorialPopups: GameManagerInGame null -> false");
+			return false;
+		}
+		if (_gameManagerInGame.CurrentGameStateInGame == GameStateInGame.Result)
+		{
+			Log($"AllowTutorialPopups: state=Result level={_gameManagerInGame.CurrentLevel} -> false");
+			return false;
+		}
+		bool allow = _gameManagerInGame.CurrentLevel > 1;
+		Log($"AllowTutorialPopups: level={_gameManagerInGame.CurrentLevel} allow={allow}");
+		return allow;
 	}
 
 	private bool IsAnyTutorialPopupVisible()
@@ -229,11 +270,18 @@ public class TutorialManager : Singleton<TutorialManager>
 	public bool HasTutorial(int level)
 	{
 		level = Mathf.Max(1, level);
-		if (!System.Enum.IsDefined(typeof(TutorialType), level)) return false;
+		if (!System.Enum.IsDefined(typeof(TutorialType), level))
+		{
+			Log($"HasTutorial: level={level} not defined in TutorialType -> false");
+			return false;
+		}
 
 		var type = (TutorialType)level;
 		string key = type.ToString();
-		return PlayerPrefs.GetInt(key, 0) == 0;
+		int pref = PlayerPrefs.GetInt(key, 0);
+		bool result = pref == 0;
+		Log($"HasTutorial: level={level} type={type} key={key} pref={pref} -> {result}");
+		return result;
 	}
 
 	public void TutorialFinish()

@@ -75,6 +75,9 @@ public static class BoosterUnlockService
         var cfg = Config;
         if (cfg == null || cfg.boosters == null) return;
 
+        bool debugLogs = false;
+        if (debugLogs) Debug.Log($"[BoosterUnlockService] TryShowUnlockTutorialAtLevelStart level={currentLevel}");
+
         var ud = GetUserData();
         if (ud == null) return;
 
@@ -87,6 +90,7 @@ public static class BoosterUnlockService
             string key = GetTutorialShownKey(entry.boosterType, entry.unlockLevel);
             if (ud.boosterUnlockTutorialShownKeys != null && ud.boosterUnlockTutorialShownKeys.Contains(key)) continue;
 
+            if (debugLogs) Debug.Log($"[BoosterUnlockService] Show unlock tutorial boosterType={entry.boosterType} level={entry.unlockLevel} key={key}");
             ShowTutorial(entry);
 
             ud.boosterUnlockTutorialShownKeys ??= new System.Collections.Generic.List<string>();
