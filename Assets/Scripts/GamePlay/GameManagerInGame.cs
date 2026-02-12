@@ -153,7 +153,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             _hideLoadingRoutine = null;
         }
 
-        _pendingAutoHideLoading = _isFirstSceneStart || _nextStartIsAfterWin;
+        _pendingAutoHideLoading = (_isFirstSceneStart || _nextStartIsAfterWin) && level > 21;
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;
         _playRoutine = StartCoroutine(PlayGame(level));
@@ -169,13 +169,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         GameUI.Instance.Get<UITopInGame>().Show();
         GameUI.Instance.Get<UIBottomInGame>().Show();
-        var loading = GameUI.Instance.Get<UILoadingInGame>();
-        if (loading == null) return;
+        if (UILoadingInGame.Instance == null) return;
 
         if (_pendingAutoHideLoading)
-            loading.Show();
+            UILoadingInGame.Instance.Show();
         else
-            loading.Hide();
+            UILoadingInGame.Instance.Hide();
     }
 
     public void RestartLevel()
@@ -239,8 +238,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private IEnumerator HideLoadingAfterDelay(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-        var loading = GameUI.Instance != null ? GameUI.Instance.Get<UILoadingInGame>() : null;
-        if (loading != null) loading.Hide();
+        if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Hide();
         _hideLoadingRoutine = null;
     }
     public void SaveData()

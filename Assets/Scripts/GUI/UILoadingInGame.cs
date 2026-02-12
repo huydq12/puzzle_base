@@ -2,9 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UILoadingInGame : UIElement
+public class UILoadingInGame : Singleton<UILoadingInGame>
 {
-    public override bool ManualHide => true;
-    public override bool DestroyOnHide => false;
-    public override bool UseBehindPanel => false;
+    [SerializeField] public GameObject holder;
+
+    private GameObject HolderOrSelf()
+    {
+        return holder != null ? holder : gameObject;
+    }
+
+    public void Show()
+    {
+        HolderOrSelf().SetActive(true);
+    }
+
+    public void Hide()
+    {
+        HolderOrSelf().SetActive(false);
+    }
 }

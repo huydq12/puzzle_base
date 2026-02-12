@@ -94,14 +94,12 @@ public class GameManager : Singleton<GameManager>
         }
 
         HeatManager.Instance.Initialize(userData);
-        GameUI.Instance.Get<UILoadingInGame>().Show();
+        if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Show();
         SetGameState(GameState.Home);
         GameUI.Instance.Get<UIHome>().Show();
         GameUI.Instance.Get<UIShop>().Hide();
         GameUI.Instance.Get<UIPopupRank>().Hide();
         GameUI.Instance.Get<UIMenuBar>().Show();
-        // GameUI.Instance.Get<UILoadingInGame>().Hide();
-
     }
 
     public void StartGame()
