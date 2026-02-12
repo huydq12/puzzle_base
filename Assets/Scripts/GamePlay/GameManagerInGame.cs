@@ -35,6 +35,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private float _lastStartRequestTime = -999f;
     private const float StartRequestCooldownSeconds = 0.25f;
 
+    private int _lastTrackedStartLevel = -1;
+    private int _lastTrackedFinishLevel = -1;
+    private bool _lastTrackedFinishWasWin;
+
     private bool _isFirstSceneStart = true;
     private bool _nextStartIsAfterWin;
     private bool _pendingAutoHideLoading;
@@ -98,13 +102,41 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         var bottom = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
         if (bottom != null) bottom.RefreshBoosterQuantity();
         PlayVfxWin();
+        TrackLevelFinished(true, completedLevel);
         SetState(GameStateInGame.Result);
         _nextStartIsAfterWin = true;
     }
     public void SetLose()
     {
-        _queuedNextLevel = Mathf.Max(1, _levelInPlay);
+        int failedLevel = Mathf.Max(1, _levelInPlay);
+        _queuedNextLevel = failedLevel;
+        TrackLevelFinished(false, failedLevel);
         SetState(GameStateInGame.Result);
+    }
+
+    private void TrackLevelStarted(int level)
+    {
+        if (level <= 0) return;
+        if (_lastTrackedStartLevel == level) return;
+        _lastTrackedStartLevel = level;
+
+        int cash = userData != null ? userData.playerCash : 0;
+
+        TinySauce.OnGameStarted(level);
+        TinySauce.TrackCustomEvent("level_start", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
+    }
+
+    private void TrackLevelFinished(bool win, int level)
+    {
+        if (level <= 0) return;
+        if (_lastTrackedFinishLevel == level && _lastTrackedFinishWasWin == win) return;
+        _lastTrackedFinishLevel = level;
+        _lastTrackedFinishWasWin = win;
+
+        int cash = userData != null ? userData.playerCash : 0;
+
+        TinySauce.OnGameFinished(win, 0f, level);
+        TinySauce.TrackCustomEvent(win ? "level_win" : "level_lose", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
     }
     public void SetState(GameStateInGame state)
     {
@@ -142,6 +174,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         CurrentLevel = level;
         MaxLevel = Mathf.Max(MaxLevel, level);
         SaveData();
+
+        TrackLevelStarted(level);
 
         if (_playRoutine != null)
         {

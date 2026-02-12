@@ -13,7 +13,6 @@ public class UILose : UIPopup
     public override void Show()
     {
         base.Show();
-        Debug.Log("UILose.Show");
         VibrateManager.Instance.MediumVibrate();
         AudioManager.Instance.PlaySFX(SFXType.Lose);
 
