@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class UITutorialBotter :UIElement
 {
@@ -16,16 +17,57 @@ public class UITutorialBotter :UIElement
     [SerializeField] private float autoHideSeconds = 3f;
     private Coroutine autoHideRoutine;
 
+    [SerializeField] private float _slideDuration = 0.25f;
+    [SerializeField] private float _slideOffsetY = 200f;
+
+    private RectTransform _holderRect;
+    private Vector2 _holderShownPos;
+    private bool _holderPosCached;
+    private Tween _slideTween;
+
     public override void Show()
     {
+        CacheHolderPos();
+        _slideTween?.Kill();
+        if (_holderRect != null)
+        {
+            _holderRect.anchoredPosition = _holderShownPos + new Vector2(0f, -_slideOffsetY);
+        }
         base.Show();
+
+        if (_holderRect != null)
+        {
+            _slideTween = _holderRect.DOAnchorPos(_holderShownPos, _slideDuration).SetEase(Ease.OutCubic);
+        }
         StartAutoHide();
     }
 
     public override void Hide()
     {
         StopAutoHide();
-        base.Hide();
+
+        CacheHolderPos();
+        _slideTween?.Kill();
+        if (_holderRect == null)
+        {
+            base.Hide();
+            return;
+        }
+
+        GameUI.Instance.Unsubmit(this);
+        _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
+            .SetEase(Ease.InCubic)
+            .OnComplete(() => base.Hide());
+    }
+
+    private void CacheHolderPos()
+    {
+        if (_holderPosCached) return;
+        if (holder == null) return;
+        _holderRect = holder.GetComponent<RectTransform>();
+        if (_holderRect == null) return;
+        _holderShownPos = _holderRect.anchoredPosition;
+        _holderPosCached = true;
     }
 
     private void StartAutoHide()

@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class UITutorial : UIElement
 {
@@ -21,6 +22,14 @@ public class UITutorial : UIElement
     private string _overrideTitle;
     private string _overrideDescription;
 
+    [SerializeField] private float _slideDuration = 0.25f;
+    [SerializeField] private float _slideOffsetY = 200f;
+
+    private RectTransform _holderRect;
+    private Vector2 _holderShownPos;
+    private bool _holderPosCached;
+    private Tween _slideTween;
+
     private TutorialPopupConfig Config => _config != null ? _config : TutorialPopupService.Config;
 
     void Start()
@@ -34,13 +43,47 @@ public class UITutorial : UIElement
     public override void Show()
     {
         RefreshView();
+
+        CacheHolderPos();
+        _slideTween?.Kill();
+        if (_holderRect != null)
+        {
+            _holderRect.anchoredPosition = _holderShownPos + new Vector2(0f, -_slideOffsetY);
+        }
         base.Show();
+
+        if (_holderRect != null)
+        {
+            _slideTween = _holderRect.DOAnchorPos(_holderShownPos, _slideDuration).SetEase(Ease.OutCubic);
+        }
     }
 
     public override void Hide()
     {
         _useOverrideContent = false;
-        base.Hide();
+
+        CacheHolderPos();
+        _slideTween?.Kill();
+        if (_holderRect == null)
+        {
+            base.Hide();
+            return;
+        }
+
+        GameUI.Instance.Unsubmit(this);
+        _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
+            .SetEase(Ease.InCubic)
+            .OnComplete(() => base.Hide());
+    }
+
+    private void CacheHolderPos()
+    {
+        if (_holderPosCached) return;
+        if (holder == null) return;
+        _holderRect = holder.GetComponent<RectTransform>();
+        if (_holderRect == null) return;
+        _holderShownPos = _holderRect.anchoredPosition;
+        _holderPosCached = true;
     }
 
     public void ShowBoosterTutorial(Sprite icon, string title, string description)

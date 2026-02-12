@@ -109,6 +109,7 @@ public class TutorialManager : Singleton<TutorialManager>
 		if (_gameUI == null) _gameUI = GameUI.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
+		if (_uiTutorial == null) _uiTutorial = _gameUI.Get<UITutorial>();
 
 		if (_uiTutorial == null) return;
 		_uiTutorial.ShowBoosterTutorial(icon, title, description);
@@ -121,6 +122,7 @@ public class TutorialManager : Singleton<TutorialManager>
 		if (_gameUI == null) _gameUI = GameUI.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
+		if (_uiTutorialBotter == null) _uiTutorialBotter = _gameUI.Get<UITutorialBotter>();
 
 		if (_uiTutorialBotter == null) return;
 		_uiTutorialBotter.ShowForBooster(boosterType);
@@ -156,15 +158,13 @@ public class TutorialManager : Singleton<TutorialManager>
 	private void EnsureUIRefs(GameUI gameUI)
 	{
 		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.Get<UIBottomInGame>();
-		if (!AllowTutorialPopups()) return;
-		if (_uiTutorial == null) _uiTutorial = gameUI.Get<UITutorial>();
-		if (_uiTutorialBotter == null) _uiTutorialBotter = gameUI.Get<UITutorialBotter>();
 	}
 
 	private static bool AllowTutorialPopups()
 	{
 		var gm = GameManagerInGame.Instance;
 		if (gm == null) return true;
+		if (gm.CurrentGameStateInGame == GameStateInGame.Result) return false;
 		return gm.CurrentLevel > 1;
 	}
 
