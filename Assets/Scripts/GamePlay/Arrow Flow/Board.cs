@@ -420,6 +420,10 @@ public class Board : Singleton<Board>
             GameManagerInGame.Instance.SetState(GameStateInGame.Result);
             GameUI.Instance.Get<UILose>().Show();
         }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
         if (_currentConfig == null) return;
         if (_elevators.Count == 0) return;
         if (Time.time < _nextElevatorCheckTime) return;
@@ -1238,12 +1242,16 @@ public class Board : Singleton<Board>
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();
-
-
-        StartCoroutine(Common.DelayAction(0.5f, () =>
+        Sequence sq = DOTween.Sequence();
+        Camera.main.transform.position = new Vector3(0, 18, 2.1f);
+        Camera.main.orthographicSize = 9.92f;
+        sq.AppendInterval(1.0f);
+        sq.Append(Camera.main.DOOrthoSize(12, 0.5f));
+        sq.Join(  Camera.main.transform.DOMoveZ(4.2f, 0.5f));
+        sq.OnComplete(() =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);
             GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
-        }));
+        });
     }
 }
