@@ -29,10 +29,17 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public UserData userData { get; private set; }
     public bool InitLevel = true;
     private Coroutine _playRoutine;
+    private Coroutine _hideLoadingRoutine;
     private int _levelInPlay = 1;
     private int _queuedNextLevel = 1;
     private float _lastStartRequestTime = -999f;
     private const float StartRequestCooldownSeconds = 0.25f;
+
+    private bool _isFirstSceneStart = true;
+    private bool _nextStartIsAfterWin;
+    private bool _pendingAutoHideLoading;
+
+    [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
 
@@ -90,6 +97,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         if (bottom != null) bottom.RefreshBoosterQuantity();
         PlayVfxWin();
         SetState(GameStateInGame.Result);
+        _nextStartIsAfterWin = true;
     }
     public void SetLose()
     {
@@ -138,6 +146,16 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             StopCoroutine(_playRoutine);
             _playRoutine = null;
         }
+
+        if (_hideLoadingRoutine != null)
+        {
+            StopCoroutine(_hideLoadingRoutine);
+            _hideLoadingRoutine = null;
+        }
+
+        _pendingAutoHideLoading = _isFirstSceneStart || _nextStartIsAfterWin;
+        _isFirstSceneStart = false;
+        _nextStartIsAfterWin = false;
         _playRoutine = StartCoroutine(PlayGame(level));
 
         SpawnUI();
@@ -151,6 +169,13 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         GameUI.Instance.Get<UITopInGame>().Show();
         GameUI.Instance.Get<UIBottomInGame>().Show();
+        var loading = GameUI.Instance.Get<UILoadingInGame>();
+        if (loading == null) return;
+
+        if (_pendingAutoHideLoading)
+            loading.Show();
+        else
+            loading.Hide();
     }
 
     public void RestartLevel()
@@ -201,7 +226,22 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
 
         Board.Instance.SetupLevel(config);
+
+        if (_pendingAutoHideLoading)
+        {
+            _pendingAutoHideLoading = false;
+            _hideLoadingRoutine = StartCoroutine(HideLoadingAfterDelay(CONST_TIME_HIDE_LOADING));
+        }
+
         _playRoutine = null;
+    }
+
+    private IEnumerator HideLoadingAfterDelay(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        var loading = GameUI.Instance != null ? GameUI.Instance.Get<UILoadingInGame>() : null;
+        if (loading != null) loading.Hide();
+        _hideLoadingRoutine = null;
     }
     public void SaveData()
     {

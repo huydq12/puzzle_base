@@ -45,6 +45,7 @@ public class BoardManager : Singleton<BoardManager>
         SpawnArrows(data);
         SpawnShooters(data);
         SpawnConveyors(data);
+
     }
 
     public void ClearBoard()
