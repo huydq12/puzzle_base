@@ -27,6 +27,8 @@ public class ConveyorController : Singleton<ConveyorController>
     private Coroutine _cycleRoutine;
     private bool _isPaused = false;
     private bool _isRunning = true;
+    private bool _loseTriggered;
+    private Tween _loseShowTween;
     private bool _isBlinking;
     private Tween _blinkTween;
     private WaitForSeconds _cycleWait;
@@ -45,17 +47,33 @@ public class ConveyorController : Singleton<ConveyorController>
             _totalLineMoved = 0;
             _walkAroundSpeed = 12;
         };
+
+        GameManagerInGame.Instance.OnStartLevel += () =>
+        {
+            _loseTriggered = false;
+            if (_loseShowTween != null)
+            {
+                _loseShowTween.Kill();
+                _loseShowTween = null;
+            }
+        };
     }
     private void LoseGame()
     {
+        if (_loseTriggered)
+            return;
+
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
             return;
+
+        _loseTriggered = true;
 
         StopConveyor();
         GameManagerInGame.Instance.SetState(GameStateInGame.Result);
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
-        DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
+        if (_loseShowTween != null) _loseShowTween.Kill();
+        _loseShowTween = DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
     }
     public void OnLineMoved()
     {
