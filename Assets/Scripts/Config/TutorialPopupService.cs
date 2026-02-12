@@ -27,8 +27,9 @@ public static class TutorialPopupService
         string key = $"tutorial_popup_level_{currentLevel}";
         if (PlayerPrefs.GetInt(key, 0) == 1) return;
 
-        if (TutorialManager.Instance == null) return;
-        TutorialManager.Instance.ShowTutorialPopup(entry.icon, entry.title, entry.description);
+        var tutorialManager = Object.FindFirstObjectByType<TutorialManager>();
+        if (tutorialManager == null) return;
+        tutorialManager.ShowTutorialPopup(entry.icon, entry.title, entry.description);
         PlayerPrefs.SetInt(key, 1);
     }
 }

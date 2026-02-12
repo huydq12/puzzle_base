@@ -49,15 +49,20 @@ public class TutorialControl : TutorialBase
                         yield return new WaitForSeconds(0.2f);
                         PlayHandClick();
                         yield return new WaitForSeconds(0.5f);
-                        TutorialManager.Instance.TutorialControlWaitTapLine = true;
+                        var tutorialManager = TutorialManager.Instance;
+                        if (tutorialManager != null) tutorialManager.TutorialControlWaitTapLine = true;
                         break;
                     }
                 default:
                     {
                         if (IsFinish())
                         {
-                            TutorialManager.Instance.TutorialControlWaitTapLine = false;
-                            TutorialManager.Instance.TutorialFinish();
+                            var tutorialManager = TutorialManager.Instance;
+                            if (tutorialManager != null)
+                            {
+                                tutorialManager.TutorialControlWaitTapLine = false;
+                                tutorialManager.TutorialFinish();
+                            }
 
                             _circleImg.DOKill();
                             _handImg.DOKill();

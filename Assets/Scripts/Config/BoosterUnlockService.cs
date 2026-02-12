@@ -149,8 +149,9 @@ public static class BoosterUnlockService
 
     private static void ShowTutorial(BoosterUnlockConfig.BoosterEntry entry)
     {
-        if (TutorialManager.Instance == null) return;
-        TutorialManager.Instance.ShowBoosterUnlockTutorial(entry.boosterType);
+        var tutorialManager = TutorialManager.Instance;
+        if (tutorialManager == null) return;
+        tutorialManager.ShowBoosterUnlockTutorial(entry.boosterType);
 
         if (GameUI.Instance == null) return;
         var bottom = GameUI.Instance.Get<UIBottomInGame>();

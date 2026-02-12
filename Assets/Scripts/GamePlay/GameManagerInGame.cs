@@ -163,7 +163,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _playRoutine = StartCoroutine(PlayGame(level));
 
         SpawnUI();
-        if (TutorialManager.Instance != null) TutorialManager.Instance.TryShowTutorial(CurrentLevel);
+        var tutorialManager = TutorialManager.Instance;
+        if (tutorialManager != null) tutorialManager.TryShowTutorial(CurrentLevel);
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(CurrentLevel);
         TutorialPopupService.TryShowAtLevelStart(CurrentLevel);
         ClearVfx();
