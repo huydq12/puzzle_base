@@ -38,8 +38,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _isFirstSceneStart = true;
     private bool _nextStartIsAfterWin;
     private bool _pendingAutoHideLoading;
+    private float _pendingAutoHideSeconds;
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
+    [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
 
@@ -153,7 +155,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             _hideLoadingRoutine = null;
         }
 
-        _pendingAutoHideLoading = (_isFirstSceneStart || _nextStartIsAfterWin) && level > 21;
+        bool isFirstStart = _isFirstSceneStart;
+        _pendingAutoHideLoading = _isFirstSceneStart || (_nextStartIsAfterWin && level > 21);
+        _pendingAutoHideSeconds = isFirstStart ? Mathf.Max(CONST_TIME_HIDE_LOADING, CONST_TIME_HIDE_LOADING_FIRST) : CONST_TIME_HIDE_LOADING;
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;
         _playRoutine = StartCoroutine(PlayGame(level));
@@ -229,7 +233,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         if (_pendingAutoHideLoading)
         {
             _pendingAutoHideLoading = false;
-            _hideLoadingRoutine = StartCoroutine(HideLoadingAfterDelay(CONST_TIME_HIDE_LOADING));
+            _hideLoadingRoutine = StartCoroutine(HideLoadingAfterDelay(_pendingAutoHideSeconds));
         }
 
         _playRoutine = null;
@@ -237,6 +241,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     private IEnumerator HideLoadingAfterDelay(float seconds)
     {
+        while (CurrentGameStateInGame != GameStateInGame.Playing)
+            yield return null;
+
+        yield return new WaitForEndOfFrame();
         yield return new WaitForSeconds(seconds);
         if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Hide();
         _hideLoadingRoutine = null;

@@ -29,7 +29,15 @@ public class UITopInGame : UIElement
     private const float HardLevelPopupAutoHideDelay = 1.2f;
     private const string PopupOpenStateName = "Open";
     private const string PopupCloseStateName = "Close";
-    
+
+    [SerializeField] private List<Image> warningNotice;
+    [SerializeField] private Color warningNoticeColor = Color.red;
+    [SerializeField] private float warningNoticeBlinkDuration = 0.3f;
+
+    private bool _isWarningNoticeBlinking;
+    private readonly List<Tween> _warningNoticeTweens = new List<Tween>();
+    private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
+
     private void Start()
     {
         buttonSetting.onClick.AddListener(() =>
@@ -44,10 +52,21 @@ public class UITopInGame : UIElement
                 GameManagerInGame.Instance.ReplayLevel();
             }
         });
+
+        _warningNoticeDefaultColors.Clear();
+        if (warningNotice == null) return;
+
+        for (int i = 0; i < warningNotice.Count; i++)
+        {
+            var img = warningNotice[i];
+            _warningNoticeDefaultColors.Add(img != null ? img.color : Color.white);
+        }
     }
 
     private void OnDisable()
     {
+        SetConveyorWarning(false);
+
         if (hardLevelPopupCoroutine != null)
         {
             StopCoroutine(hardLevelPopupCoroutine);
@@ -57,6 +76,62 @@ public class UITopInGame : UIElement
         if (ani_hard_level != null)
         {
             ani_hard_level.gameObject.SetActive(false);
+        }
+    }
+
+    private void SetWarningNoticeVisible(bool visible)
+    {
+        if (warningNotice == null) return;
+        for (int i = 0; i < warningNotice.Count; i++)
+        {
+            var img = warningNotice[i];
+            if (img == null) continue;
+            img.gameObject.SetActive(visible);
+        }
+    }
+
+    public void SetConveyorWarning(bool enabled)
+    {
+        if (enabled && _isWarningNoticeBlinking) return;
+        _isWarningNoticeBlinking = enabled;
+
+        for (int i = 0; i < _warningNoticeTweens.Count; i++)
+        {
+            _warningNoticeTweens[i]?.Kill();
+        }
+        _warningNoticeTweens.Clear();
+
+        if (warningNotice == null || warningNotice.Count == 0) return;
+
+        if (!enabled)
+        {
+            SetWarningNoticeVisible(false);
+            for (int i = 0; i < warningNotice.Count; i++)
+            {
+                var img = warningNotice[i];
+                if (img == null) continue;
+                var c = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
+                img.color = c;
+            }
+            return;
+        }
+
+        SetWarningNoticeVisible(true);
+
+        for (int i = 0; i < warningNotice.Count; i++)
+        {
+            var img = warningNotice[i];
+            if (img == null) continue;
+
+            var defaultColor = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
+            img.color = defaultColor;
+
+            var t = img
+                .DOColor(warningNoticeColor, warningNoticeBlinkDuration)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+
+            _warningNoticeTweens.Add(t);
         }
     }
 
@@ -73,6 +148,8 @@ public class UITopInGame : UIElement
     public override void Show()
     {
         base.Show();
+
+        SetConveyorWarning(false);
 
         int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
         txt_level.text = "Level " + level.ToString();

@@ -134,6 +134,12 @@ public class ConveyorController : Singleton<ConveyorController>
 
         bool shouldBlink = percent >= 70f;
 
+        var topUi = GameUI.Instance.Get<UITopInGame>();
+        if (topUi != null)
+        {
+            topUi.SetConveyorWarning(shouldBlink);
+        }
+
         if (shouldBlink && !_isBlinking)
         {
             StartBlink();
