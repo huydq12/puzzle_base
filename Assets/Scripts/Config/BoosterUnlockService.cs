@@ -149,18 +149,10 @@ public static class BoosterUnlockService
 
     private static void ShowTutorial(BoosterUnlockConfig.BoosterEntry entry)
     {
+        if (TutorialManager.Instance == null) return;
+        TutorialManager.Instance.ShowBoosterUnlockTutorial(entry.boosterType);
+
         if (GameUI.Instance == null) return;
-
-        // Booster unlock tutorial uses UITutorialBotter prefab.
-        var popup = GameUI.Instance.Get<UITutorialBotter>();
-        if (popup == null)
-        {
-            Debug.LogWarning("[BoosterUnlockService] Missing Resources/GameUI/UITutorialBotter prefab.");
-            return;
-        }
-
-        popup.ShowForBooster(entry.boosterType);
-
         var bottom = GameUI.Instance.Get<UIBottomInGame>();
         if (bottom != null)
         {

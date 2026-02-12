@@ -35,6 +35,13 @@ public class TutorialManager : Singleton<TutorialManager>
 	public TutorialBase CurrentTutorial { get; private set; }
 	public bool IsInTutorial { get; private set; }
 
+	private UITutorial _uiTutorial;
+	private UITutorialBotter _uiTutorialBotter;
+	private UIBottomInGame _uiBottomInGame;
+	private GameUI _gameUI;
+	private bool _wasAnyPopupVisible;
+	private bool _bottomHiddenByPopup;
+
 	private int _currentLevel;
 
 	protected override void Awake()
@@ -52,11 +59,73 @@ public class TutorialManager : Singleton<TutorialManager>
 		}
 	}
 
+	private void Update()
+	{
+		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) return;
+
+		EnsureUIRefs(_gameUI);
+		if (!AllowTutorialPopups())
+		{
+			if (IsUIElementVisible(_uiTutorial)) _uiTutorial.Hide();
+			if (IsUIElementVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
+			ShowBottomIfHiddenByPopup();
+			_wasAnyPopupVisible = false;
+			return;
+		}
+
+		bool anyPopupVisible = IsAnyTutorialPopupVisible();
+
+		if (anyPopupVisible && IsTapDown())
+		{
+			HideTutorialPopups();
+			ShowBottomIfHiddenByPopup();
+			anyPopupVisible = false;
+		}
+
+		if (anyPopupVisible != _wasAnyPopupVisible)
+		{
+			_wasAnyPopupVisible = anyPopupVisible;
+			if (anyPopupVisible)
+			{
+				HideBottomForPopup();
+			}
+			else
+			{
+				ShowBottomIfHiddenByPopup();
+			}
+		}
+	}
+
 	public void TryShowTutorial(int levelIndex)
 	{
 		if (!HasTutorial(levelIndex)) return;
 		SetupTutorial(levelIndex);
 		ShowTutorial();
+	}
+	public void ShowTutorialPopup(Sprite icon, string title, string description)
+	{
+		if (!AllowTutorialPopups()) return;
+		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) return;
+		EnsureUIRefs(_gameUI);
+
+		if (_uiTutorial == null) return;
+		_uiTutorial.ShowBoosterTutorial(icon, title, description);
+		HideBottomForPopup();
+		_wasAnyPopupVisible = true;
+	}
+	public void ShowBoosterUnlockTutorial(int boosterType)
+	{
+		if (!AllowTutorialPopups()) return;
+		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) return;
+		EnsureUIRefs(_gameUI);
+
+		if (_uiTutorialBotter == null) return;
+		_uiTutorialBotter.ShowForBooster(boosterType);
+		HideBottomForPopup();
+		_wasAnyPopupVisible = true;
 	}
 
 	public void SetupTutorial(int currentLevel)
@@ -82,6 +151,66 @@ public class TutorialManager : Singleton<TutorialManager>
 		Debug.LogWarning($"[TutorialManager] Tutorial not found for type: {type} level={_currentLevel}");
 		CurrentTutorial = null;
 		IsInTutorial = false;
+	}
+
+	private void EnsureUIRefs(GameUI gameUI)
+	{
+		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.Get<UIBottomInGame>();
+		if (!AllowTutorialPopups()) return;
+		if (_uiTutorial == null) _uiTutorial = gameUI.Get<UITutorial>();
+		if (_uiTutorialBotter == null) _uiTutorialBotter = gameUI.Get<UITutorialBotter>();
+	}
+
+	private static bool AllowTutorialPopups()
+	{
+		var gm = GameManagerInGame.Instance;
+		if (gm == null) return true;
+		return gm.CurrentLevel > 1;
+	}
+
+	private bool IsAnyTutorialPopupVisible()
+	{
+		return IsUIElementVisible(_uiTutorial) || IsUIElementVisible(_uiTutorialBotter);
+	}
+
+	private static bool IsUIElementVisible(UIElement element)
+	{
+		if (element == null) return false;
+		if (element.holder != null) return element.holder.activeSelf;
+		return element.gameObject.activeSelf;
+	}
+
+	private void HideBottomForPopup()
+	{
+		if (_uiBottomInGame == null) return;
+		bool wasVisible = IsUIElementVisible(_uiBottomInGame);
+		if (!wasVisible)
+		{
+			_bottomHiddenByPopup = false;
+			return;
+		}
+		_uiBottomInGame.Hide();
+		_bottomHiddenByPopup = true;
+	}
+
+	private void ShowBottomIfHiddenByPopup()
+	{
+		if (!_bottomHiddenByPopup) return;
+		_bottomHiddenByPopup = false;
+		if (_uiBottomInGame == null) return;
+		if (IsUIElementVisible(_uiBottomInGame)) return;
+		_uiBottomInGame.Show();
+	}
+
+	private void HideTutorialPopups()
+	{
+		if (IsUIElementVisible(_uiTutorial)) _uiTutorial.Hide();
+		if (IsUIElementVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
+	}
+
+	private static bool IsTapDown()
+	{
+		return Input.GetMouseButtonDown(0);
 	}
 
 	public void ShowTutorial()

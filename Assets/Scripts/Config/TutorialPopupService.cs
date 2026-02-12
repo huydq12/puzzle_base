@@ -17,8 +17,6 @@ public static class TutorialPopupService
 
     public static void TryShowAtLevelStart(int currentLevel)
     {
-        if (GameUI.Instance == null) return;
-
         var cfg = Config;
         if (cfg == null) return;
 
@@ -29,14 +27,8 @@ public static class TutorialPopupService
         string key = $"tutorial_popup_level_{currentLevel}";
         if (PlayerPrefs.GetInt(key, 0) == 1) return;
 
-        var popup = GameUI.Instance.Get<UITutorial>();
-        if (popup == null)
-        {
-            Debug.LogWarning("[TutorialPopupService] Missing Resources/GameUI/UITutorial prefab.");
-            return;
-        }
-
-        popup.ShowBoosterTutorial(entry.icon, entry.title, entry.description);
+        if (TutorialManager.Instance == null) return;
+        TutorialManager.Instance.ShowTutorialPopup(entry.icon, entry.title, entry.description);
         PlayerPrefs.SetInt(key, 1);
     }
 }
