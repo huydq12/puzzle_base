@@ -75,16 +75,21 @@ public class ConveyorController : Singleton<ConveyorController>
 
         SplineSample sample = new SplineSample();
 
+        float stepDistance = splineLength / (total - 1);
+        double percent = 0.0;
+
 	        for (int i = 0; i < total - 1; i++)
 	        {
-	            double percent = i / (double)(total - 1);
-
             _splineComputer.Evaluate(percent, ref sample);
 
 	            GameObject arrow = Instantiate(_arrow);
 	            if (arrow == null) continue;
 	            arrow.transform.SetParent(Board.Instance.transform, false);
 	            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+
+                float moved;
+                percent = _splineComputer.Travel(percent, stepDistance, out moved);
+                if (percent >= 1.0) percent -= 1.0;
 	        }
 	    }
     public void WinGame()
@@ -100,6 +105,8 @@ public class ConveyorController : Singleton<ConveyorController>
     private class PathSlot
     {
         public Vector3 Position;
+        public Vector3 Forward;
+        public Vector3 Left;
         public CubeLine CubeSlot;
     }
 
@@ -154,11 +161,8 @@ public class ConveyorController : Singleton<ConveyorController>
             }
         }
 
-        Vector3 conveyorDir;
-        if (nearest < _lstPaths.Count - 1)
-            conveyorDir = (_lstPaths[nearest + 1].Position - _lstPaths[nearest].Position).normalized;
-        else
-            conveyorDir = (_lstPaths[nearest].Position - _lstPaths[nearest - 1].Position).normalized;
+        Vector3 conveyorDir = _lstPaths[nearest].Forward;
+        if (conveyorDir.sqrMagnitude < 0.0001f) conveyorDir = Vector3.forward;
 
         Vector3 toWorldPos = (worldPos - _lstPaths[nearest].Position).normalized;
 
@@ -182,6 +186,9 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public void SetupFromSpline()
     {
+        if (_splineComputer != null && _splineComputer.sampleMode != SplineComputer.SampleMode.Uniform)
+            _splineComputer.sampleMode = SplineComputer.SampleMode.Uniform;
+
         SpawnArrowAlongSpline();
         _isRunning = true;
         _isPaused = false;
@@ -197,21 +204,38 @@ public class ConveyorController : Singleton<ConveyorController>
         }
 
         float distancePerCube = Mathf.Max(0.01f, _cubeSize);
-        int slotCount = Mathf.FloorToInt(length / distancePerCube);
+        int slotCount = Mathf.RoundToInt(length / distancePerCube);
         slotCount = Mathf.Max(2, slotCount);
+        float stepDistance = length / slotCount;
 
         SplineSample sample = new SplineSample();
 
+        double percent = 0.0;
+
         for (int i = 0; i < slotCount; i++)
         {
-            float percent = i / (float)slotCount;
             _splineComputer.Evaluate(percent, ref sample);
+
+            Vector3 forward = sample.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            forward.Normalize();
+
+            Vector3 left = -Vector3.Cross(Vector3.up, forward);
+            if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
+            left.Normalize();
 
             _lstPaths.Add(new PathSlot
             {
                 Position = sample.position,
+                Forward = forward,
+                Left = left,
                 CubeSlot = null
             });
+
+            float moved;
+            percent = _splineComputer.Travel(percent, stepDistance, out moved);
+            if (percent >= 1.0) percent -= 1.0;
         }
 
         EnsureCycleRunning();
@@ -478,19 +502,13 @@ public class ConveyorController : Singleton<ConveyorController>
                                 enteringRequest.Line?.NotifyEnteredConveyor();
                                 enteringRequest.OnInserted?.Invoke();
 
-                                Vector3 pos = _lstPaths[curIndex].Position;
-                                Vector3 dir;
-                                if (curIndex < _lstPaths.Count - 1)
-                                    dir = (_lstPaths[curIndex + 1].Position - _lstPaths[curIndex].Position).normalized;
-                                else
-                                    dir = (_lstPaths[curIndex].Position - _lstPaths[curIndex - 1].Position).normalized;
-
+                                var slot = _lstPaths[curIndex];
+                                Vector3 dir = slot.Forward;
                                 if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
-                                Vector3 normal = new Vector3(-dir.z, 0f, dir.x);
-                                if (normal.sqrMagnitude < 0.0001f) normal = Vector3.right;
-                                normal.Normalize();
+                                Vector3 left = slot.Left;
+                                if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
 
-                                Vector3 targetPos = pos + normal * _baseOffsetAmount;
+                                Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
                                 cube.transform.DOMove(targetPos, timePerCycle);
                                 cube.transform.LookAt(targetPos + dir);
                             }
@@ -577,18 +595,11 @@ public class ConveyorController : Singleton<ConveyorController>
         var slot = _lstPaths[idx];
         if (slot.CubeSlot == null) return;
 
-        var pos = slot.Position;
-
-        Vector3 dir;
-        if (idx < _lstPaths.Count - 1)
-            dir = (_lstPaths[idx + 1].Position - _lstPaths[idx].Position).normalized;
-        else
-            dir = (_lstPaths[idx].Position - _lstPaths[idx - 1].Position).normalized;
-
+        Vector3 dir = slot.Forward;
         if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
-
-        Vector3 normal = new Vector3(-dir.z, 0f, dir.x).normalized;
-        Vector3 targetPos = pos + normal * _baseOffsetAmount;
+        Vector3 left = slot.Left;
+        if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
+        Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
 
         slot.CubeSlot.transform.DOMove(targetPos, time).SetEase(Ease.Linear);
         slot.CubeSlot.transform.LookAt(targetPos + dir);
