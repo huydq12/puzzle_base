@@ -6,14 +6,22 @@ using UnityEngine.UI;
 public class TutorialControl : TutorialBase
 {
     [SerializeField] private RectTransform _canvasRectTransform;
+    [SerializeField] private RectTransform _titleRectTransform;
     [SerializeField] private Image _handImg;
     [SerializeField] private Image _circleImg;
+
+    private Vector3 _titleDefaultScale;
 
     public override void Setup()
     {
         base.Setup();
         Type = TutorialType.Control;
         _tutName = Type.ToString();
+
+        if (_titleRectTransform != null)
+        {
+            _titleDefaultScale = _titleRectTransform.localScale;
+        }
     }
 
     public override void GoNextStep()
@@ -29,6 +37,14 @@ public class TutorialControl : TutorialBase
                     {
                         _handImg.color = Color.white.With(a: 0);
                         _circleImg.color = Color.white.With(a: 0);
+
+                        if (_titleRectTransform != null)
+                        {
+                            _titleRectTransform.DOKill();
+                            Vector3 s = _titleDefaultScale == default ? _titleRectTransform.localScale : _titleDefaultScale;
+                            _titleRectTransform.localScale = new Vector3(0f, s.y, s.z);
+                            _titleRectTransform.DOScaleX(s.x, 0.25f).SetEase(Ease.OutBack).SetTarget(this);
+                        }
 
                         yield return new WaitForSeconds(0.2f);
                         PlayHandClick();
@@ -47,6 +63,7 @@ public class TutorialControl : TutorialBase
                             _handImg.DOKill();
                             _handImg.rectTransform.DOKill();
                             _circleImg.rectTransform.DOKill();
+                            if (_titleRectTransform != null) _titleRectTransform.DOKill();
                             this.DOKill();
                             
                             Sequence sq = DOTween.Sequence();

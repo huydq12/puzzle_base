@@ -1273,7 +1273,13 @@ public class Board : Singleton<Board>
 
             if (config.Camera.UseOrthographicSize && config.Camera.OrthographicSize > 0f)
             {
-                mainCam.orthographicSize = config.Camera.OrthographicSize;
+                float refAspect = 9f / 16f;
+                float aspect = mainCam.aspect;
+                if (aspect <= 0.0001f) aspect = refAspect;
+
+                float scaledSize = config.Camera.OrthographicSize * (refAspect / aspect);
+                float minSize = config.Camera.MinOrthoSize > 0f ? config.Camera.MinOrthoSize : 0f;
+                mainCam.orthographicSize = Mathf.Max(scaledSize, minSize);
                 SyncEffectCameraFromMainInternal();
             }
             else

@@ -3,8 +3,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UITutorialBotter : UIPopup
+public class UITutorialBotter :UIElement
 {
+    public override bool ManualHide => true;
+    public override bool DestroyOnHide => false;
+    public override bool UseBehindPanel => false;
+    
     [SerializeField] private Image _icon;
     [SerializeField] private TextMeshProUGUI _title;
     [SerializeField] private TextMeshProUGUI _description;

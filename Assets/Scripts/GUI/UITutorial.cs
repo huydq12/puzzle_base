@@ -2,8 +2,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UITutorial : UIPopup
+public class UITutorial : UIElement
 {
+    public override bool ManualHide => true;
+    public override bool DestroyOnHide => false;
+    public override bool UseBehindPanel => false;
+    
     [Header("Config (optional)")]
     [SerializeField] private TutorialPopupConfig _config;
 
