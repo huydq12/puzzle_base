@@ -927,11 +927,15 @@ public class Board : Singleton<Board>
 
         Vector2Int[] dirs =
         {
-        Vector2Int.right,
-        Vector2Int.down,
-        Vector2Int.left,
-        Vector2Int.up
-    };
+            Vector2Int.right,
+            new Vector2Int(1, -1),
+            Vector2Int.down,
+            new Vector2Int(-1, -1),
+            Vector2Int.left,
+            new Vector2Int(-1, 1),
+            Vector2Int.up,
+            new Vector2Int(1, 1)
+        };
 
         Vector2Int start = cells
             .OrderBy(c => c.y)
@@ -947,9 +951,12 @@ public class Board : Singleton<Board>
             result.Add(current);
 
             bool moved = false;
-            for (int i = 0; i < 4; i++)
+            int dirIndex = Array.IndexOf(dirs, dir);
+            if (dirIndex < 0) dirIndex = 0;
+
+            for (int i = 0; i < 8; i++)
             {
-                Vector2Int nextDir = dirs[(Array.IndexOf(dirs, dir) + 3 + i) % 4];
+                Vector2Int nextDir = dirs[(dirIndex + 7 + i) % 8];
                 Vector2Int next = current + nextDir;
 
                 if (set.Contains(next))
