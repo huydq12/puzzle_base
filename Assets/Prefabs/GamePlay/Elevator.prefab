@@ -2539,13 +2539,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7873831828897963333}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.70710576, y: -0, z: -0, w: 0.7071079}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.3007409, y: 0.3007409, z: 0.3007409}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: -0.1, z: 0}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1754199775712594547}
-  m_LocalEulerAnglesHint: {x: 89.999825, y: -0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: -0, z: 0}
 --- !u!212 &1997681311749884950
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2648,11 +2648,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   leftGate: {fileID: 6790153449670260283}
   rightGate: {fileID: 3222424601969501370}
+  border: {fileID: 7492462473962349746}
   openDuration: 0.35
   gateOpenDistance: 0.4
   scaleGateOpenDistance: 1
-  gateOpenDistanceScale: 3.6
+  gateOpenDistanceScale: 1.5
   spawnDelayAfterOpen: 0.15
-  holdOpenDuration: 0.25
+  holdOpenDuration: 0.5
   vfx: {fileID: 2687083696577423839}
   pointSpawn: {fileID: 1194045271461182900}

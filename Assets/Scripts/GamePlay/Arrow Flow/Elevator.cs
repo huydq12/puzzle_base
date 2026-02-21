@@ -6,6 +6,7 @@ public class Elevator : MonoBehaviour
 {
     [SerializeField] private Transform leftGate;
     [SerializeField] private Transform rightGate;
+    [SerializeField] private Transform border;
     [SerializeField] private float openDuration = 0.35f;
     [SerializeField] private float gateOpenDistance = 0.4f;
     [SerializeField] private bool scaleGateOpenDistance = true;
@@ -28,6 +29,7 @@ public class Elevator : MonoBehaviour
     private void OnEnable()
     {
         _hasActivated = false;
+        border.gameObject.SetActive(true);
         if (leftGate != null) leftGate.localPosition = _leftGateStart;
         if (rightGate != null) rightGate.localPosition = _rightGateStart;
     }
@@ -45,6 +47,8 @@ public class Elevator : MonoBehaviour
         }
 
         Sequence seq = DOTween.Sequence();
+
+        border.gameObject.SetActive(false);
 
         float openDistance = gateOpenDistance;
         if (scaleGateOpenDistance)
