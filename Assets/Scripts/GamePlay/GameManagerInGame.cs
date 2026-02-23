@@ -31,6 +31,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private Coroutine _playRoutine;
     private Coroutine _hideLoadingRoutine;
     private int _levelInPlay = 1;
+    private int _contentLevelInPlay = 1;
     private int _queuedNextLevel = 1;
     private float _lastStartRequestTime = -999f;
     private const float StartRequestCooldownSeconds = 0.25f;
@@ -43,6 +44,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _nextStartIsAfterWin;
     private bool _pendingAutoHideLoading;
     private float _pendingAutoHideSeconds;
+
+    private const int LoopStartLevel = 30;
+    private const int LoopEndLevel = 108;
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
@@ -93,15 +97,17 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void SetWin()
     {
         int completedLevel = Mathf.Max(1, _levelInPlay);
-        CurrentLevel = completedLevel + 1;
-        _queuedNextLevel = CurrentLevel;
-        MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
+        int nextLevel = completedLevel + 1;
+        CurrentLevel = nextLevel;
+        _queuedNextLevel = nextLevel;
+        MaxLevel = Mathf.Max(MaxLevel, nextLevel);
         SaveData();
         // Grant unlock gift for the newly reached level (config unlockLevel matches StartGame level).
         // If an unlock tutorial will be shown at level start, we defer the gift until the tutorial FX completes.
-        if (!BoosterUnlockService.ShouldDeferGift(CurrentLevel))
+        int contentLevel = NormalizeLoopLevel(CurrentLevel);
+        if (!BoosterUnlockService.ShouldDeferGift(contentLevel))
         {
-            BoosterUnlockService.TryGrantUnlockGift(CurrentLevel);
+            BoosterUnlockService.TryGrantUnlockGift(contentLevel);
         }
         var bottom = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
         if (bottom != null) bottom.RefreshBoosterQuantity();
@@ -174,6 +180,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _lastStartRequestTime = Time.unscaledTime;
 
         _levelInPlay = level;
+        _contentLevelInPlay = NormalizeLoopLevel(level);
         _queuedNextLevel = level;
         CurrentLevel = level;
         MaxLevel = Mathf.Max(MaxLevel, level);
@@ -203,9 +210,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         SpawnUI();
         var tutorialManager = TutorialManager.Instance;
-        if (tutorialManager != null) tutorialManager.TryShowTutorial(CurrentLevel);
-        BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(CurrentLevel);
-        TutorialPopupService.TryShowAtLevelStart(CurrentLevel);
+        if (tutorialManager != null) tutorialManager.TryShowTutorial(_contentLevelInPlay);
+        BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
+        TutorialPopupService.TryShowAtLevelStart(_contentLevelInPlay);
         ClearVfx();
     }
 
@@ -239,17 +246,18 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private IEnumerator PlayGame(int level)
     {
         CurrentLevel = level;
+        int contentLevel = NormalizeLoopLevel(level);
         LevelConfig config = null;
-        yield return LevelDatabase.LoadLevelAsync(level, c => config = c);
+        yield return LevelDatabase.LoadLevelAsync(contentLevel, c => config = c);
 
         if (config == null)
         {
 #if UNITY_EDITOR
-            config = AssetDatabase.LoadAssetAtPath<LevelConfig>($"Assets/Levels/SO/Level {level}.asset");
+            config = AssetDatabase.LoadAssetAtPath<LevelConfig>($"Assets/Levels/SO/Level {contentLevel}.asset");
 #endif
             if (config == null)
             {
-                ResourceRequest soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + level);
+                ResourceRequest soRequest = Resources.LoadAsync<LevelConfig>("Levels/SO/Level " + contentLevel);
                 yield return soRequest;
                 config = soRequest.asset as LevelConfig;
             }
@@ -257,7 +265,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         if (config == null)
         {
-            Debug.LogError($"Failed to load level {level}. Missing secure `StreamingAssets/levels.dat` entry and no fallback asset at `Assets/Levels/SO/Level {level}.asset` (or `Resources/Levels/SO/Level {level}.asset`).");
+            Debug.LogError($"Failed to load content level {contentLevel} (display level {level}). Missing secure `StreamingAssets/levels.dat` entry and no fallback asset at `Assets/Levels/SO/Level {contentLevel}.asset` (or `Resources/Levels/SO/Level {contentLevel}.asset`).");
             _playRoutine = null;
             yield break;
         }
@@ -307,6 +315,15 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         MaxLevel = Mathf.Max(1, userData.maxLevel);
         CurrentLevel = Mathf.Clamp(userData.currentLevel, 1, MaxLevel);
+    }
+
+    private static int NormalizeLoopLevel(int level)
+    {
+        if (level <= LoopEndLevel) return level;
+        if (level < LoopStartLevel) return level;
+        int loopLen = LoopEndLevel - LoopStartLevel + 1;
+        int offset = (level - LoopStartLevel) % loopLen;
+        return LoopStartLevel + offset;
     }
 #if UNITY_EDITOR
     new void OnApplicationQuit()
