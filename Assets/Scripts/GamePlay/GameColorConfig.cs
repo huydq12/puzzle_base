@@ -24,6 +24,10 @@ public class GameColorConfig : SerializedScriptableObject
     {
         return ColorList[color].ShooterEye;
     }
+    public Color GetOutlineShooter(ObjectColor color)
+    {
+        return ColorList[color].Outline;
+    }
 }
 
 [HideReferenceObjectPicker]
@@ -37,5 +41,6 @@ public class ColorMaterial
     public Material Shooter;
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
     public Material ShooterEye;
+    public Color Outline;
 }
 

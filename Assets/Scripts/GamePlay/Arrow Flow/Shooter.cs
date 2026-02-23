@@ -25,6 +25,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private Bullet _bulletPrefab;
     [SerializeField] private Transform _bulletSpawnPoint;
     [SerializeField] private Animation _animation;
+    [SerializeField] private Outline _outline;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
@@ -117,10 +118,23 @@ public class Shooter : MonoBehaviour
     public void SetRole(ShooterRole role)
     {
         _animation.Play(role == ShooterRole.Current ? "Show" : "Hide", PlayMode.StopAll);
+        _outline.enabled = role == ShooterRole.Current;
+        if (role == ShooterRole.Current)
+        {
+            StartCoroutine(Common.DelayActionToNextFrame(() =>
+            {
+                _outline.OutlineColor = Board.Instance.ColorConfig.GetOutlineShooter(Color);
+                _outline.RenderOutline();
+            }
+            ));
+        }
         switch (role)
         {
             case ShooterRole.Current:
-                CanShoot = true;
+                StartCoroutine(Common.DelayAction(0.2f, () =>
+                {
+                    CanShoot = true;
+                }));
                 ShowTotal = true;
                 _collectRequested = false;
                 SetSize(0.75f);
