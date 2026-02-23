@@ -1250,11 +1250,11 @@ public class Board : Singleton<Board>
         SetupShooter();
         RefreshAllHeadHighlights();
         Sequence sq = DOTween.Sequence();
-        Camera.main.transform.position = new Vector3(0, 18, 2.1f);
-        Camera.main.orthographicSize = 9.92f;
+        Camera.main.transform.position = new Vector3(0, 18, 1.96f);
+        Camera.main.orthographicSize = 8.1f;
         sq.AppendInterval(1.0f);
         sq.Append(Camera.main.DOOrthoSize(12, 0.5f));
-        sq.Join(  Camera.main.transform.DOMoveZ(4.2f, 0.5f));
+        sq.Join(  Camera.main.transform.DOMoveZ(4.0f, 0.5f));
         sq.OnComplete(() =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);
