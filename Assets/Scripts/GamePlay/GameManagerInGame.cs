@@ -98,7 +98,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         MaxLevel = Mathf.Max(MaxLevel, CurrentLevel);
         SaveData();
         // Grant unlock gift for the newly reached level (config unlockLevel matches StartGame level).
-        BoosterUnlockService.TryGrantUnlockGift(CurrentLevel);
+        // If an unlock tutorial will be shown at level start, we defer the gift until the tutorial FX completes.
+        if (!BoosterUnlockService.ShouldDeferGift(CurrentLevel))
+        {
+            BoosterUnlockService.TryGrantUnlockGift(CurrentLevel);
+        }
         var bottom = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
         if (bottom != null) bottom.RefreshBoosterQuantity();
         PlayVfxWin();

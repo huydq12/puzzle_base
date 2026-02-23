@@ -66,6 +66,7 @@ public class UIBottomInGame : UIElement
 
     [Header("Group Booster")]
     [SerializeField] private GameObject _groupBooster;
+    [SerializeField] private RectTransform _spawnPointBooster;
     [SerializeField] private Image _imageBooster;
     [SerializeField] private TextMeshProUGUI _textBooster;
     [SerializeField] private TextMeshProUGUI _textBoosterDesp;
@@ -82,6 +83,12 @@ public class UIBottomInGame : UIElement
     [SerializeField] private string _textDespBoosterConveyor = "Pick an arrow to \n destroy!";
 
     private BoosterType _lastBooster = (BoosterType)(-1);
+
+    [Header("Tutorial Drop FX")]
+    [SerializeField] private float _tutorialDropDuration = 0.6f;
+    [SerializeField] private float _tutorialDropScatterX = 120f;
+    [SerializeField] private float _tutorialDropStartScale = 0.9f;
+    [SerializeField] private float _tutorialDropEndScale = 0.75f;
 
 
 
@@ -113,6 +120,137 @@ public class UIBottomInGame : UIElement
 
         _slideTween?.Kill();
         _slideTween = null;
+    }
+
+    public void PlayTutorialDropToBoosterButton(int boosterType, int count)
+    {
+        PlayTutorialDropToBoosterButton(boosterType, count, null);
+    }
+
+    public void PlayTutorialDropToBoosterButton(int boosterType, int count, Action onComplete)
+    {
+        if (count <= 0) return;
+
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        var canvasRect = canvas.transform as RectTransform;
+        if (canvasRect == null) return;
+
+        var cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+
+        RectTransform targetBtn = ResolveBoosterButtonRect(boosterType);
+        if (targetBtn == null) return;
+
+        Sprite sprite = ResolveBoosterSprite(boosterType);
+        if (sprite == null) return;
+
+        RectTransform spawnParentRect = _spawnPointBooster != null ? _spawnPointBooster : canvasRect;
+        Vector2 startLocal;
+        if (_spawnPointBooster != null)
+        {
+            startLocal = Vector2.zero;
+        }
+        else
+        {
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    spawnParentRect,
+                    new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                    cam,
+                    out startLocal))
+            {
+                return;
+            }
+        }
+
+        int spawnCount = Mathf.Clamp(count, 1, 30);
+        int completed = 0;
+        void HandleOneComplete()
+        {
+            completed++;
+            if (completed >= spawnCount)
+            {
+                onComplete?.Invoke();
+            }
+        }
+
+        for (int i = 0; i < spawnCount; i++)
+        {
+            float offsetX = UnityEngine.Random.Range(-_tutorialDropScatterX, _tutorialDropScatterX);
+            float offsetY = UnityEngine.Random.Range(-_tutorialDropScatterX * 0.2f, _tutorialDropScatterX * 0.2f);
+            Vector2 spawnLocal = startLocal + new Vector2(offsetX, offsetY);
+            float delay = i * 0.03f;
+            SpawnAndDrop(spawnParentRect, cam, sprite, spawnLocal, targetBtn, delay, HandleOneComplete);
+        }
+    }
+
+    private RectTransform ResolveBoosterButtonRect(int boosterType)
+    {
+        Button btn = boosterType switch
+        {
+            1 => BoosterButtonType1,
+            2 => BoosterButtonType2,
+            3 => BoosterButtonType3,
+            4 => BoosterButtonType4,
+            _ => null
+        };
+
+        return btn != null ? btn.GetComponent<RectTransform>() : null;
+    }
+
+    private Sprite ResolveBoosterSprite(int boosterType)
+    {
+        GameObject iconRoot = boosterType switch
+        {
+            1 => iconType1,
+            2 => iconType2,
+            3 => iconType3,
+            4 => iconType4,
+            _ => null
+        };
+
+        if (iconRoot == null) return null;
+        var img = iconRoot.GetComponentInChildren<Image>(includeInactive: true);
+        if (img == null) return null;
+        return img.sprite;
+    }
+
+    private void SpawnAndDrop(RectTransform spawnParentRect, Camera cam, Sprite sprite, Vector2 startLocal, RectTransform target, float delay, Action onComplete)
+    {
+        Vector2 targetLocal;
+        Vector2 targetScreen = RectTransformUtility.WorldToScreenPoint(cam, target.position);
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(spawnParentRect, targetScreen, cam, out targetLocal)) return;
+
+        var go = new GameObject("TutorialDropIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        go.transform.SetParent(spawnParentRect, worldPositionStays: false);
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = startLocal;
+        rt.localScale = Vector3.one * _tutorialDropStartScale;
+
+        var img = go.GetComponent<Image>();
+        img.sprite = sprite;
+        img.SetNativeSize();
+
+        DOTween.Kill(rt, complete: false);
+        DOTween.Kill(img, complete: false);
+
+        Sequence seq = DOTween.Sequence();
+        seq.SetTarget(go);
+        if (delay > 0f) seq.AppendInterval(delay);
+        seq.Join(rt.DOAnchorPos(targetLocal, _tutorialDropDuration).SetEase(Ease.InQuad));
+        seq.Join(rt.DOScale(_tutorialDropEndScale, _tutorialDropDuration).SetEase(Ease.OutCubic));
+        seq.Append(rt.DOScale(_tutorialDropEndScale * 1.08f, 0.12f).SetEase(Ease.OutBack));
+        seq.Append(rt.DOScale(_tutorialDropEndScale, 0.08f).SetEase(Ease.InQuad));
+        seq.OnComplete(() =>
+        {
+            if (go != null) Destroy(go);
+
+            onComplete?.Invoke();
+        });
     }
 
     public override void Show()

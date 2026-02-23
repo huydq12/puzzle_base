@@ -43,6 +43,9 @@ public class TutorialManager : Singleton<TutorialManager>
 	private GameManagerInGame _gameManagerInGame;
 	private bool _wasAnyPopupVisible;
 	private bool _bottomHiddenByPopup;
+	private int _pendingBoosterDropType;
+	private int _pendingBoosterDropCount;
+	private int _pendingBoosterGiftLevel;
 
 	private int _currentLevel;
 
@@ -94,6 +97,24 @@ public class TutorialManager : Singleton<TutorialManager>
 		{
 			HideTutorialPopups();
 			ShowBottomIfHiddenByPopup();
+			if (_uiBottomInGame != null && _pendingBoosterDropType > 0 && _pendingBoosterDropCount > 0)
+			{
+				int giftLevel = _pendingBoosterGiftLevel;
+				_uiBottomInGame.PlayTutorialDropToBoosterButton(_pendingBoosterDropType, _pendingBoosterDropCount, () =>
+				{
+					if (giftLevel > 0)
+					{
+						BoosterUnlockService.TryGrantUnlockGift(giftLevel);
+					}
+					if (_uiBottomInGame != null)
+					{
+						_uiBottomInGame.RefreshBoosterQuantity();
+					}
+				});
+			}
+			_pendingBoosterDropType = 0;
+			_pendingBoosterDropCount = 0;
+			_pendingBoosterGiftLevel = 0;
 			anyPopupVisible = false;
 		}
 
@@ -154,6 +175,18 @@ public class TutorialManager : Singleton<TutorialManager>
 			return;
 		}
 		_uiTutorialBotter.ShowForBooster(boosterType);
+		_pendingBoosterDropType = boosterType;
+		_pendingBoosterDropCount = 1;
+		_pendingBoosterGiftLevel = _gameManagerInGame != null ? _gameManagerInGame.CurrentLevel : 0;
+		var cfg = BoosterUnlockService.Config;
+		if (cfg != null)
+		{
+			var entry = cfg.GetEntry(boosterType);
+			if (entry != null)
+			{
+				_pendingBoosterDropCount = Mathf.Max(1, entry.giftAmount);
+			}
+		}
 		HideBottomForPopup();
 		_wasAnyPopupVisible = true;
 	}

@@ -16,6 +16,28 @@ public static class BoosterUnlockService
         }
     }
 
+    public static bool ShouldDeferGift(int level)
+    {
+        var cfg = Config;
+        if (cfg == null || cfg.boosters == null) return false;
+
+        var ud = GetUserData();
+        if (ud == null) return false;
+
+        for (int i = 0; i < cfg.boosters.Count; i++)
+        {
+            var entry = cfg.boosters[i];
+            if (entry == null) continue;
+            if (entry.unlockLevel != level) continue;
+
+            string tutorialKey = GetTutorialShownKey(entry.boosterType, entry.unlockLevel);
+            bool tutorialShown = ud.boosterUnlockTutorialShownKeys != null && ud.boosterUnlockTutorialShownKeys.Contains(tutorialKey);
+            if (!tutorialShown) return true;
+        }
+
+        return false;
+    }
+
     public static bool IsUnlocked(int boosterType, int currentLevel)
     {
         var cfg = Config;
@@ -156,13 +178,6 @@ public static class BoosterUnlockService
         var tutorialManager = TutorialManager.Instance;
         if (tutorialManager == null) return;
         tutorialManager.ShowBoosterUnlockTutorial(entry.boosterType);
-
-        if (GameUI.Instance == null) return;
-        var bottom = GameUI.Instance.Get<UIBottomInGame>();
-        if (bottom != null)
-        {
-            bottom.RefreshBoosterQuantity();
-        }
     }
 
     private static string GetGiftClaimKey(int boosterType, int unlockLevel)
