@@ -15,6 +15,7 @@ public class Gate : MonoBehaviour
     [SerializeField] private Transform _nextShooterHolder;
     [SerializeField] private Transform _queueShooterHolder;
     [SerializeField] private ParticleSystem _collectEffect;
+    [SerializeField] private ParticleSystem _closeEffect;
     [ReadOnly] public List<ShooterData> Shooters;
     private List<Shooter> _shooterInstances = new List<Shooter>();
     public Shooter CurrentShooter { get; private set; }
@@ -37,14 +38,30 @@ public class Gate : MonoBehaviour
     }
     private void UpdateShooterRoles()
     {
+        if (IsClosed || _shooterInstances == null || _currentShooterIndex >= _shooterInstances.Count)
+        {
+            CurrentShooter = null;
+            NextShooter = null;
+            QueueShooter = null;
+            return;
+        }
+
+        CurrentShooter = (_currentShooterIndex < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex] : null;
+        NextShooter = (_currentShooterIndex + 1 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 1] : null;
+        QueueShooter = (_currentShooterIndex + 2 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 2] : null;
+
         if (CurrentShooter != null)
             CurrentShooter.SetRole(ShooterRole.Current);
 
         if (NextShooter != null)
             NextShooter.SetRole(ShooterRole.Next);
 
-        if (QueueShooter != null)
-            QueueShooter.SetRole(ShooterRole.Queue);
+        for (int i = _currentShooterIndex + 2; i < _shooterInstances.Count; i++)
+        {
+            Shooter shooter = _shooterInstances[i];
+            if (shooter == null) continue;
+            shooter.SetRole(ShooterRole.Queue);
+        }
     }
 
     public void Setup(List<ShooterData> datas)
@@ -107,6 +124,11 @@ public class Gate : MonoBehaviour
     public void CloseGate()
     {
         IsClosed = true;
+        if (_closeEffect != null)
+        {
+            _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            _closeEffect.Play();
+        }
 
         if (_isSingleShooterMode)
         {
@@ -131,6 +153,8 @@ public class Gate : MonoBehaviour
     public void OpenGate()
     {
         IsClosed = false;
+        if (_closeEffect != null)
+            _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
@@ -296,6 +320,7 @@ public class Gate : MonoBehaviour
                     prevCurrent.transform.SetParent(_queueShooterHolder, false);
                     prevCurrent.transform.localPosition = Vector3.zero;
                     prevCurrent.transform.localScale = 0.75f * Vector3.one;
+                    prevCurrent.SetRole(ShooterRole.Queue);
                     int dataIdx = _currentShooterIndex + 2;
                     if (dataIdx < Shooters.Count)
                     {

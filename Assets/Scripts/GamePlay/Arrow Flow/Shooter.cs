@@ -14,7 +14,7 @@ public enum ShooterRole
 
 public class Shooter : MonoBehaviour
 {
-    [SerializeField] private Renderer[] _renderer;
+    [SerializeField] private Renderer _renderer;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
     [SerializeField] private Material _materialType6;
@@ -23,6 +23,8 @@ public class Shooter : MonoBehaviour
     [SerializeField] private LayerMask _cubeLayer;
     [SerializeField] private ParticleSystem _hiddenEffect;
     [SerializeField] private Bullet _bulletPrefab;
+    [SerializeField] private Transform _bulletSpawnPoint;
+    [SerializeField] private Animation _animation;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
@@ -99,7 +101,8 @@ public class Shooter : MonoBehaviour
         Bullet bullet = Instantiate(_bulletPrefab);
         if (bullet != null)
         {
-            bullet.transform.SetParent(transform, false);
+            Transform parent = _bulletSpawnPoint != null ? _bulletSpawnPoint : transform;
+            bullet.transform.SetParent(parent, false);
         }
         return bullet;
     }
@@ -113,6 +116,7 @@ public class Shooter : MonoBehaviour
 
     public void SetRole(ShooterRole role)
     {
+        _animation.Play(role == ShooterRole.Current ? "Show" : "Hide", PlayMode.StopAll);
         switch (role)
         {
             case ShooterRole.Current:
@@ -228,7 +232,7 @@ public class Shooter : MonoBehaviour
 
     private void FireBullet()
     {
-        Vector3 origin = transform.position;
+        Vector3 origin = _bulletSpawnPoint != null ? _bulletSpawnPoint.position : transform.position;
         Vector3 direction = -transform.right;
 
         Bullet bullet = GetBullet();
@@ -268,22 +272,26 @@ public class Shooter : MonoBehaviour
 
     private void ApplyMaterial(bool forceColorMaterial = false)
     {
-        if (_renderer == null || _renderer.Length == 0) return;
+        if (_renderer == null) return;
 
         Material material = null;
-
+        Material eyeMaterial = null;
         if (Type == 6)
         {
             material = _materialType6;
+            eyeMaterial = _materialType6;
         }
         else if (!forceColorMaterial && Type == 1)
         {
             material = _materialType1;
+            eyeMaterial = _materialType1;
         }
 
-        if (material == null)
+        if (material == null && eyeMaterial == null)
         {
             material = Board.Instance.ColorConfig.GetShooterColor(Color);
+            eyeMaterial = Board.Instance.ColorConfig.GetShooterEyeColor(Color);
+
             if (Type == 1)
             {
                 Type = 0;
@@ -291,13 +299,10 @@ public class Shooter : MonoBehaviour
             }
         }
 
-        if (material == null) return;
+        if (material == null || eyeMaterial == null) return;
 
-        for (int i = 0; i < _renderer.Length; i++)
-        {
-            if (_renderer[i] == null) continue;
-            _renderer[i].sharedMaterial = material;
-        }
+
+        _renderer.sharedMaterials = new Material[] { material, eyeMaterial };
     }
 
     private void OnDrawGizmos()
