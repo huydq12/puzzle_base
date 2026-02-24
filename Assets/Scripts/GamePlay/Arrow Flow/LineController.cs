@@ -5,6 +5,7 @@ using UnityEngine;
 public class LineController : Singleton<LineController>
 {
     [SerializeField] private LayerMask _cubeLayer;
+    [SerializeField] private LayerMask _gateLayer;
     [SerializeField] private Hammer _hammerPrefab;
     void Update()
     {
@@ -39,6 +40,68 @@ public class LineController : Singleton<LineController>
     private void OnTouchBegan()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        if (Board.Instance.CurrentBooster == BoosterType.Shuffle)
+        {
+            int mask = _gateLayer.value != 0 ? _gateLayer.value : ~0;
+            if (mask != ~0)
+            {
+                int top = LayerMask.NameToLayer("Top");
+                if (top >= 0) mask |= 1 << top;
+                int gateLayer = LayerMask.NameToLayer("Gate");
+                if (gateLayer >= 0) mask |= 1 << gateLayer;
+            }
+            RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
+            if (hits != null && hits.Length > 0)
+            {
+                System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+                Gate gate = null;
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    var tr = hits[i].transform;
+                    if (tr == null) continue;
+                    gate = tr.GetComponentInParent<Gate>();
+                    if (gate != null) break;
+                }
+
+                if (gate == null) return;
+
+                if (ShooterController.Instance == null || !ShooterController.Instance.CanShuffleShootersOnGate(gate)) return;
+
+                if (InventoryManager.Instance == null) return;
+                bool used = InventoryManager.Instance.UseBoosterType2();
+                if (!used)
+                {
+                    if (GameUI.Instance != null)
+                    {
+                        var buy = GameUI.Instance.Get<UIBuyBooster>();
+                        if (buy != null) buy.ShowForBooster(2);
+                    }
+
+                    Board.Instance.CurrentBooster = BoosterType.None;
+                    Board.Instance.ResetBooster();
+                    var ui = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+                    if (ui != null) ui.RefreshBoosterUIImmediate();
+                    return;
+                }
+
+                bool success = ShooterController.Instance.ShuffleShootersOnGate(gate);
+                if (!success)
+                {
+                    InventoryManager.Instance.AddBoosterType2(1);
+                    return;
+                }
+
+                Board.Instance.CurrentBooster = BoosterType.None;
+                Board.Instance.ResetBooster();
+                var bottomUi = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+                if (bottomUi != null) bottomUi.RefreshBoosterUIImmediate();
+            }
+
+            return;
+        }
+
         if (Physics.Raycast(ray, out RaycastHit hit, 100, _cubeLayer))
         {
             if (hit.transform.TryGetComponent(out CubeLine cube))

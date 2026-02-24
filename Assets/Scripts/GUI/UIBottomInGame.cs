@@ -77,6 +77,7 @@ public class UIBottomInGame : UIElement
 
     [SerializeField] private Sprite _spriteBoosterHammer;
     [SerializeField] private Sprite _spriteBoosterConveyor;
+    [SerializeField] private Sprite _spriteBoosterShuffle;
     
     [SerializeField] private string _textBoosterHammer = "Hammer !";
     [SerializeField] private string _textBoosterConveyor = "Color Picker !";
@@ -326,13 +327,14 @@ public class UIBottomInGame : UIElement
                 ConveyorController.Instance.BringToTop = false;
                 ConveyorController.Instance.SetAllCubesBringToTop(false);
                 ConveyorController.Instance.ResumeConveyor();
-                InventoryManager.Instance.AddBoosterType2(1);
+                InventoryManager.Instance.AddBoosterType3(1);
                 break;
 
             case BoosterType.Rainbow:
                 break;
 
             case BoosterType.Shuffle:
+                Board.Instance.ResetBooster();
                 break;
         }
 
@@ -368,6 +370,21 @@ public class UIBottomInGame : UIElement
         if (!board.CanActivateBooster(booster))
         {
             ShowCannotUseBoosterToast(booster);
+            return;
+        }
+
+        if (booster == BoosterType.Shuffle)
+        {
+            int count = InventoryManager.Instance.GetBoosterType2();
+            if (count <= 0)
+            {
+                GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
+                return;
+            }
+
+            board.UseShuffle();
+            RefreshBoosterQuantity();
+            RefreshGroupBoosterUI(force: true);
             return;
         }
 
@@ -507,6 +524,12 @@ public class UIBottomInGame : UIElement
         SetBoosterVisual(unlocked3, b3, iconType3Locked, iconType3, iconType3Add, BoosterTextType3);
     }
 
+    public void RefreshBoosterUIImmediate()
+    {
+        RefreshBoosterQuantity();
+        RefreshGroupBoosterUI(force: true);
+    }
+
     private static void SetBoosterVisual(
         bool unlocked,
         int count,
@@ -590,6 +613,7 @@ public class UIBottomInGame : UIElement
         {
             if (current == BoosterType.Hammer) _imageBooster.sprite = _spriteBoosterHammer;
             else if (current == BoosterType.Conveyor) _imageBooster.sprite = _spriteBoosterConveyor;
+            else if (current == BoosterType.Shuffle) _imageBooster.sprite = _spriteBoosterShuffle;
         }
 
         if (_textBooster != null)

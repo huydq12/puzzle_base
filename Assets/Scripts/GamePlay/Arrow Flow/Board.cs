@@ -226,6 +226,7 @@ public class Board : Singleton<Board>
         _overlay.DOFade(0f, 0.25f).OnComplete(() =>
         {
             _overlay.enabled = false;
+            SetShuffleGateLayerActive(false);
             foreach (var cell in Cells)
             {
                 if (!cell.IsOccupied) continue;
@@ -282,14 +283,44 @@ public class Board : Singleton<Board>
 
             case BoosterType.Shuffle:
                 {
-                    bool success = ShooterController.Instance != null && ShooterController.Instance.ShuffleShootersOnGates();
-                    CurrentBooster = BoosterType.None;
-                    if (!success)
+                    if (ShooterController.Instance == null || !ShooterController.Instance.CanShuffleShootersOnGates())
                     {
+                        CurrentBooster = BoosterType.None;
                         return;
                     }
+
+                    SetShuffleGateLayerActive(true);
+
+                    _overlay.color = _overlay.color.With(a: 0f);
+                    _overlay.enabled = true;
+                    _overlay.DOFade(0.85f, 0.25f);
                     break;
                 }
+        }
+    }
+
+    private void SetShuffleGateLayerActive(bool active)
+    {
+        int layer = LayerMask.NameToLayer(active ? "Top" : "Gate");
+        if (layer < 0) return;
+        if (ShooterController.Instance == null || ShooterController.Instance.Gates == null) return;
+
+        for (int i = 0; i < ShooterController.Instance.Gates.Count; i++)
+        {
+            Gate gate = ShooterController.Instance.Gates[i];
+            if (gate == null) continue;
+            SetLayerRecursively(gate.transform, layer);
+        }
+    }
+
+    private static void SetLayerRecursively(Transform root, int layer)
+    {
+        if (root == null) return;
+        root.gameObject.layer = layer;
+        int childCount = root.childCount;
+        for (int i = 0; i < childCount; i++)
+        {
+            SetLayerRecursively(root.GetChild(i), layer);
         }
     }
     private SplinePoint CreatePoint(Vector3 pos)

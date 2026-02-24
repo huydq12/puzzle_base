@@ -176,4 +176,17 @@ public class ShooterController : Singleton<ShooterController>
 
         return shuffledAny;
     }
+
+    public bool CanShuffleShootersOnGate(Gate gate)
+    {
+        if (gate == null) return false;
+        if (gate.IsClosed) return false;
+        return gate.RemainingShooterCount > 1;
+    }
+
+    public bool ShuffleShootersOnGate(Gate gate)
+    {
+        if (!CanShuffleShootersOnGate(gate)) return false;
+        return gate.ShuffleRemainingShooters();
+    }
 }
