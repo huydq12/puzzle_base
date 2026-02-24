@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class LineController : Singleton<LineController>
 {
     [SerializeField] private LayerMask _cubeLayer;
     [SerializeField] private LayerMask _gateLayer;
     [SerializeField] private Hammer _hammerPrefab;
+    [SerializeField] private Shuffle _shufflePrefab;
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.P))
@@ -86,17 +88,22 @@ public class LineController : Singleton<LineController>
                     return;
                 }
 
-                bool success = ShooterController.Instance.ShuffleShootersOnGate(gate);
-                if (!success)
-                {
-                    InventoryManager.Instance.AddBoosterType2(1);
-                    return;
-                }
+                var shuffle = Instantiate(_shufflePrefab);
 
-                Board.Instance.CurrentBooster = BoosterType.None;
-                Board.Instance.ResetBooster();
-                var bottomUi = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
-                if (bottomUi != null) bottomUi.RefreshBoosterUIImmediate();
+                StartCoroutine(shuffle.Hit(gate, onHit: () =>
+                {
+                    bool success = ShooterController.Instance.ShuffleShootersOnGate(gate);
+                    if (!success)
+                    {
+                        InventoryManager.Instance.AddBoosterType2(1);
+                        return;
+                    }
+
+                    Board.Instance.CurrentBooster = BoosterType.None;
+                    Board.Instance.ResetBooster();
+                    var bottomUi = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+                    if (bottomUi != null) bottomUi.RefreshBoosterUIImmediate();
+                }));
             }
 
             return;

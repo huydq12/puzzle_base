@@ -388,6 +388,21 @@ public class UIBottomInGame : UIElement
             return;
         }
 
+        if (booster == BoosterType.Shuffle)
+        {
+            int count = InventoryManager.Instance.GetBoosterType2();
+            if (count <= 0)
+            {
+                GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
+                return;
+            }
+
+            board.UseShuffle();
+            RefreshBoosterQuantity();
+            RefreshGroupBoosterUI(force: true);
+            return;
+        }
+
         bool used = inventoryBoosterType switch
         {
             1 => InventoryManager.Instance.UseBoosterType1(),
