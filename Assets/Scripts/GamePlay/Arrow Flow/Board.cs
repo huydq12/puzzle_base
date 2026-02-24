@@ -13,7 +13,8 @@ public enum BoosterType
     None,
     Hammer,
     Conveyor,
-    Rainbow
+    Rainbow,
+    Shuffle
 }
 public class Board : Singleton<Board>
 {
@@ -175,6 +176,11 @@ public class Board : Singleton<Board>
         TryUseBooster(BoosterType.Rainbow);
     }
 
+    public void UseShuffle()
+    {
+        TryUseBooster(BoosterType.Shuffle);
+    }
+
     public bool CanActivateBooster(BoosterType type)
     {
         switch (type)
@@ -197,6 +203,9 @@ public class Board : Singleton<Board>
 
             case BoosterType.Rainbow:
                 return ShooterController.Instance != null && ShooterController.Instance.CanConvertRandomShooterToRainbow();
+
+            case BoosterType.Shuffle:
+                return ShooterController.Instance != null && ShooterController.Instance.CanShuffleShootersOnGates();
 
             default:
                 return true;
@@ -263,6 +272,17 @@ public class Board : Singleton<Board>
             case BoosterType.Rainbow:
                 {
                     bool success = ShooterController.Instance.ConvertRandomShooterToRainbow();
+                    CurrentBooster = BoosterType.None;
+                    if (!success)
+                    {
+                        return;
+                    }
+                    break;
+                }
+
+            case BoosterType.Shuffle:
+                {
+                    bool success = ShooterController.Instance != null && ShooterController.Instance.ShuffleShootersOnGates();
                     CurrentBooster = BoosterType.None;
                     if (!success)
                     {

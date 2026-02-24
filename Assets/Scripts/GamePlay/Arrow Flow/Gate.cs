@@ -26,6 +26,17 @@ public class Gate : MonoBehaviour
     [ReadOnly] public bool IsClosed { get; private set; }
     private bool _isSingleShooterMode = false;
 
+    public int RemainingShooterCount
+    {
+        get
+        {
+            if (_shooterInstances == null) return 0;
+            if (_currentShooterIndex < 0) return 0;
+            if (_currentShooterIndex >= _shooterInstances.Count) return 0;
+            return _shooterInstances.Count - _currentShooterIndex;
+        }
+    }
+
     public int Total
     {
         get => _totalValue;
@@ -118,6 +129,37 @@ public class Gate : MonoBehaviour
             _shooterInstances[i].ShowTotal = i == 0;
         }
         UpdateShooterRoles();
+    }
+
+    public bool ShuffleRemainingShooters()
+    {
+        if (IsClosed) return false;
+        if (Shooters == null || _shooterInstances == null) return false;
+        if (_currentShooterIndex < 0 || _currentShooterIndex >= Shooters.Count) return false;
+
+        int remaining = Shooters.Count - _currentShooterIndex;
+        if (remaining <= 1) return false;
+
+        var slice = new List<ShooterData>(remaining);
+        for (int i = _currentShooterIndex; i < Shooters.Count; i++)
+        {
+            slice.Add(Shooters[i]);
+        }
+
+        slice.Shuffle();
+
+        for (int i = 0; i < slice.Count; i++)
+        {
+            Shooters[_currentShooterIndex + i] = slice[i];
+            Shooter inst = _shooterInstances[_currentShooterIndex + i];
+            if (inst == null) continue;
+            inst.SetColor(slice[i].Color);
+            inst.SetType(slice[i].Type);
+            inst.Total = slice[i].Counter;
+        }
+
+        UpdateShooterRoles();
+        return true;
     }
 
     [Button]

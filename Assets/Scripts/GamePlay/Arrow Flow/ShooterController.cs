@@ -147,4 +147,33 @@ public class ShooterController : Singleton<ShooterController>
 
         return false;
     }
+
+    public bool CanShuffleShootersOnGates()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            var gate = Gates[i];
+            if (gate == null || gate.IsClosed) continue;
+            if (gate.RemainingShooterCount > 1) return true;
+        }
+
+        return false;
+    }
+
+    public bool ShuffleShootersOnGates()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+
+        bool shuffledAny = false;
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            var gate = Gates[i];
+            if (gate == null) continue;
+            if (gate.ShuffleRemainingShooters()) shuffledAny = true;
+        }
+
+        return shuffledAny;
+    }
 }

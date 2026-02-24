@@ -1679,7 +1679,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 58e5ee3030972ad449078985884510f4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9c520c0e384e64eb5854de5f18c48ae3, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1993,6 +1993,7 @@ RectTransform:
   - {fileID: 2657773601446569126}
   - {fileID: 6429799856521693136}
   - {fileID: 3781665388115530093}
+  - {fileID: 2699888267765912922}
   m_Father: {fileID: 6258027836421736216}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -2494,7 +2495,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6a916f6eab40fb34d89978d8b748e13e, type: 2}
+  m_Sprite: {fileID: 21300000, guid: 58e5ee3030972ad449078985884510f4, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2569,12 +2570,15 @@ MonoBehaviour:
   iconType1Locked: {fileID: 8487159757852132938}
   iconType2Locked: {fileID: 6779597119734885769}
   iconType3Locked: {fileID: 4541743973059573416}
+  iconType4Locked: {fileID: 8196437863252696116}
   iconType1Add: {fileID: 5775994001929861945}
   iconType2Add: {fileID: 2955831653756353135}
   iconType3Add: {fileID: 326437046004187788}
+  iconType4Add: {fileID: 681251931610205697}
   bgType1: {fileID: 5783969281377483540}
   bgType2: {fileID: 1409411283088963774}
   bgType3: {fileID: 8791974826484599340}
+  bgType4: {fileID: 8868413045105880065}
   bgUnlockedSprite: {fileID: 21300000, guid: 4aa789cfb0d10c549afd2946d69c0775, type: 3}
   bgLockedSprite: {fileID: 21300000, guid: 0910c6d2de6f39a46b59ae70e986aec9, type: 3}
   fillLevel: {fileID: 7467824323984262299}
@@ -2598,8 +2602,10 @@ MonoBehaviour:
     type: 3}
   _textBoosterHammer: Hammer !
   _textBoosterConveyor: Color Picker !
+  _textBoosterShuffle: Shuffle !
   _textDespBoosterHammer: "Pick a color on the \n converyor to destroy!"
   _textDespBoosterConveyor: "Pick an arrow to \n destroy!"
+  _textDespBoosterShuffle: Shuffle Shooter on Gate!
   _tutorialDropDuration: 1.2
   _tutorialDropScatterX: 120
   _tutorialDropStartScale: 0.8
@@ -3064,6 +3070,81 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!1 &8196437863252696116
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2699888267765912922}
+  - component: {fileID: 2349200979321224515}
+  - component: {fileID: 895529029441949306}
+  m_Layer: 5
+  m_Name: Image (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2699888267765912922
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8196437863252696116}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2283345393323585321}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 124}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &2349200979321224515
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8196437863252696116}
+  m_CullTransparentMesh: 1
+--- !u!114 &895529029441949306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8196437863252696116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 14326541f13f3b343bb0318d3687cca7, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &8421105244007217853
 GameObject:
   m_ObjectHideFlags: 0

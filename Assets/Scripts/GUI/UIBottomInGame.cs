@@ -31,15 +31,18 @@ public class UIBottomInGame : UIElement
     public GameObject iconType1Locked;
     public GameObject iconType2Locked;
     public GameObject iconType3Locked;
+    public GameObject iconType4Locked;
 
     public GameObject iconType1Add;
     public GameObject iconType2Add;
     public GameObject iconType3Add;
+    public GameObject iconType4Add;
 
     [Header("Lock State")]
     [SerializeField] private Image bgType1;
     [SerializeField] private Image bgType2;
     [SerializeField] private Image bgType3;
+    [SerializeField] private Image bgType4;
 
     [SerializeField] private Sprite bgUnlockedSprite;
     [SerializeField] private Sprite bgLockedSprite;
@@ -77,10 +80,12 @@ public class UIBottomInGame : UIElement
     
     [SerializeField] private string _textBoosterHammer = "Hammer !";
     [SerializeField] private string _textBoosterConveyor = "Color Picker !";
+    [SerializeField] private string _textBoosterShuffle = "Shuffle !";
     
 
     [SerializeField] private string _textDespBoosterHammer = "Pick a color on the \n converyor to destroy!";
     [SerializeField] private string _textDespBoosterConveyor = "Pick an arrow to \n destroy!";
+    [SerializeField] private string _textDespBoosterShuffle = "Shuffle Shooter on Gate!";
 
     private BoosterType _lastBooster = (BoosterType)(-1);
 
@@ -97,8 +102,8 @@ public class UIBottomInGame : UIElement
         // Only 3 boosters are supported in this mode: Hammer / Conveyor / Rainbow.
         // We reuse the first 3 button slots and hide the 4th one (Swap).
         if (BoosterButtonType1 != null) BoosterButtonType1.onClick.AddListener(UseHammer);
-        if (BoosterButtonType2 != null) BoosterButtonType2.onClick.AddListener(UseConveyor);
-        if (BoosterButtonType3 != null) BoosterButtonType3.onClick.AddListener(UseRainbow);
+        if (BoosterButtonType2 != null) BoosterButtonType2.onClick.AddListener(UseShuffle);
+        if (BoosterButtonType3 != null) BoosterButtonType3.onClick.AddListener(UseConveyor);
         if (_buttonCancelBooster != null) _buttonCancelBooster.onClick.AddListener(CancelBooster);
 
         SetSwapBoosterVisible(false);
@@ -191,7 +196,6 @@ public class UIBottomInGame : UIElement
             1 => BoosterButtonType1,
             2 => BoosterButtonType2,
             3 => BoosterButtonType3,
-            4 => BoosterButtonType4,
             _ => null
         };
 
@@ -205,7 +209,6 @@ public class UIBottomInGame : UIElement
             1 => iconType1,
             2 => iconType2,
             3 => iconType3,
-            4 => iconType4,
             _ => null
         };
 
@@ -299,8 +302,8 @@ public class UIBottomInGame : UIElement
     }
 
     public void UseHammer() => TryUseBooster(BoosterType.Hammer, inventoryBoosterType: 1);
-    public void UseConveyor() => TryUseBooster(BoosterType.Conveyor, inventoryBoosterType: 2);
-    public void UseRainbow() => TryUseBooster(BoosterType.Rainbow, inventoryBoosterType: 3);
+    public void UseShuffle() => TryUseBooster(BoosterType.Shuffle, inventoryBoosterType: 2);
+    public void UseConveyor() => TryUseBooster(BoosterType.Conveyor, inventoryBoosterType: 3);
 
     private void SetSwapBoosterVisible(bool visible)
     {
@@ -327,6 +330,9 @@ public class UIBottomInGame : UIElement
                 break;
 
             case BoosterType.Rainbow:
+                break;
+
+            case BoosterType.Shuffle:
                 break;
         }
 
@@ -370,6 +376,7 @@ public class UIBottomInGame : UIElement
             1 => InventoryManager.Instance.UseBoosterType1(),
             2 => InventoryManager.Instance.UseBoosterType2(),
             3 => InventoryManager.Instance.UseBoosterType3(),
+            4 => InventoryManager.Instance.UseBoosterType4(),
             _ => false
         };
 
@@ -390,6 +397,9 @@ public class UIBottomInGame : UIElement
             case BoosterType.Rainbow:
                 board.UseRainbow();
                 break;
+            case BoosterType.Shuffle:
+                board.UseShuffle();
+                break;
         }
 
         RefreshBoosterQuantity();
@@ -403,6 +413,7 @@ public class UIBottomInGame : UIElement
             BoosterType.Hammer => "No blocks to destroy",
             BoosterType.Conveyor => "No blocks on conveyor",
             BoosterType.Rainbow => "No shooters available",
+            BoosterType.Shuffle => "No shooters to shuffle",
             _ => "Can't use booster right now"
         };
 
@@ -571,23 +582,28 @@ public class UIBottomInGame : UIElement
 
         if (_groupBooster == null) return;
 
-        bool show = current == BoosterType.Hammer || current == BoosterType.Conveyor;
+        bool show = current == BoosterType.Hammer || current == BoosterType.Conveyor || current == BoosterType.Rainbow || current == BoosterType.Shuffle;
         _groupBooster.SetActive(show);
         if (!show) return;
 
         if (_imageBooster != null)
         {
-            _imageBooster.sprite = current == BoosterType.Hammer ? _spriteBoosterHammer : _spriteBoosterConveyor;
+            if (current == BoosterType.Hammer) _imageBooster.sprite = _spriteBoosterHammer;
+            else if (current == BoosterType.Conveyor) _imageBooster.sprite = _spriteBoosterConveyor;
         }
 
         if (_textBooster != null)
         {
-            _textBooster.text = current == BoosterType.Hammer ? _textBoosterHammer : _textBoosterConveyor;
+            if (current == BoosterType.Hammer) _textBooster.text = _textBoosterHammer;
+            else if (current == BoosterType.Conveyor) _textBooster.text = _textBoosterConveyor;
+            else if (current == BoosterType.Rainbow || current == BoosterType.Shuffle) _textBooster.text = _textBoosterShuffle;
         }
 
         if (_textBoosterDesp != null)
         {
-            _textBoosterDesp.text = current == BoosterType.Hammer ? _textDespBoosterHammer : _textDespBoosterConveyor;
+            if (current == BoosterType.Hammer) _textBoosterDesp.text = _textDespBoosterHammer;
+            else if (current == BoosterType.Conveyor) _textBoosterDesp.text = _textDespBoosterConveyor;
+            else if (current == BoosterType.Rainbow || current == BoosterType.Shuffle) _textBoosterDesp.text = _textDespBoosterShuffle;
         }
     }
 
