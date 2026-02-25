@@ -15,6 +15,7 @@ public class Gate : MonoBehaviour
     [SerializeField] private Transform _nextShooterHolder;
     [SerializeField] private Transform _queueShooterHolder;
     [SerializeField] private ParticleSystem _collectEffect;
+    [SerializeField] private ParticleSystem _closeEffect;
     [ReadOnly] public List<ShooterData> Shooters;
     private List<Shooter> _shooterInstances = new List<Shooter>();
     public Shooter CurrentShooter { get; private set; }
@@ -24,6 +25,17 @@ public class Gate : MonoBehaviour
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
     private bool _isSingleShooterMode = false;
+
+    public int RemainingShooterCount
+    {
+        get
+        {
+            if (_shooterInstances == null) return 0;
+            if (_currentShooterIndex < 0) return 0;
+            if (_currentShooterIndex >= _shooterInstances.Count) return 0;
+            return _shooterInstances.Count - _currentShooterIndex;
+        }
+    }
 
     public int Total
     {
@@ -37,14 +49,30 @@ public class Gate : MonoBehaviour
     }
     private void UpdateShooterRoles()
     {
+        if (IsClosed || _shooterInstances == null || _currentShooterIndex >= _shooterInstances.Count)
+        {
+            CurrentShooter = null;
+            NextShooter = null;
+            QueueShooter = null;
+            return;
+        }
+
+        CurrentShooter = (_currentShooterIndex < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex] : null;
+        NextShooter = (_currentShooterIndex + 1 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 1] : null;
+        QueueShooter = (_currentShooterIndex + 2 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 2] : null;
+
         if (CurrentShooter != null)
             CurrentShooter.SetRole(ShooterRole.Current);
 
         if (NextShooter != null)
             NextShooter.SetRole(ShooterRole.Next);
 
-        if (QueueShooter != null)
-            QueueShooter.SetRole(ShooterRole.Queue);
+        for (int i = _currentShooterIndex + 2; i < _shooterInstances.Count; i++)
+        {
+            Shooter shooter = _shooterInstances[i];
+            if (shooter == null) continue;
+            shooter.SetRole(ShooterRole.Queue);
+        }
     }
 
     public void Setup(List<ShooterData> datas)
@@ -103,10 +131,46 @@ public class Gate : MonoBehaviour
         UpdateShooterRoles();
     }
 
+    public bool ShuffleRemainingShooters()
+    {
+        if (IsClosed) return false;
+        if (Shooters == null || _shooterInstances == null) return false;
+        if (_currentShooterIndex < 0 || _currentShooterIndex >= Shooters.Count) return false;
+
+        int remaining = Shooters.Count - _currentShooterIndex;
+        if (remaining <= 1) return false;
+
+        var slice = new List<ShooterData>(remaining);
+        for (int i = _currentShooterIndex; i < Shooters.Count; i++)
+        {
+            slice.Add(Shooters[i]);
+        }
+
+        slice.Shuffle();
+
+        for (int i = 0; i < slice.Count; i++)
+        {
+            Shooters[_currentShooterIndex + i] = slice[i];
+            Shooter inst = _shooterInstances[_currentShooterIndex + i];
+            if (inst == null) continue;
+            inst.SetColor(slice[i].Color);
+            inst.SetType(slice[i].Type);
+            inst.Total = slice[i].Counter;
+        }
+
+        UpdateShooterRoles();
+        return true;
+    }
+
     [Button]
     public void CloseGate()
     {
         IsClosed = true;
+        if (_closeEffect != null)
+        {
+            _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            _closeEffect.Play();
+        }
 
         if (_isSingleShooterMode)
         {
@@ -131,6 +195,8 @@ public class Gate : MonoBehaviour
     public void OpenGate()
     {
         IsClosed = false;
+        if (_closeEffect != null)
+            _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
@@ -296,6 +362,7 @@ public class Gate : MonoBehaviour
                     prevCurrent.transform.SetParent(_queueShooterHolder, false);
                     prevCurrent.transform.localPosition = Vector3.zero;
                     prevCurrent.transform.localScale = 0.75f * Vector3.one;
+                    prevCurrent.SetRole(ShooterRole.Queue);
                     int dataIdx = _currentShooterIndex + 2;
                     if (dataIdx < Shooters.Count)
                     {
