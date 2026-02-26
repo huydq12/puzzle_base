@@ -17,9 +17,18 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private float _splineHeight;
     [SerializeField] private float _gateHeight = 0.5f;
     [SerializeField] private float _textHeight = 2f;
+    [SerializeField] private float _closeDuration = 0.25f;
+
+    [SerializeField] private ParticleSystem _particleSystemHole1;
+    [SerializeField] private ParticleSystem _particleSystemHole2;
+
+    [SerializeField] private ParticleSystem _particleSystemShooter;
 
     public int Type { get; private set; }
     public int Counter { get; private set; }
+
+    private SplineMesh _splineMesh;
+    private Coroutine _closeRoutine;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
@@ -79,14 +88,14 @@ public class ConveyorTunel : MonoBehaviour
 
         if (_splineComputer == null || worldPositions == null || worldPositions.Count < 2) return;
 
-        SplineMesh splineMesh = GetComponent<SplineMesh>();
-        if (splineMesh != null)
+        _splineMesh = GetComponent<SplineMesh>();
+        if (_splineMesh != null)
         {
-            splineMesh.spline = _splineComputer;
-            splineMesh.loopSamples = false;
-            splineMesh.clipFrom = 0.0;
-            splineMesh.clipTo = 1.0;
-            splineMesh.autoUpdate = true;
+            _splineMesh.spline = _splineComputer;
+            _splineMesh.loopSamples = false;
+            _splineMesh.clipFrom = 0.0;
+            _splineMesh.clipTo = 1.0;
+            _splineMesh.autoUpdate = true;
         }
 
         if (_splineComputer.isClosed)
@@ -108,29 +117,118 @@ public class ConveyorTunel : MonoBehaviour
         _splineComputer.SetPoints(points, SplineComputer.Space.World);
         _splineComputer.RebuildImmediate(true, true);
 
-        if (splineMesh != null)
-            splineMesh.RebuildImmediate();
+        if (_splineMesh != null)
+            _splineMesh.RebuildImmediate();
     }
 
     public void SetCounter(int counter)
     {
         Counter = Mathf.Max(0, counter);
 
+        if (Counter <= 0)
+        {
+            if (_countTunel != null)
+            {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        DebugSetActive(gameObject, Counter > 0, this, "ConveyorTunel.SetCounter() toggle tunnel");
+                DebugSetActive(_countTunel.gameObject, false, this, "ConveyorTunel.SetCounter() toggle _countTunel");
 #else
-        gameObject.SetActive(Counter > 0);
+                _countTunel.gameObject.SetActive(false);
+#endif
+            }
+
+            StartCloseAnimation();
+            return;
+        }
+
+        StopCloseAnimation();
+        ResetSplineClip();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugSetActive(gameObject, true, this, "ConveyorTunel.SetCounter() toggle tunnel");
+#else
+        gameObject.SetActive(true);
 #endif
 
         if (_countTunel == null) return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.SetCounter() toggle _countTunel");
+        DebugSetActive(_countTunel.gameObject, true, this, "ConveyorTunel.SetCounter() toggle _countTunel");
 #else
-        _countTunel.gameObject.SetActive(Counter > 0);
+        _countTunel.gameObject.SetActive(true);
 #endif
 
-        if (Counter > 0)
-            _countTunel.text = Counter.ToString();
+        _countTunel.text = Counter.ToString();
+    }
+
+    private void StartCloseAnimation()
+    {
+        EnsureSplineMesh();
+
+        if (_closeRoutine != null)
+            StopCoroutine(_closeRoutine);
+
+        if (_closeDuration <= 0f || _splineMesh == null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DebugSetActive(gameObject, false, this, "ConveyorTunel.StartCloseAnimation() no spline");
+#else
+            gameObject.SetActive(false);
+#endif
+            return;
+        }
+
+        _closeRoutine = StartCoroutine(CloseRoutine());
+    }
+
+    private void StopCloseAnimation()
+    {
+        if (_closeRoutine == null) return;
+        StopCoroutine(_closeRoutine);
+        _closeRoutine = null;
+    }
+
+    private void ResetSplineClip()
+    {
+        EnsureSplineMesh();
+        if (_splineMesh == null) return;
+        _splineMesh.clipFrom = 0.0f;
+        _splineMesh.clipTo = 1.0f;
+        _splineMesh.RebuildImmediate();
+    }
+
+    private void EnsureSplineMesh()
+    {
+        if (_splineMesh == null)
+            _splineMesh = GetComponent<SplineMesh>();
+    }
+
+    private IEnumerator CloseRoutine()
+    {
+        float startFrom = (float)_splineMesh.clipFrom;
+        float startTo = (float)_splineMesh.clipTo;
+        float target = 0.5f;
+        float time = 0f;
+
+        while (time < _closeDuration)
+        {
+            float t = time / _closeDuration;
+            _splineMesh.clipFrom = Mathf.Lerp(startFrom, target, t);
+            _splineMesh.clipTo = Mathf.Lerp(startTo, target, t);
+            _splineMesh.RebuildImmediate();
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        _splineMesh.clipFrom = target;
+        _splineMesh.clipTo = target;
+        _splineMesh.RebuildImmediate();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugSetActive(gameObject, false, this, "ConveyorTunel.CloseRoutine() done");
+#else
+        gameObject.SetActive(false);
+#endif
+
+        _closeRoutine = null;
     }
 }
