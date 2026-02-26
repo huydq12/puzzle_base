@@ -264,7 +264,7 @@ public class Gate : MonoBehaviour
         if (_iceShooter == null) return;
         Transform target = CurrentShooter != null ? CurrentShooter.transform : _currentShooterHolder;
         if (target == null) target = transform;
-        _iceShooter.transform.SetParent(target, false);
+        _iceShooter.transform.SetParent(transform, false);
         _iceShooter.transform.localPosition = Vector3.zero;
         _iceShooter.transform.localRotation = Quaternion.identity;
     }

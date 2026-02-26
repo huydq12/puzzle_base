@@ -20,7 +20,7 @@ public class IceShooter : MonoBehaviour
         Counter = Mathf.Max(0, counter);
         RefreshVisuals();
         if (Counter > 0)
-            PlayRandomEffect();
+            PlayAllEffects();
     }
 
     public void Consume(int amount)
@@ -35,13 +35,16 @@ public class IceShooter : MonoBehaviour
         {
             RefreshVisuals();
             if (Counter > 0)
-                PlayRandomEffect();
+                PlayAllEffects();
         }
     }
 
     private void RefreshVisuals()
     {
         bool show = Counter > 0;
+        if (gameObject.activeSelf != show)
+            gameObject.SetActive(show);
+
         if (_textCount != null)
         {
             _textCount.gameObject.SetActive(show);
@@ -64,12 +67,16 @@ public class IceShooter : MonoBehaviour
         }
     }
 
-    private void PlayRandomEffect()
+    private void PlayAllEffects()
     {
         if (_effect == null || _effect.Count == 0) return;
-        int index = Random.Range(0, _effect.Count);
-        ParticleSystem ps = _effect[index];
-        if (ps == null) return;
-        ps.Play(true);
+        for (int i = 0; i < _effect.Count; i++)
+        {
+            ParticleSystem ps = _effect[i];
+            if (ps == null) continue;
+            if (!ps.gameObject.activeSelf)
+                ps.gameObject.SetActive(true);
+            ps.Play(true);
+        }
     }
 }

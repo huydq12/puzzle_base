@@ -11,7 +11,7 @@ public static class LevelsSecureExportTool
     [MenuItem("Tools/Levels/Export Secure Levels (Encrypted StreamingAssets)")]
     private static void ExportAllLevelsEncryptedStreamingAssets()
     {
-        const string sourceFolder = "Assets/Levels/SO";
+        const string sourceFolder = "Assets/SO";
         const string streamingAssetsFolder = "Assets/StreamingAssets";
         const string fileName = "levels.dat";
 
