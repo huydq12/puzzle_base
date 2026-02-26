@@ -282,7 +282,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             if (!seenLineKeys.Add(key)) return;
 
             ColorLine line = new ColorLine();
-            line.Color = (ObjectColor)arrow.color;
+            line.Color = ResolveJsonColor(arrow.color);
             line.Cells = new List<Vector2Int>();
             line.ElementTypes = new List<int>();
             line.Counter = arrow.counter;
@@ -342,7 +342,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                         if (arrow == null || arrow.unitPositions == null || arrow.unitPositions.Count == 0) continue;
 
                         ColorLine line = new ColorLine();
-                        line.Color = (ObjectColor)arrow.color;
+                        line.Color = ResolveJsonColor(arrow.color);
                         line.Cells = new List<Vector2Int>();
                         line.ElementTypes = new List<int>();
                         line.Counter = arrow.counter;
@@ -463,7 +463,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                         if (unit == null) continue;
 
                         ShooterData data = new ShooterData();
-                        data.Color = (ObjectColor)unit.color;
+                        data.Color = ResolveJsonColor(unit.color);
                         data.Counter = unit.counter;
                         data.Type = ResolveShooterElementType(unit);
                         data.TieID = unit.tieID;
@@ -713,6 +713,14 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public float x;
         public float y;
         public float z;
+    }
+
+    private static ObjectColor ResolveJsonColor(int color)
+    {
+        if (color <= 0) return ObjectColor.None;
+        int mapped = color - 1;
+        if (mapped > (int)ObjectColor.White) return ObjectColor.None;
+        return (ObjectColor)mapped;
     }
 
     private static int ResolveShooterElementType(LevelJsonShooterUnit unit)

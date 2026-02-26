@@ -21,8 +21,10 @@ public class Line : MonoBehaviour
     [SerializeField] private Vector3 _counterTextOffset = new Vector3(0f, 0.4f, 0f);
 
     [SerializeField] private Bomb _bomb;
+    [SerializeField] private Key _key;
     [SerializeField] private float _bombDurationSeconds = 60f;
     [SerializeField] private int _bombElementType = 8;
+    [SerializeField] private int _keyElementType = 11;
 
 
     private float _cellDistance;
@@ -54,6 +56,10 @@ public class Line : MonoBehaviour
     private bool _bombActive;
     private bool _bombStarted;
     private bool _bombLoseTriggered;
+
+    private Key _keyInstance;
+    private bool _keyConsumed;
+    private bool _hasKeyElement;
     public void Clear()
     {
         _isMoving = false;
@@ -89,10 +95,12 @@ public class Line : MonoBehaviour
             ElementTypes.Clear();
 
         StopBomb();
+        StopKey();
     }
 
     private void Update()
     {
+        UpdateKeyVisuals();
         if (!_bombActive) return;
         if (GameManagerInGame.Instance != null &&
             GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
@@ -163,6 +171,10 @@ public class Line : MonoBehaviour
 
         while (ElementTypes.Count < expectedCount)
             ElementTypes.Add(0);
+
+        _keyConsumed = false;
+        UpdateKeyPresenceFromData();
+        UpdateKeyVisuals();
     }
 
     public void SetRemainingCounter(int remaining)
@@ -323,6 +335,7 @@ public class Line : MonoBehaviour
                 CubeLine cube = Cubes[i];
                 ElementTypes.Add(cube != null ? cube.ElementType : 0);
             }
+            UpdateKeyPresenceFromData();
             return;
         }
 
@@ -331,6 +344,7 @@ public class Line : MonoBehaviour
             CubeLine cube = Cubes[i];
             ElementTypes[i] = cube != null ? cube.ElementType : 0;
         }
+        UpdateKeyPresenceFromData();
     }
 
     public void InitializeBombIfNeeded()
@@ -379,11 +393,24 @@ public class Line : MonoBehaviour
         return false;
     }
 
+    private bool HasKeyElement()
+    {
+        UpdateKeyPresenceFromData();
+        return _hasKeyElement && !_keyConsumed;
+    }
+
     private void EnsureBombInstance()
     {
         if (_bombInstance != null) return;
         if (_bomb == null) return;
         _bombInstance = Instantiate(_bomb, transform);
+    }
+
+    private void EnsureKeyInstance()
+    {
+        if (_keyInstance != null) return;
+        if (_key == null) return;
+        _keyInstance = Instantiate(_key, transform);
     }
 
     private void UpdateBombVisuals()
@@ -416,6 +443,104 @@ public class Line : MonoBehaviour
         _bombLoseTriggered = false;
         if (_bombInstance != null)
             _bombInstance.SetVisible(false);
+    }
+
+    private void UpdateKeyVisuals()
+    {
+        if (!HasKeyElement())
+        {
+            if (_keyInstance != null && _keyInstance.gameObject.activeSelf)
+                _keyInstance.gameObject.SetActive(false);
+            return;
+        }
+
+        EnsureKeyInstance();
+        if (_keyInstance == null) return;
+
+        if (!_keyInstance.gameObject.activeSelf)
+            _keyInstance.gameObject.SetActive(true);
+
+        UpdateKeyPosition();
+    }
+
+    private void UpdateKeyPosition()
+    {
+        if (_keyInstance == null) return;
+        if (Cubes == null || Cubes.Count == 0) return;
+
+        int midIndex = Cubes.Count / 2;
+        CubeLine anchor = Cubes[midIndex];
+        if (anchor == null) return;
+        _keyInstance.SetAnchorPosition(anchor.transform.position);
+    }
+
+    private void StopKey()
+    {
+        _keyConsumed = false;
+        _hasKeyElement = false;
+        if (_keyInstance != null)
+            _keyInstance.gameObject.SetActive(false);
+    }
+
+    private void ReleaseKeyIfNeeded(string reason, bool force = false)
+    {
+        if (_keyConsumed) return;
+        if (!force)
+        {
+            UpdateKeyPresenceFromData();
+            if (!_hasKeyElement) return;
+        }
+        if (ShooterController.Instance == null) return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Line] Key released ({reason}). Unlocking next lock. line={name}", this);
+#endif
+        ShooterController.Instance.UnlockNextLockOnAnyGate();
+        _keyConsumed = true;
+        _hasKeyElement = false;
+        if (_keyInstance != null)
+            _keyInstance.gameObject.SetActive(false);
+    }
+
+    private void UpdateKeyPresenceFromData()
+    {
+        if (_keyConsumed)
+        {
+            _hasKeyElement = false;
+            return;
+        }
+
+        if (_hasKeyElement)
+            return;
+
+        bool found = false;
+        if (ElementTypes != null && ElementTypes.Count > 0)
+        {
+            for (int i = 0; i < ElementTypes.Count; i++)
+            {
+                if (ElementTypes[i] == _keyElementType)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found && Cubes != null)
+        {
+            for (int i = 0; i < Cubes.Count; i++)
+            {
+                CubeLine cube = Cubes[i];
+                if (cube != null && cube.ElementType == _keyElementType)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (found)
+            _hasKeyElement = true;
     }
 
     private void TriggerBombLose()
@@ -607,6 +732,7 @@ public class Line : MonoBehaviour
 
         // Track destroyed cubes by color
         Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
+        bool destroyedKey = false;
 
         for (int i = Cubes.Count - 1; i >= 0; i--)
         {
@@ -640,6 +766,9 @@ public class Line : MonoBehaviour
                     destroyedByColor[cubeColor] = 0;
                 destroyedByColor[cubeColor]++;
 
+                if (cube.ElementType == _keyElementType)
+                    destroyedKey = true;
+
                 if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
                 {
                     cube.Cell.CubeOnCell = null;
@@ -662,6 +791,10 @@ public class Line : MonoBehaviour
 
         if (Cubes.Count == 0)
         {
+            if (destroyedKey)
+                ReleaseKeyIfNeeded("cube_destroyed", force: true);
+            else
+                ReleaseKeyIfNeeded("line_empty");
             Destroy(gameObject);
         }
         else
@@ -856,6 +989,7 @@ public class Line : MonoBehaviour
         RefreshCounterText();
         if (Cubes.Count == 0)
         {
+            ReleaseKeyIfNeeded("line_empty");
             ConveyorController.Instance.OnLineMoved();
             Destroy(gameObject);
         }

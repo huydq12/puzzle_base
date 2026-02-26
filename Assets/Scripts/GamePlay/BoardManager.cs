@@ -91,7 +91,7 @@ public class BoardManager : Singleton<BoardManager>
 	            go.transform.SetPositionAndRotation(pos, Quaternion.identity);
 	            spawned.Add(go);
 
-            ApplyMaterial(go, (ObjectColor)arrow.color, true);
+            ApplyMaterial(go, ResolveJsonColor(arrow.color), true);
         }
     }
 
@@ -132,7 +132,7 @@ public class BoardManager : Singleton<BoardManager>
 	                unitGo.transform.SetParent(holder, false);
 	                unitGo.transform.SetPositionAndRotation(holder.position, holder.rotation);
 	                spawned.Add(unitGo);
-	                ApplyMaterial(unitGo, (ObjectColor)unit.color, false);
+	                ApplyMaterial(unitGo, ResolveJsonColor(unit.color), false);
             }
         }
     }
@@ -214,6 +214,14 @@ public class BoardManager : Singleton<BoardManager>
         else if (direction == 3) y = 270f;
         else if (direction == 4) y = 0f;
         return Quaternion.Euler(0f, y, 0f);
+    }
+
+    private static ObjectColor ResolveJsonColor(int color)
+    {
+        if (color <= 0) return ObjectColor.None;
+        int mapped = color - 1;
+        if (mapped > (int)ObjectColor.White) return ObjectColor.None;
+        return (ObjectColor)mapped;
     }
 
     [System.Serializable]

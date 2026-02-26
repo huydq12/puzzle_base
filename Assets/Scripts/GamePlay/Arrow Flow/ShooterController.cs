@@ -7,8 +7,10 @@ public class ShooterController : Singleton<ShooterController>
 {
     [SerializeField] private Gate _gatePrefab;
     [SerializeField] private Shooter _shooterPrefab;
+    [SerializeField] private Lock _lockPrefab;
     [ReadOnly] public List<Gate> Gates;
     public Shooter ShooterPrefab => _shooterPrefab;
+    public Lock LockPrefab => _lockPrefab;
 
     private Quaternion DirectionToRotation(int direction)
     {
@@ -70,6 +72,42 @@ public class ShooterController : Singleton<ShooterController>
             if (gate == null) continue;
             gate.ConsumeIceCounter(clamped);
         }
+    }
+
+    public bool UnlockCurrentLockOnGate(Gate gate)
+    {
+        if (gate == null) return false;
+        return gate.UnlockCurrentLock();
+    }
+
+    public bool UnlockNextLockOnGate(Gate gate)
+    {
+        if (gate == null) return false;
+        return gate.UnlockNextLock();
+    }
+
+    public bool UnlockCurrentLockOnAnyGate()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            Gate gate = Gates[i];
+            if (gate != null && gate.UnlockCurrentLock())
+                return true;
+        }
+        return false;
+    }
+
+    public bool UnlockNextLockOnAnyGate()
+    {
+        if (Gates == null || Gates.Count == 0) return false;
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            Gate gate = Gates[i];
+            if (gate != null && gate.UnlockNextLock())
+                return true;
+        }
+        return false;
     }
 
     public void ReduceShooterTotalByColor(ObjectColor color, int amount)

@@ -10,23 +10,30 @@ public class GameColorConfig : SerializedScriptableObject
     public Dictionary<ObjectColor, ColorMaterial> ColorList;
     public Material GetCubeColor(ObjectColor color)
     {
-        return ColorList[color].Cube;
+        return TryGetColorMaterial(color, out var mat) ? mat.Cube : null;
     }
     public Material GetCubeHeadColor(ObjectColor color)
     {
-        return ColorList[color].Head;
+        return TryGetColorMaterial(color, out var mat) ? mat.Head : null;
     }
     public Material GetShooterColor(ObjectColor color)
     {
-        return ColorList[color].Shooter;
+        return TryGetColorMaterial(color, out var mat) ? mat.Shooter : null;
     }
     public Material GetShooterEyeColor(ObjectColor color)
     {
-        return ColorList[color].ShooterEye;
+        return TryGetColorMaterial(color, out var mat) ? mat.ShooterEye : null;
     }
     public Color GetOutlineShooter(ObjectColor color)
     {
-        return ColorList[color].Outline;
+        return TryGetColorMaterial(color, out var mat) ? mat.Outline : Color.clear;
+    }
+
+    private bool TryGetColorMaterial(ObjectColor color, out ColorMaterial mat)
+    {
+        mat = null;
+        if (color == ObjectColor.None) return false;
+        return ColorList != null && ColorList.TryGetValue(color, out mat) && mat != null;
     }
 }
 
@@ -43,4 +50,3 @@ public class ColorMaterial
     public Material ShooterEye;
     public Color Outline;
 }
-

@@ -1,5 +1,6 @@
 public enum ObjectColor
 {
+    None = -1,
     Green,
     Red,
     Blue,
@@ -10,4 +11,6 @@ public enum ObjectColor
     Cyan,
     Brown,
     Teal,
+    Black,
+    White,
 }

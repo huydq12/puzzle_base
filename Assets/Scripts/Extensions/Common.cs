@@ -206,6 +206,10 @@ public static class Common
 
         switch (value)
         {
+            case ObjectColor.None:
+                hex = "#808080";
+                break;
+
             case ObjectColor.Red:
                 hex = "#ff3232d2";
                 break;
@@ -244,6 +248,14 @@ public static class Common
 
             case ObjectColor.Teal:
                 hex = "#6bc5b6ff";
+                break;
+
+            case ObjectColor.Black:
+                hex = "#000000";
+                break;
+
+            case ObjectColor.White:
+                hex = "#FFFFFF";
                 break;
         }
 

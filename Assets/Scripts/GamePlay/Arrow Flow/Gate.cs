@@ -27,6 +27,8 @@ public class Gate : MonoBehaviour
     [ReadOnly] public bool IsClosed { get; private set; }
     private bool _isSingleShooterMode = false;
     private IceShooter _iceShooter;
+    private readonly List<Lock> _lockInstances = new List<Lock>();
+    private readonly List<Lock> _locksByIndex = new List<Lock>();
 
     public bool IsShooterFrozen => _iceShooter != null && _iceShooter.Counter > 0;
 
@@ -58,6 +60,7 @@ public class Gate : MonoBehaviour
             CurrentShooter = null;
             NextShooter = null;
             QueueShooter = null;
+            UpdateLockVisuals();
             return;
         }
 
@@ -78,6 +81,7 @@ public class Gate : MonoBehaviour
             shooter.SetRole(ShooterRole.Queue);
         }
 
+        UpdateLockVisuals();
         UpdateIceShooterAttachment();
     }
 
@@ -90,6 +94,7 @@ public class Gate : MonoBehaviour
             this
         );
 #endif
+        ClearLocks();
         if (data == null || data.Shooters == null)
         {
             Total = 0;
@@ -97,10 +102,11 @@ public class Gate : MonoBehaviour
         }
         else
         {
-            Total = data.Shooters.Count;
             Shooters = new List<ShooterData>(data.Shooters);
+            Total = Shooters.Count;
         }
         _shooterInstances.Clear();
+        _locksByIndex.Clear();
         _currentShooterIndex = 0;
 
         // Check if single shooter mode (only 1 shooter from the start)
@@ -121,10 +127,25 @@ public class Gate : MonoBehaviour
 
 	        for (int i = 0; i < Shooters.Count; i++)
 	        {
-	            if (ShooterController.Instance == null) continue;
-	            if (ShooterController.Instance.ShooterPrefab == null) continue;
+                if (IsLockShooter(Shooters[i]))
+                {
+                    _shooterInstances.Add(null);
+                    _locksByIndex.Add(SpawnLockAtIndex(i));
+                    continue;
+                }
+
+                _locksByIndex.Add(null);
+	            if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null)
+                {
+                    _shooterInstances.Add(null);
+                    continue;
+                }
 	            Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
-	            if (shoot == null) continue;
+	            if (shoot == null)
+                {
+                    _shooterInstances.Add(null);
+                    continue;
+                }
 	            shoot.ResetForReuse();
 	            shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
 	            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
@@ -146,6 +167,7 @@ public class Gate : MonoBehaviour
 
         for (int i = 0; i < _shooterInstances.Count; i++)
         {
+            if (_shooterInstances[i] == null) continue;
             _shooterInstances[i].ShowTotal = i == 0;
         }
         UpdateShooterRoles();
@@ -163,22 +185,27 @@ public class Gate : MonoBehaviour
         int remaining = Shooters.Count - _currentShooterIndex;
         if (remaining <= 1) return false;
 
-        var slice = new List<ShooterData>(remaining);
+        var movable = new List<ShooterData>(remaining);
         for (int i = _currentShooterIndex; i < Shooters.Count; i++)
         {
-            slice.Add(Shooters[i]);
+            if (IsLockIndex(i)) continue;
+            movable.Add(Shooters[i]);
         }
 
-        slice.Shuffle();
+        if (movable.Count <= 1) return false;
+        movable.Shuffle();
 
-        for (int i = 0; i < slice.Count; i++)
+        int moveIdx = 0;
+        for (int i = _currentShooterIndex; i < Shooters.Count; i++)
         {
-            Shooters[_currentShooterIndex + i] = slice[i];
-            Shooter inst = _shooterInstances[_currentShooterIndex + i];
+            if (IsLockIndex(i)) continue;
+            ShooterData data = movable[moveIdx++];
+            Shooters[i] = data;
+            Shooter inst = _shooterInstances[i];
             if (inst == null) continue;
-            inst.SetColor(slice[i].Color);
-            inst.SetType(slice[i].Type);
-            inst.Total = slice[i].Counter;
+            inst.SetColor(data.Color);
+            inst.SetType(data.Type);
+            inst.Total = data.Counter;
         }
 
         UpdateShooterRoles();
@@ -267,6 +294,134 @@ public class Gate : MonoBehaviour
         _iceShooter.transform.SetParent(transform, false);
         _iceShooter.transform.localPosition = Vector3.zero;
         _iceShooter.transform.localRotation = Quaternion.identity;
+    }
+
+    private static bool IsLockShooter(ShooterData data)
+    {
+        return data != null && data.Color == ObjectColor.None && data.Type == 10;
+    }
+
+    private bool IsLockIndex(int index)
+    {
+        return index >= 0 && Shooters != null && index < Shooters.Count && IsLockShooter(Shooters[index]);
+    }
+
+    private void UpdateLockVisuals()
+    {
+        if (_locksByIndex == null || _locksByIndex.Count == 0) return;
+
+        for (int i = 0; i < _locksByIndex.Count; i++)
+        {
+            Lock lockObj = _locksByIndex[i];
+            if (lockObj == null) continue;
+
+            int offset = i - _currentShooterIndex;
+            if (offset < 0 || offset > 2)
+            {
+                lockObj.gameObject.SetActive(false);
+                continue;
+            }
+
+            Transform holder = GetShooterHolderByIndex(offset);
+            if (holder != null)
+            {
+                lockObj.transform.SetParent(holder, false);
+                lockObj.transform.localPosition = Vector3.zero;
+                lockObj.transform.localRotation = Quaternion.identity;
+            }
+
+            lockObj.gameObject.SetActive(true);
+        }
+    }
+
+    public bool UnlockCurrentLock()
+    {
+        if (!IsLockIndex(_currentShooterIndex)) return false;
+        RemoveLockAtIndex(_currentShooterIndex);
+        return true;
+    }
+
+    public bool UnlockNextLock()
+    {
+        int lockIndex = FindNextLockIndex(_currentShooterIndex);
+        if (lockIndex < 0) return false;
+        RemoveLockAtIndex(lockIndex);
+        return true;
+    }
+
+    private int FindNextLockIndex(int startIndex)
+    {
+        if (Shooters == null || Shooters.Count == 0) return -1;
+        int start = Mathf.Max(0, startIndex);
+        for (int i = start; i < Shooters.Count; i++)
+        {
+            if (IsLockIndex(i)) return i;
+        }
+        return -1;
+    }
+
+    private void RemoveLockAtIndex(int index)
+    {
+        if (index < 0 || index >= Shooters.Count) return;
+        Lock lockObj = (index < _locksByIndex.Count) ? _locksByIndex[index] : null;
+        if (lockObj != null)
+        {
+            _lockInstances.Remove(lockObj);
+            Destroy(lockObj.gameObject);
+        }
+
+        Shooters.RemoveAt(index);
+        _locksByIndex.RemoveAt(index);
+        if (index < _shooterInstances.Count)
+            _shooterInstances.RemoveAt(index);
+
+        Total = Mathf.Max(0, Total - 1);
+
+        if (index < _currentShooterIndex)
+            _currentShooterIndex = Mathf.Max(0, _currentShooterIndex - 1);
+
+        if (_currentShooterIndex >= _shooterInstances.Count)
+        {
+            CurrentShooter = null;
+            NextShooter = null;
+            QueueShooter = null;
+            CloseGate();
+            return;
+        }
+
+        UpdateShooterRoles();
+        RearrangeShooterPositions();
+    }
+
+    private Lock SpawnLockAtIndex(int index)
+    {
+        if (ShooterController.Instance == null || ShooterController.Instance.LockPrefab == null) return null;
+
+        Lock lockObj = Instantiate(ShooterController.Instance.LockPrefab);
+        if (lockObj == null) return null;
+
+        Transform parent = transform;
+        lockObj.transform.SetParent(parent, false);
+        lockObj.transform.localPosition = Vector3.zero;
+        lockObj.transform.localRotation = Quaternion.identity;
+        _lockInstances.Add(lockObj);
+        return lockObj;
+    }
+
+    private void ClearLocks()
+    {
+        if (_lockInstances.Count == 0)
+        {
+            _locksByIndex.Clear();
+            return;
+        }
+        for (int i = 0; i < _lockInstances.Count; i++)
+        {
+            if (_lockInstances[i] != null)
+                Destroy(_lockInstances[i].gameObject);
+        }
+        _lockInstances.Clear();
+        _locksByIndex.Clear();
     }
 
 
@@ -367,6 +522,7 @@ public class Gate : MonoBehaviour
     [Button]
     public void CollectCurrentShooter()
     {
+        if (IsLockIndex(_currentShooterIndex)) return;
         if (_currentShooterIndex > _shooterInstances.Count - 1)
         {
             return;
@@ -421,11 +577,16 @@ public class Gate : MonoBehaviour
                     prevCurrent.transform.localScale = 0.75f * Vector3.one;
                     prevCurrent.SetRole(ShooterRole.Queue);
                     int dataIdx = _currentShooterIndex + 2;
-                    if (dataIdx < Shooters.Count)
+                    if (dataIdx < Shooters.Count && !IsLockIndex(dataIdx))
                     {
+                        prevCurrent.gameObject.SetActive(true);
                         prevCurrent.SetColor(Shooters[dataIdx].Color);
                         prevCurrent.SetType(Shooters[dataIdx].Type);
                         prevCurrent.Total = Shooters[dataIdx].Counter;
+                    }
+                    else if (dataIdx < Shooters.Count)
+                    {
+                        prevCurrent.gameObject.SetActive(false);
                     }
                 }
             });

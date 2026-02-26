@@ -171,6 +171,8 @@ public class CubeLine : SerializedMonoBehaviour
         ObjectColor.Cyan,
         ObjectColor.Brown,
         ObjectColor.Teal,
+        ObjectColor.Black,
+        ObjectColor.White,
     };
 
     private bool TryGetElementType3ShiftedColorFromOriginal(int offset, out ObjectColor shiftedColor)
