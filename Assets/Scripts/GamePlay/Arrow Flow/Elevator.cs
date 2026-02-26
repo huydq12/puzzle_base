@@ -4,13 +4,12 @@ using UnityEngine;
 
 public class Elevator : MonoBehaviour
 {
-    [SerializeField] private Transform leftGate;
-    [SerializeField] private Transform rightGate;
+    [SerializeField] private SpriteRenderer leftGate;
+    [SerializeField] private SpriteRenderer rightGate;
+    [SerializeField] private Vector2 leftGateSize;
+    [SerializeField] private Vector2 rightGateSize;
     [SerializeField] private Transform border;
     [SerializeField] private float openDuration = 0.35f;
-    [SerializeField] private float gateOpenDistance = 0.4f;
-    [SerializeField] private bool scaleGateOpenDistance = true;
-    [SerializeField] private float gateOpenDistanceScale = 1f;
     [SerializeField] private float spawnDelayAfterOpen = 0.2f;
     [SerializeField] private float holdOpenDuration = 0.25f;
     [SerializeField] private ParticleSystem vfx;
@@ -18,20 +17,51 @@ public class Elevator : MonoBehaviour
 
     private Vector3 _leftGateStart;
     private Vector3 _rightGateStart;
+    private Vector2 _leftGateSizeStart;
+    private Vector2 _rightGateSizeStart;
     private bool _hasActivated;
 
     private void Awake()
     {
-        if (leftGate != null) _leftGateStart = leftGate.localPosition;
-        if (rightGate != null) _rightGateStart = rightGate.localPosition;
+        if (leftGate != null) _leftGateStart = leftGate.transform.localPosition;
+        if (rightGate != null) _rightGateStart = rightGate.transform.localPosition;
+        ApplyGateVisuals();
+        CacheGateSizes();
     }
 
     private void OnEnable()
     {
         _hasActivated = false;
         border.gameObject.SetActive(true);
-        if (leftGate != null) leftGate.localPosition = _leftGateStart;
-        if (rightGate != null) rightGate.localPosition = _rightGateStart;
+        if (leftGate != null) leftGate.transform.localPosition = _leftGateStart;
+        if (rightGate != null) rightGate.transform.localPosition = _rightGateStart;
+        if (leftGate != null) leftGate.size = _leftGateSizeStart;
+        if (rightGate != null) rightGate.size = _rightGateSizeStart;
+    }
+
+    private void ApplyGateVisuals()
+    {
+        if (leftGate != null)
+        {
+            leftGate.drawMode = SpriteDrawMode.Tiled;
+            if (leftGateSize == Vector2.zero)
+                leftGateSize = leftGate.size;
+            leftGate.size = leftGateSize;
+        }
+
+        if (rightGate != null)
+        {
+            rightGate.drawMode = SpriteDrawMode.Tiled;
+            if (rightGateSize == Vector2.zero)
+                rightGateSize = rightGate.size;
+            rightGate.size = rightGateSize;
+        }
+    }
+
+    private void CacheGateSizes()
+    {
+        if (leftGate != null) _leftGateSizeStart = leftGate.size;
+        if (rightGate != null) _rightGateSizeStart = rightGate.size;
     }
 
     public void ActivateAndDisappear(Action onOpened = null)
@@ -50,14 +80,18 @@ public class Elevator : MonoBehaviour
 
         border.gameObject.SetActive(false);
 
-        float openDistance = gateOpenDistance;
-        if (scaleGateOpenDistance)
-            openDistance *= Mathf.Max(0.01f, transform.localScale.x) * Mathf.Max(0.01f, gateOpenDistanceScale);
-
         if (leftGate != null)
-            seq.Join(leftGate.DOLocalMoveX(_leftGateStart.x - openDistance, openDuration).SetEase(Ease.OutQuad));
+        {
+            Vector2 leftOpenSize = new Vector2(0f, _leftGateSizeStart.y);
+            seq.Join(DOTween.To(() => leftGate.size, value => leftGate.size = value, leftOpenSize, openDuration)
+                .SetEase(Ease.OutQuad));
+        }
         if (rightGate != null)
-            seq.Join(rightGate.DOLocalMoveX(_rightGateStart.x + openDistance, openDuration).SetEase(Ease.OutQuad));
+        {
+            Vector2 rightOpenSize = new Vector2(0f, _rightGateSizeStart.y);
+            seq.Join(DOTween.To(() => rightGate.size, value => rightGate.size = value, rightOpenSize, openDuration)
+                .SetEase(Ease.OutQuad));
+        }
 
         if (spawnDelayAfterOpen > 0f)
             seq.AppendInterval(spawnDelayAfterOpen);

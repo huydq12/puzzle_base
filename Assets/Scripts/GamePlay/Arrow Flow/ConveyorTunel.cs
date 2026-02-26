@@ -10,6 +10,7 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private TextMeshPro _countTunel;
     [SerializeField] private GameObject _gate_start;
     [SerializeField] private GameObject _gate_end;
+    [SerializeField] private GameObject _bg_text;
     [SerializeField] private MeshRenderer _renderer;
     [SerializeField] private SplineComputer _splineComputer;
 
@@ -63,6 +64,8 @@ public class ConveyorTunel : MonoBehaviour
         if (_countTunel != null)
         {
             int midIdx = Mathf.Clamp(worldPositions.Count / 2, 0, worldPositions.Count - 1);
+
+            _bg_text.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
             _countTunel.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.Setup() toggle _countTunel");
@@ -97,7 +100,7 @@ public class ConveyorTunel : MonoBehaviour
             SplinePoint point = new SplinePoint(worldPositions[i] + Vector3.up * _splineHeight)
             {
                 type = SplinePoint.Type.SmoothMirrored,
-                size = ConveyorController.Instance._cubeSize
+                size = _splineHeight
             };
             points[i] = point;
         }
