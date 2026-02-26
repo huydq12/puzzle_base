@@ -7014,7 +7014,7 @@ Transform:
   m_GameObject: {fileID: 1312940133053104}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2, y: 1.5, z: 0}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0}
   m_LocalScale: {x: 1.4101, y: 1.4101, z: 1.4101}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9311,7 +9311,6 @@ GameObject:
   - component: {fileID: 23127340342214330}
   - component: {fileID: 198117122935782354}
   - component: {fileID: 199341212591503476}
-  - component: {fileID: 95839939870309814}
   m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
@@ -9328,7 +9327,7 @@ Transform:
   m_GameObject: {fileID: 1388317978815293}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2, y: 1.5, z: 0}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0}
   m_LocalScale: {x: 1.21, y: 1.21, z: 1.21}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -11645,27 +11644,6 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!95 &95839939870309814
-Animator:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1388317978815293}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 14bfdf3b79a95a2428c915ba817f1021, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1432771809617950
 GameObject:
   m_ObjectHideFlags: 0
@@ -18708,9 +18686,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 675d71769f7324f4eac0e3c6cb607829, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _explodeParticleSystem: {fileID: 198095287961024398}
+  _explodePunchScale: 0.25
+  _explodePunchDuration: 0.6
+  _explodePunchVibrato: 8
+  _explodePunchElasticity: 0.6
+  _explodeShakeDuration: 0.6
+  _explodeShakeStrength: 0.05
   _counterTimeText: {fileID: 8712560418211672224}
-  _counterTextOffset: {x: 0, y: 0.4, z: 0}
-  _animator: {fileID: 95839939870309814}
+  _counterTextOffset: {x: 0, y: 2, z: 0}
+  _explodeObject: {fileID: 1388317978815293}
 --- !u!1 &1632433781147647
 GameObject:
   m_ObjectHideFlags: 0

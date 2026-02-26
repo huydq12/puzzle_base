@@ -671,6 +671,7 @@ public class Board : Singleton<Board>
             _iceLines.Add(lineGo);
 
         lineGo.RefreshCounterText();
+        lineGo.InitializeBombIfNeeded();
     }
     private void SetupConveyor()
     {
@@ -1189,6 +1190,7 @@ public class Board : Singleton<Board>
             }
 
             lineColor.RefreshCounterText();
+            lineColor.InitializeBombIfNeeded();
         }
     }
 

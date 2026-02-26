@@ -73,7 +73,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
         if (_loseShowTween != null) _loseShowTween.Kill();
-        _loseShowTween = DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UILose>().Show());
+        _loseShowTween = DOVirtual.DelayedCall(1f, () => GameUI.Instance.Get<UILose>().Show());
     }
     public void OnLineMoved()
     {

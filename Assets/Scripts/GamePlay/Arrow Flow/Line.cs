@@ -21,6 +21,8 @@ public class Line : MonoBehaviour
     [SerializeField] private Vector3 _counterTextOffset = new Vector3(0f, 0.4f, 0f);
 
     [SerializeField] private Bomb _bomb;
+    [SerializeField] private float _bombDurationSeconds = 60f;
+    [SerializeField] private int _bombElementType = 8;
 
 
     private float _cellDistance;
@@ -46,6 +48,12 @@ public class Line : MonoBehaviour
 
     private GridCell[] _targetsBuffer;
     private bool _hasNotifiedConveyorEnter;
+
+    private Bomb _bombInstance;
+    private float _bombRemainingSeconds;
+    private bool _bombActive;
+    private bool _bombStarted;
+    private bool _bombLoseTriggered;
     public void Clear()
     {
         _isMoving = false;
@@ -79,6 +87,46 @@ public class Line : MonoBehaviour
         Cubes.Clear();
         if (ElementTypes != null)
             ElementTypes.Clear();
+
+        StopBomb();
+    }
+
+    private void Update()
+    {
+        if (!_bombActive) return;
+        if (GameManagerInGame.Instance != null &&
+            GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
+            return;
+
+        if (!HasBombElement())
+        {
+            StopBomb();
+            return;
+        }
+
+        if (!_bombStarted)
+        {
+            UpdateBombVisuals();
+            if (WasAnyPointerPressed())
+            {
+                _bombStarted = true;
+                if (_bombInstance != null)
+                    _bombInstance.PlayTimer();
+            }
+            return;
+        }
+
+        _bombRemainingSeconds -= Time.deltaTime;
+        if (_bombRemainingSeconds < 0f)
+            _bombRemainingSeconds = 0f;
+
+        UpdateBombVisuals();
+
+        if (_bombRemainingSeconds <= 0f && !_bombLoseTriggered && HasBombElement())
+        {
+            _bombLoseTriggered = true;
+            TriggerBombLose();
+        }
     }
     private void Awake()
     {
@@ -213,11 +261,17 @@ public class Line : MonoBehaviour
     {
         UpdateCounterText();
         UpdateCounterTextPosition();
+        UpdateBombVisuals();
     }
 
     private void UpdateCounterText()
     {
         if (_counterText == null) return;
+        if (HasBombElement())
+        {
+            _counterText.gameObject.SetActive(false);
+            return;
+        }
         bool hasElementType3 = false;
         if (Cubes != null)
         {
@@ -277,6 +331,116 @@ public class Line : MonoBehaviour
             CubeLine cube = Cubes[i];
             ElementTypes[i] = cube != null ? cube.ElementType : 0;
         }
+    }
+
+    public void InitializeBombIfNeeded()
+    {
+        if (!HasBombElement())
+        {
+            StopBomb();
+            return;
+        }
+
+        if (!_bombActive)
+        {
+            _bombActive = true;
+            _bombLoseTriggered = false;
+            _bombRemainingSeconds = Mathf.Max(0.01f, _bombDurationSeconds);
+            _bombStarted = false;
+        }
+
+        EnsureBombInstance();
+        if (_bombInstance != null)
+            _bombInstance.PlayIdle();
+        UpdateBombVisuals();
+    }
+
+    private bool HasBombElement()
+    {
+        if (ElementTypes != null && ElementTypes.Count > 0)
+        {
+            for (int i = 0; i < ElementTypes.Count; i++)
+            {
+                if (ElementTypes[i] == _bombElementType)
+                    return true;
+            }
+        }
+
+        if (Cubes != null)
+        {
+            for (int i = 0; i < Cubes.Count; i++)
+            {
+                CubeLine cube = Cubes[i];
+                if (cube != null && cube.ElementType == _bombElementType)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void EnsureBombInstance()
+    {
+        if (_bombInstance != null) return;
+        if (_bomb == null) return;
+        _bombInstance = Instantiate(_bomb, transform);
+    }
+
+    private void UpdateBombVisuals()
+    {
+        if (!_bombActive) return;
+        EnsureBombInstance();
+        if (_bombInstance == null) return;
+
+        _bombInstance.SetVisible(true);
+        _bombInstance.SetRemainingSeconds(_bombRemainingSeconds);
+        UpdateBombPosition();
+    }
+
+    private void UpdateBombPosition()
+    {
+        if (_bombInstance == null) return;
+        if (Cubes == null || Cubes.Count == 0) return;
+
+        int midIndex = Cubes.Count / 2;
+        CubeLine anchor = Cubes[midIndex];
+        if (anchor == null) return;
+        _bombInstance.SetAnchorPosition(anchor.transform.position);
+    }
+
+    private void StopBomb()
+    {
+        _bombActive = false;
+        _bombRemainingSeconds = 0f;
+        _bombStarted = false;
+        _bombLoseTriggered = false;
+        if (_bombInstance != null)
+            _bombInstance.SetVisible(false);
+    }
+
+    private void TriggerBombLose()
+    {
+        if (GameManagerInGame.Instance == null) return;
+        if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result) return;
+
+        if (_bombInstance != null)
+            _bombInstance.PlayExplosion();
+
+        DOVirtual.DelayedCall(1.0f, () => { GameManagerInGame.Instance.SetLose(); GameUI.Instance.Get<UILose>().Show(); });
+    }
+
+    private static bool WasAnyPointerPressed()
+    {
+#if UNITY_EDITOR || UNITY_STANDALONE
+        return Input.GetMouseButtonDown(0);
+#else
+        if (Input.touchCount > 0)
+        {
+            Touch t = Input.GetTouch(0);
+            if (t.phase == TouchPhase.Began) return true;
+        }
+        return Input.GetMouseButtonDown(0);
+#endif
     }
 
     private void UpdateCounterTextPosition()
@@ -485,6 +649,8 @@ public class Line : MonoBehaviour
                 cube.transform.SetParent(Board.Instance.transform, true);
                 cube.OnHit();
                 Cubes.RemoveAt(i);
+                if (ElementTypes != null && i < ElementTypes.Count)
+                    ElementTypes.RemoveAt(i);
             }
         }
 
