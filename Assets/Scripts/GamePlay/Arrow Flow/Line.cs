@@ -11,6 +11,7 @@ public class Line : MonoBehaviour
     [ReadOnly] public int Counter;
     [ReadOnly] public int RemainingCounter;
     [ReadOnly] public bool IsIceLine;
+    [ReadOnly] public List<int> ElementTypes;
 
     [Header("Cubes (0 = tail, last = head)")]
     [ReadOnly] public List<CubeLine> Cubes;
@@ -18,6 +19,8 @@ public class Line : MonoBehaviour
     [SerializeField] private float _moveSpeed;
     [SerializeField] private TextMeshPro _counterText;
     [SerializeField] private Vector3 _counterTextOffset = new Vector3(0f, 0.4f, 0f);
+
+    [SerializeField] private Bomb _bomb;
 
 
     private float _cellDistance;
@@ -74,6 +77,8 @@ public class Line : MonoBehaviour
         _blockingCube = null;
 
         Cubes.Clear();
+        if (ElementTypes != null)
+            ElementTypes.Clear();
     }
     private void Awake()
     {
@@ -92,6 +97,24 @@ public class Line : MonoBehaviour
     public void SetIsIceLine(bool isIceLine)
     {
         IsIceLine = isIceLine;
+    }
+
+    public void SetElementTypes(List<int> elementTypes, int expectedCount)
+    {
+        if (ElementTypes == null)
+            ElementTypes = new List<int>(expectedCount);
+
+        ElementTypes.Clear();
+
+        if (elementTypes != null)
+        {
+            int count = Mathf.Min(elementTypes.Count, expectedCount);
+            for (int i = 0; i < count; i++)
+                ElementTypes.Add(elementTypes[i]);
+        }
+
+        while (ElementTypes.Count < expectedCount)
+            ElementTypes.Add(0);
     }
 
     public void SetRemainingCounter(int remaining)
@@ -228,7 +251,32 @@ public class Line : MonoBehaviour
             if (cube.ElementType != 2) continue;
             cube.SetElementType(0);
         }
+        SyncElementTypesFromCubes();
         AudioManager.Instance.PlaySFX(SFXType.Ice);
+    }
+
+    private void SyncElementTypesFromCubes()
+    {
+        if (Cubes == null) return;
+        if (ElementTypes == null)
+            ElementTypes = new List<int>(Cubes.Count);
+
+        if (ElementTypes.Count != Cubes.Count)
+        {
+            ElementTypes.Clear();
+            for (int i = 0; i < Cubes.Count; i++)
+            {
+                CubeLine cube = Cubes[i];
+                ElementTypes.Add(cube != null ? cube.ElementType : 0);
+            }
+            return;
+        }
+
+        for (int i = 0; i < Cubes.Count; i++)
+        {
+            CubeLine cube = Cubes[i];
+            ElementTypes[i] = cube != null ? cube.ElementType : 0;
+        }
     }
 
     private void UpdateCounterTextPosition()

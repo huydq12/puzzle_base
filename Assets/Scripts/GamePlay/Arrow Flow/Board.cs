@@ -605,6 +605,7 @@ public class Board : Singleton<Board>
         lineGo.Color = line.Color;
         lineGo.InitializeCounter(line.Counter);
         lineGo.SetIsIceLine(lineHasIce);
+        lineGo.SetElementTypes(line.ElementTypes, line.Cells.Count);
         lineGo.Cubes = new List<CubeLine>();
 
         int last = line.Cells.Count - 1;
@@ -625,6 +626,8 @@ public class Board : Singleton<Board>
             cube.SetColor(line.Color);
             int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
             cube.SetElementType(elementType);
+            if (lineGo.ElementTypes != null && i < lineGo.ElementTypes.Count)
+                lineGo.ElementTypes[i] = elementType;
             cell.CubeOnCell = cube;
             cell.ShowRenderer(true);
             cube.Cell = cell;
@@ -1129,6 +1132,7 @@ public class Board : Singleton<Board>
             lineColor.Color = line.Color;
             lineColor.InitializeCounter(line.Counter);
             lineColor.SetIsIceLine(lineHasIce);
+            lineColor.SetElementTypes(line.ElementTypes, line.Cells.Count);
             lineColor.Cubes = new List<CubeLine>();
 
             var cells = line.Cells;
@@ -1147,6 +1151,8 @@ public class Board : Singleton<Board>
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
                 cube.SetElementType(elementType);
+                if (lineColor.ElementTypes != null && i < lineColor.ElementTypes.Count)
+                    lineColor.ElementTypes[i] = elementType;
                 cell.CubeOnCell = cube;
                 cube.Cell = cell;
                 if (i == last)
