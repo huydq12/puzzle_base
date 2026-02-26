@@ -449,7 +449,7 @@ public class Line : MonoBehaviour
     {
         if (!HasKeyElement())
         {
-            if (_keyInstance != null && _keyInstance.gameObject.activeSelf)
+            if (_keyInstance != null && _keyInstance.gameObject.activeSelf && !_keyInstance.IsFlying)
                 _keyInstance.gameObject.SetActive(false);
             return;
         }
@@ -495,11 +495,14 @@ public class Line : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[Line] Key released ({reason}). Unlocking next lock. line={name}", this);
 #endif
-        ShooterController.Instance.UnlockNextLockOnAnyGate();
+        if (_keyInstance != null && !_keyInstance.gameObject.activeSelf)
+            _keyInstance.gameObject.SetActive(true);
+
+        bool unlocked = ShooterController.Instance.UnlockNextLockOnAnyGate(_keyInstance);
         _keyConsumed = true;
         _hasKeyElement = false;
-        if (_keyInstance != null)
-            _keyInstance.gameObject.SetActive(false);
+        if (!unlocked && _keyInstance != null)
+            _keyInstance.Consume();
     }
 
     private void UpdateKeyPresenceFromData()

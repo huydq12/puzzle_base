@@ -22,6 +22,7 @@ public class Board : Singleton<Board>
     [SerializeField] private Line _linePrefab;
     [SerializeField] private CubeLine _cubePrefab;
     [SerializeField] private Elevator _elevatorPrefab;
+    [SerializeField] private LineDoor _lineDoorPrefab;
     [SerializeField] private ConveyorTunel _conveyorTunelPrefab;
     [SerializeField] private GameColorConfig _colorConfig;
     [SerializeField] private float _cellSize;

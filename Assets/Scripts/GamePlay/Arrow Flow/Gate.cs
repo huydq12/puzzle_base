@@ -314,6 +314,7 @@ public class Gate : MonoBehaviour
         {
             Lock lockObj = _locksByIndex[i];
             if (lockObj == null) continue;
+            if (lockObj.IsUnlocking) continue;
 
             int offset = i - _currentShooterIndex;
             if (offset < 0 || offset > 2)
@@ -334,19 +335,17 @@ public class Gate : MonoBehaviour
         }
     }
 
-    public bool UnlockCurrentLock()
+    public bool UnlockCurrentLock(Key key = null)
     {
         if (!IsLockIndex(_currentShooterIndex)) return false;
-        RemoveLockAtIndex(_currentShooterIndex);
-        return true;
+        return BeginUnlockLockAtIndex(_currentShooterIndex, key);
     }
 
-    public bool UnlockNextLock()
+    public bool UnlockNextLock(Key key = null)
     {
         int lockIndex = FindNextLockIndex(_currentShooterIndex);
         if (lockIndex < 0) return false;
-        RemoveLockAtIndex(lockIndex);
-        return true;
+        return BeginUnlockLockAtIndex(lockIndex, key);
     }
 
     private int FindNextLockIndex(int startIndex)
@@ -358,6 +357,42 @@ public class Gate : MonoBehaviour
             if (IsLockIndex(i)) return i;
         }
         return -1;
+    }
+
+    private bool BeginUnlockLockAtIndex(int index, Key key)
+    {
+        if (index < 0 || index >= Shooters.Count) return false;
+
+        Lock lockObj = (index < _locksByIndex.Count) ? _locksByIndex[index] : null;
+        if (lockObj == null)
+        {
+            RemoveLockAtIndex(index);
+            return true;
+        }
+
+        if (key == null)
+        {
+            RemoveLockAtIndex(index);
+            return true;
+        }
+
+        if (!lockObj.TryBeginUnlock(key, () => RemoveLock(lockObj)))
+            return false;
+
+        return true;
+    }
+
+    private void RemoveLock(Lock lockObj)
+    {
+        if (lockObj == null) return;
+        int index = _locksByIndex.IndexOf(lockObj);
+        if (index < 0)
+        {
+            if (lockObj != null && lockObj.gameObject != null)
+                Destroy(lockObj.gameObject);
+            return;
+        }
+        RemoveLockAtIndex(index);
     }
 
     private void RemoveLockAtIndex(int index)

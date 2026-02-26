@@ -74,37 +74,37 @@ public class ShooterController : Singleton<ShooterController>
         }
     }
 
-    public bool UnlockCurrentLockOnGate(Gate gate)
+    public bool UnlockCurrentLockOnGate(Gate gate, Key key = null)
     {
         if (gate == null) return false;
-        return gate.UnlockCurrentLock();
+        return gate.UnlockCurrentLock(key);
     }
 
-    public bool UnlockNextLockOnGate(Gate gate)
+    public bool UnlockNextLockOnGate(Gate gate, Key key = null)
     {
         if (gate == null) return false;
-        return gate.UnlockNextLock();
+        return gate.UnlockNextLock(key);
     }
 
-    public bool UnlockCurrentLockOnAnyGate()
+    public bool UnlockCurrentLockOnAnyGate(Key key = null)
     {
         if (Gates == null || Gates.Count == 0) return false;
         for (int i = 0; i < Gates.Count; i++)
         {
             Gate gate = Gates[i];
-            if (gate != null && gate.UnlockCurrentLock())
+            if (gate != null && gate.UnlockCurrentLock(key))
                 return true;
         }
         return false;
     }
 
-    public bool UnlockNextLockOnAnyGate()
+    public bool UnlockNextLockOnAnyGate(Key key = null)
     {
         if (Gates == null || Gates.Count == 0) return false;
         for (int i = 0; i < Gates.Count; i++)
         {
             Gate gate = Gates[i];
-            if (gate != null && gate.UnlockNextLock())
+            if (gate != null && gate.UnlockNextLock(key))
                 return true;
         }
         return false;
