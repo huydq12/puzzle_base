@@ -360,9 +360,17 @@ public class Board : Singleton<Board>
     {
         return _conveyorTunnelBlockCounts.TryGetValue(cellPos, out int count) && count > 0;
     }
-    public void NotifyShooterDisappeared()
+    public void NotifyShooterDisappeared(Shooter shooter = null, string reason = null)
     {
         if (_activeTunnels == null || _activeTunnels.Count == 0) return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (shooter != null)
+            UnityEngine.Debug.Log(
+                $"[Board] Shooter disappeared: {DescribeShooter(shooter)} reason={reason}",
+                shooter
+            );
+#endif
 
         for (int i = _activeTunnels.Count - 1; i >= 0; i--)
         {
@@ -378,6 +386,16 @@ public class Board : Singleton<Board>
                 continue;
 
             int nextCounter = tunnel.Counter - 1;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shooter != null)
+                UnityEngine.Debug.Log(
+                    $"[Board] ConveyorTunel '{tunnel.name}' counter {tunnel.Counter} -> {nextCounter} by {DescribeShooter(shooter)}",
+                    tunnel
+                );
+#endif
+            if (shooter != null)
+                tunnel.PlayShooterVfx(shooter.transform);
             tunnel.SetCounter(nextCounter);
 
             if (nextCounter <= 0)
@@ -387,6 +405,12 @@ public class Board : Singleton<Board>
                 _activeTunnels.RemoveAt(i);
             }
         }
+    }
+
+    private static string DescribeShooter(Shooter shooter)
+    {
+        if (shooter == null) return "null";
+        return $"{shooter.name} (Type={shooter.Type}, Color={shooter.Color}, Total={shooter.Total})";
     }
     private bool CanHeadReachConveyor(CubeLine head)
     {

@@ -277,7 +277,7 @@ public class Gate : MonoBehaviour
         Shooters.RemoveAt(index);
         Total = Mathf.Max(0, Total - 1);
 
-        Board.Instance?.NotifyShooterDisappeared();
+        Board.Instance?.NotifyShooterDisappeared(shooter, "RemoveShooterFromQueue");
 
 	        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
 	        {
@@ -316,13 +316,14 @@ public class Gate : MonoBehaviour
             return;
         }
 
-        Board.Instance?.NotifyShooterDisappeared();
-        AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
-        _collectEffect.Stop();
-        _collectEffect.Play();
         var prevCurrent = CurrentShooter;
         var prevNext = NextShooter;
         var prevQueue = QueueShooter;
+
+        Board.Instance?.NotifyShooterDisappeared(prevCurrent, "CollectCurrentShooter");
+        AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
+        _collectEffect.Stop();
+        _collectEffect.Play();
 
         if (prevCurrent != null)
             prevCurrent.ShowTotal = false;

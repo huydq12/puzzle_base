@@ -18,6 +18,8 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private float _gateHeight = 0.5f;
     [SerializeField] private float _textHeight = 2f;
     [SerializeField] private float _closeDuration = 0.25f;
+    [SerializeField] private float _shooterVfxTravelDuration = 0.25f;
+    [SerializeField] private float _shooterVfxArcHeight = 1.5f;
 
     [SerializeField] private ParticleSystem _particleSystemHole1;
     [SerializeField] private ParticleSystem _particleSystemHole2;
@@ -29,6 +31,7 @@ public class ConveyorTunel : MonoBehaviour
 
     private SplineMesh _splineMesh;
     private Coroutine _closeRoutine;
+    private Coroutine _shooterVfxRoutine;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static void DebugSetActive(GameObject obj, bool active, UnityEngine.Object context, string reason)
@@ -127,6 +130,7 @@ public class ConveyorTunel : MonoBehaviour
 
         if (Counter <= 0)
         {
+            SetGatesActive(false);
             if (_countTunel != null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -142,6 +146,7 @@ public class ConveyorTunel : MonoBehaviour
 
         StopCloseAnimation();
         ResetSplineClip();
+        SetGatesActive(true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         DebugSetActive(gameObject, true, this, "ConveyorTunel.SetCounter() toggle tunnel");
@@ -158,6 +163,17 @@ public class ConveyorTunel : MonoBehaviour
 #endif
 
         _countTunel.text = Counter.ToString();
+    }
+
+    private void SetGatesActive(bool active)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugSetActive(_gate_start, active, this, "ConveyorTunel.SetGatesActive() gate_start");
+        DebugSetActive(_gate_end, active, this, "ConveyorTunel.SetGatesActive() gate_end");
+#else
+        if (_gate_start != null) _gate_start.SetActive(active);
+        if (_gate_end != null) _gate_end.SetActive(active);
+#endif
     }
 
     private void StartCloseAnimation()
@@ -223,6 +239,9 @@ public class ConveyorTunel : MonoBehaviour
         _splineMesh.clipTo = target;
         _splineMesh.RebuildImmediate();
 
+        while (_shooterVfxRoutine != null)
+            yield return null;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         DebugSetActive(gameObject, false, this, "ConveyorTunel.CloseRoutine() done");
 #else
@@ -230,5 +249,92 @@ public class ConveyorTunel : MonoBehaviour
 #endif
 
         _closeRoutine = null;
+    }
+
+    public void PlayShooterVfx(Transform shooterTransform)
+    {
+        if (_particleSystemShooter == null) return;
+
+        Vector3 startPos = shooterTransform != null ? shooterTransform.position : _particleSystemShooter.transform.position;
+        Vector3 targetPos = GetHoleTargetPosition(startPos);
+
+        if (_shooterVfxRoutine != null)
+            StopCoroutine(_shooterVfxRoutine);
+
+        _shooterVfxRoutine = StartCoroutine(ShooterVfxRoutine(startPos, targetPos));
+    }
+
+    private Vector3 GetHoleTargetPosition(Vector3 from)
+    {
+        bool hasHole1 = _particleSystemHole1 != null;
+        bool hasHole2 = _particleSystemHole2 != null;
+
+        if (hasHole1 && hasHole2)
+        {
+            Vector3 p1 = _particleSystemHole1.transform.position;
+            Vector3 p2 = _particleSystemHole2.transform.position;
+            return Vector3.Distance(from, p1) <= Vector3.Distance(from, p2) ? p1 : p2;
+        }
+
+        if (hasHole1) return _particleSystemHole1.transform.position;
+        if (hasHole2) return _particleSystemHole2.transform.position;
+        return transform.position;
+    }
+
+    private IEnumerator ShooterVfxRoutine(Vector3 startPos, Vector3 targetPos)
+    {
+        ParticleSystem shooterVfx = _particleSystemShooter;
+        if (shooterVfx == null)
+        {
+            _shooterVfxRoutine = null;
+            yield break;
+        }
+
+        shooterVfx.transform.position = startPos;
+        if (!shooterVfx.gameObject.activeSelf)
+            shooterVfx.gameObject.SetActive(true);
+
+        shooterVfx.Play(true);
+
+        float duration = Mathf.Max(0.01f, _shooterVfxTravelDuration);
+        Vector3 mid = (startPos + targetPos) * 0.5f + Vector3.up * _shooterVfxArcHeight;
+        float time = 0f;
+        while (time < duration)
+        {
+            float t = time / duration;
+            shooterVfx.transform.position = QuadraticBezier(startPos, mid, targetPos, t);
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        shooterVfx.transform.position = targetPos;
+        shooterVfx.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+
+        PlayHoleVfx();
+
+        _shooterVfxRoutine = null;
+    }
+
+    private static Vector3 QuadraticBezier(Vector3 a, Vector3 b, Vector3 c, float t)
+    {
+        float u = 1f - t;
+        return u * u * a + 2f * u * t * b + t * t * c;
+    }
+
+    private void PlayHoleVfx()
+    {
+        if (_particleSystemHole1 != null)
+        {
+            if (!_particleSystemHole1.gameObject.activeSelf)
+                _particleSystemHole1.gameObject.SetActive(true);
+            _particleSystemHole1.Play(true);
+        }
+
+        if (_particleSystemHole2 != null)
+        {
+            if (!_particleSystemHole2.gameObject.activeSelf)
+                _particleSystemHole2.gameObject.SetActive(true);
+            _particleSystemHole2.Play(true);
+        }
     }
 }
