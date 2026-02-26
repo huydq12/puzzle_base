@@ -35,7 +35,7 @@ public class ShooterController : Singleton<ShooterController>
 	            gate.transform.SetParent(Board.Instance.transform, false);
 	            gate.transform.localPosition = data.Position;
 	            gate.transform.rotation = DirectionToRotation(data.Direction);
-	            gate.Setup(data.Shooters);
+	            gate.Setup(data);
 	            Gates.Add(gate);
 	        }
 	    }
@@ -56,6 +56,20 @@ public class ShooterController : Singleton<ShooterController>
 
         if (ConveyorController.Instance != null)
             ConveyorController.Instance.WinGame();
+    }
+
+    public void ConsumeShooterIceStep(int amount)
+    {
+        if (Gates == null || Gates.Count == 0) return;
+        int clamped = Mathf.Max(0, amount);
+        if (clamped <= 0) return;
+
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            Gate gate = Gates[i];
+            if (gate == null) continue;
+            gate.ConsumeIceCounter(clamped);
+        }
     }
 
     public void ReduceShooterTotalByColor(ObjectColor color, int amount)

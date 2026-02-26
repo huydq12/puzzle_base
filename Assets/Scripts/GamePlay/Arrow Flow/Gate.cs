@@ -16,6 +16,7 @@ public class Gate : MonoBehaviour
     [SerializeField] private Transform _queueShooterHolder;
     [SerializeField] private ParticleSystem _collectEffect;
     [SerializeField] private ParticleSystem _closeEffect;
+    [SerializeField] private IceShooter _iceShooterPrefab;
     [ReadOnly] public List<ShooterData> Shooters;
     private List<Shooter> _shooterInstances = new List<Shooter>();
     public Shooter CurrentShooter { get; private set; }
@@ -25,6 +26,9 @@ public class Gate : MonoBehaviour
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
     private bool _isSingleShooterMode = false;
+    private IceShooter _iceShooter;
+
+    public bool IsShooterFrozen => _iceShooter != null && _iceShooter.Counter > 0;
 
     public int RemainingShooterCount
     {
@@ -73,18 +77,28 @@ public class Gate : MonoBehaviour
             if (shooter == null) continue;
             shooter.SetRole(ShooterRole.Queue);
         }
+
+        UpdateIceShooterAttachment();
     }
 
-    public void Setup(List<ShooterData> datas)
+    public void Setup(GateData data)
     {
         OpenGate();
-        Total = datas.Count;
-        Shooters = new List<ShooterData>(datas);
+        if (data == null || data.Shooters == null)
+        {
+            Total = 0;
+            Shooters = new List<ShooterData>();
+        }
+        else
+        {
+            Total = data.Shooters.Count;
+            Shooters = new List<ShooterData>(data.Shooters);
+        }
         _shooterInstances.Clear();
         _currentShooterIndex = 0;
 
         // Check if single shooter mode (only 1 shooter from the start)
-        _isSingleShooterMode = datas.Count == 1;
+        _isSingleShooterMode = Shooters.Count == 1;
         if (_isSingleShooterMode)
         {
             _tunnel.gameObject.SetActive(false);
@@ -99,7 +113,7 @@ public class Gate : MonoBehaviour
             _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
         }
 
-	        for (int i = 0; i < datas.Count; i++)
+	        for (int i = 0; i < Shooters.Count; i++)
 	        {
 	            if (ShooterController.Instance == null) continue;
 	            if (ShooterController.Instance.ShooterPrefab == null) continue;
@@ -110,9 +124,9 @@ public class Gate : MonoBehaviour
 	            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
 	            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
-            shoot.SetColor(datas[i].Color);
-            shoot.SetType(datas[i].Type);
-            shoot.Total = datas[i].Counter;
+            shoot.SetColor(Shooters[i].Color);
+            shoot.SetType(Shooters[i].Type);
+            shoot.Total = Shooters[i].Counter;
             shoot.Gate = this;
             _shooterInstances.Add(shoot);
         }
@@ -129,6 +143,9 @@ public class Gate : MonoBehaviour
             _shooterInstances[i].ShowTotal = i == 0;
         }
         UpdateShooterRoles();
+
+        int iceCounter = data != null ? data.Counter : 0;
+        InitializeIceShooter(iceCounter);
     }
 
     public bool ShuffleRemainingShooters()
@@ -211,6 +228,39 @@ public class Gate : MonoBehaviour
         if (index == 2) return _queueShooterHolder;
 
         return _queueShooterHolder;
+    }
+
+    public void ConsumeIceCounter(int amount)
+    {
+        if (_iceShooter == null) return;
+        _iceShooter.Consume(amount);
+    }
+
+    private void InitializeIceShooter(int counter)
+    {
+        if (counter <= 0)
+        {
+            if (_iceShooter != null)
+                _iceShooter.SetCounter(0);
+            return;
+        }
+
+        if (_iceShooter == null && _iceShooterPrefab != null)
+            _iceShooter = Instantiate(_iceShooterPrefab);
+
+        if (_iceShooter == null) return;
+        UpdateIceShooterAttachment();
+        _iceShooter.SetCounter(counter);
+    }
+
+    private void UpdateIceShooterAttachment()
+    {
+        if (_iceShooter == null) return;
+        Transform target = CurrentShooter != null ? CurrentShooter.transform : _currentShooterHolder;
+        if (target == null) target = transform;
+        _iceShooter.transform.SetParent(target, false);
+        _iceShooter.transform.localPosition = Vector3.zero;
+        _iceShooter.transform.localRotation = Quaternion.identity;
     }
 
 

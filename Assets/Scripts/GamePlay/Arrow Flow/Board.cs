@@ -132,14 +132,17 @@ public class Board : Singleton<Board>
 #endif
     public void NotifyAnyLineEnteredConveyor()
     {
-        if (_iceLines.Count == 0) return;
-
-        for (int i = 0; i < _iceLines.Count; i++)
+        if (_iceLines.Count > 0)
         {
-            Line line = _iceLines[i];
-            if (line == null) continue;
-            line.ConsumeIceStep(1);
+            for (int i = 0; i < _iceLines.Count; i++)
+            {
+                Line line = _iceLines[i];
+                if (line == null) continue;
+                line.ConsumeIceStep(1);
+            }
         }
+
+        ShooterController.Instance?.ConsumeShooterIceStep(1);
     }
 
     void SetupCamera(float paddingCamera, float minOrthoSize)

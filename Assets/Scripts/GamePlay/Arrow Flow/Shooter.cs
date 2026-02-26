@@ -183,7 +183,7 @@ public class Shooter : MonoBehaviour
         }
 
         // Prevent firing while cooldown active or other conditions block shooting
-        if (!CanShoot || _collectRequested || Total <= 0 || (Gate != null && Gate.IsClosed) || Time.time < _nextFireTime) return;
+        if (!CanShoot || _collectRequested || Total <= 0 || (Gate != null && Gate.IsClosed) || (Gate != null && Gate.IsShooterFrozen) || Time.time < _nextFireTime) return;
         AimCube();
     }
 
