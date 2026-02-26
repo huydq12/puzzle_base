@@ -25,8 +25,21 @@
             ],
             "color": 4,
             "elementType": 0,
+            "elementPos": {
+                "x": 7.0,
+                "y": 0.0,
+                "z": 5.0
+            },
+            "elementScale": 1.2999999523162842,
             "counter": 0,
-            "arrowID": 2
+            "arrowID": 2,
+            "conveyorId": 0,
+            "conveyorIndex": 21,
+            "conveyorPos": {
+                "x": 4.0,
+                "y": 0.0,
+                "z": 1.1306923627853394
+            }
         },
         {
             "unitPositions": [
@@ -53,8 +66,21 @@
             ],
             "color": 7,
             "elementType": 2,
+            "elementPos": {
+                "x": 7.0,
+                "y": 0.0,
+                "z": 5.0
+            },
+            "elementScale": 1.2999999523162842,
             "counter": 3,
-            "arrowID": 1
+            "arrowID": 1,
+            "conveyorId": 0,
+            "conveyorIndex": 3,
+            "conveyorPos": {
+                "x": 7.018666744232178,
+                "y": 0.0,
+                "z": 8.0
+            }
         },
         {
             "unitPositions": [
@@ -77,8 +103,21 @@
             ],
             "color": 1,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 3
+            "arrowID": 3,
+            "conveyorId": 0,
+            "conveyorIndex": 1,
+            "conveyorPos": {
+                "x": 5.093356132507324,
+                "y": 0.0,
+                "z": 8.0
+            }
         },
         {
             "unitPositions": [
@@ -105,8 +144,21 @@
             ],
             "color": 2,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 5
+            "arrowID": 5,
+            "conveyorId": 0,
+            "conveyorIndex": 11,
+            "conveyorPos": {
+                "x": 10.0,
+                "y": 0.0,
+                "z": 3.0186805725097658
+            }
         },
         {
             "unitPositions": [
@@ -129,8 +181,21 @@
             ],
             "color": 3,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 6
+            "arrowID": 6,
+            "conveyorId": 0,
+            "conveyorIndex": 18,
+            "conveyorPos": {
+                "x": 6.0186767578125,
+                "y": 0.0,
+                "z": 0.0
+            }
         },
         {
             "unitPositions": [
@@ -161,8 +226,21 @@
             ],
             "color": 2,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 7
+            "arrowID": 7,
+            "conveyorId": 0,
+            "conveyorIndex": 27,
+            "conveyorPos": {
+                "x": 4.0,
+                "y": 0.0,
+                "z": 6.906646728515625
+            }
         },
         {
             "unitPositions": [
@@ -193,8 +271,21 @@
             ],
             "color": 3,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 4
+            "arrowID": 4,
+            "conveyorId": 0,
+            "conveyorIndex": 15,
+            "conveyorPos": {
+                "x": 8.906649589538575,
+                "y": 0.0,
+                "z": 0.0
+            }
         }
     ],
     "shooters": [
@@ -237,7 +328,13 @@
                 }
             ],
             "elementType": 0,
-            "counter": 0
+            "counter": 0,
+            "conveyorPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "shooterConveyorId": 0
         }
     ],
     "conveyors": [
@@ -495,23 +592,20 @@
                     "counter": 0,
                     "type": 0
                 }
-            ]
+            ],
+            "conveyorGap": 0.0,
+            "conveyorSpeed": 0.09099999815225601
         }
     ],
     "elementData": [],
     "levelNotes": "",
     "minPosition": {
-        "x": 5.0,
-        "y": 1.0
+        "x": 4.0,
+        "y": 0.0
     },
     "maxPosition": {
-        "x": 9.0,
+        "x": 10.0,
         "y": 10.5
     },
-    "cameraPosition": {
-        "x": 0.0,
-        "y": 10.0,
-        "z": -0.0117617845535278
-    },
-    "cameraOrthographicSize": 10.0
+    "shooterScale": 1.2999999523162842
 }

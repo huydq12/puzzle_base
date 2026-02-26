@@ -25,8 +25,21 @@
             ],
             "color": 1,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 2
+            "arrowID": 2,
+            "conveyorId": 0,
+            "conveyorIndex": 21,
+            "conveyorPos": {
+                "x": 3.0000431537628176,
+                "y": 0.0,
+                "z": 1.9791221618652344
+            }
         },
         {
             "unitPositions": [
@@ -61,8 +74,21 @@
             ],
             "color": 3,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 1
+            "arrowID": 1,
+            "conveyorId": 0,
+            "conveyorIndex": 17,
+            "conveyorPos": {
+                "x": 6.006961822509766,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -85,8 +111,21 @@
             ],
             "color": 7,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 3
+            "arrowID": 3,
+            "conveyorId": 0,
+            "conveyorIndex": 18,
+            "conveyorPos": {
+                "x": 5.075788497924805,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -109,8 +148,21 @@
             ],
             "color": 7,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 4
+            "arrowID": 4,
+            "conveyorId": 0,
+            "conveyorIndex": 16,
+            "conveyorPos": {
+                "x": 6.938134670257568,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -129,8 +181,21 @@
             ],
             "color": 7,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 5
+            "arrowID": 5,
+            "conveyorId": 0,
+            "conveyorIndex": 15,
+            "conveyorPos": {
+                "x": 7.869307518005371,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -149,8 +214,21 @@
             ],
             "color": 7,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 6
+            "arrowID": 6,
+            "conveyorId": 0,
+            "conveyorIndex": 19,
+            "conveyorPos": {
+                "x": 4.144615650177002,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -169,8 +247,21 @@
             ],
             "color": 5,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 7
+            "arrowID": 7,
+            "conveyorId": 0,
+            "conveyorIndex": 18,
+            "conveyorPos": {
+                "x": 5.075788497924805,
+                "y": 0.0,
+                "z": 1.0
+            }
         },
         {
             "unitPositions": [
@@ -189,8 +280,21 @@
             ],
             "color": 5,
             "elementType": 0,
+            "elementPos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "elementScale": 0.0,
             "counter": 0,
-            "arrowID": 8
+            "arrowID": 8,
+            "conveyorId": 0,
+            "conveyorIndex": 16,
+            "conveyorPos": {
+                "x": 6.938134670257568,
+                "y": 0.0,
+                "z": 1.0
+            }
         }
     ],
     "shooters": [
@@ -204,27 +308,36 @@
                 {
                     "color": 3,
                     "counter": 7,
-                    "type": 0
+                    "type": 0,
+                    "tieID": -1
                 },
                 {
                     "color": 1,
                     "counter": 5,
-                    "type": 0
+                    "type": 0,
+                    "tieID": -1
                 },
                 {
                     "color": 7,
                     "counter": 14,
-                    "type": 0
+                    "type": 0,
+                    "tieID": -1
                 },
                 {
                     "color": 5,
                     "counter": 6,
-                    "type": 0
+                    "type": 0,
+                    "tieID": -1
                 }
             ],
             "elementType": 0,
             "counter": 0,
-            "tieID": -1
+            "conveyorPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "shooterConveyorId": 0
         }
     ],
     "conveyors": [
@@ -236,7 +349,8 @@
                         "y": 0.0,
                         "z": 10.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -244,7 +358,8 @@
                         "y": 0.0,
                         "z": 10.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -252,7 +367,8 @@
                         "y": 0.0,
                         "z": 10.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -260,7 +376,8 @@
                         "y": 0.0,
                         "z": 10.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -268,7 +385,8 @@
                         "y": 0.0,
                         "z": 10.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -276,7 +394,8 @@
                         "y": 0.0,
                         "z": 9.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -284,7 +403,8 @@
                         "y": 0.0,
                         "z": 8.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -292,7 +412,8 @@
                         "y": 0.0,
                         "z": 7.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -300,7 +421,8 @@
                         "y": 0.0,
                         "z": 6.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -308,7 +430,8 @@
                         "y": 0.0,
                         "z": 6.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -316,7 +439,8 @@
                         "y": 0.0,
                         "z": 5.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -324,7 +448,8 @@
                         "y": 0.0,
                         "z": 4.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -332,7 +457,8 @@
                         "y": 0.0,
                         "z": 3.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -340,7 +466,8 @@
                         "y": 0.0,
                         "z": 2.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -348,7 +475,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -356,7 +484,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -364,7 +493,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -372,7 +502,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -380,7 +511,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -388,7 +520,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -396,7 +529,8 @@
                         "y": 0.0,
                         "z": 1.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -404,7 +538,8 @@
                         "y": 0.0,
                         "z": 2.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -412,7 +547,8 @@
                         "y": 0.0,
                         "z": 3.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -420,7 +556,8 @@
                         "y": 0.0,
                         "z": 4.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -428,7 +565,8 @@
                         "y": 0.0,
                         "z": 5.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -436,7 +574,8 @@
                         "y": 0.0,
                         "z": 6.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -444,7 +583,8 @@
                         "y": 0.0,
                         "z": 6.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -452,7 +592,8 @@
                         "y": 0.0,
                         "z": 7.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -460,7 +601,8 @@
                         "y": 0.0,
                         "z": 8.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 },
                 {
                     "position": {
@@ -468,25 +610,23 @@
                         "y": 0.0,
                         "z": 9.0
                     },
-                    "isHole": false
+                    "counter": 0,
+                    "type": 0
                 }
-            ]
+            ],
+            "conveyorGap": 0.0,
+            "conveyorSpeed": 0.09099999815225601
         }
     ],
     "elementData": [],
     "levelNotes": "6 x 8",
     "minPosition": {
-        "x": 4.0,
-        "y": 2.0
+        "x": 3.0,
+        "y": 1.0
     },
     "maxPosition": {
-        "x": 8.0,
+        "x": 9.0,
         "y": 12.5
     },
-    "cameraPosition": {
-        "x": 0,
-        "y": 0,
-        "z": -1
-    },
-    "cameraOrthographicSize": 10.0
+    "shooterScale": 1.2999999523162842
 }
