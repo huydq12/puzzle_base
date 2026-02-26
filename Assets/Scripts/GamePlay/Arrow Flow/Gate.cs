@@ -84,6 +84,12 @@ public class Gate : MonoBehaviour
     public void Setup(GateData data)
     {
         OpenGate();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        UnityEngine.Debug.Log(
+            $"[Gate] Setup gate name={name} dir={(data != null ? data.Direction : -1)} counter={(data != null ? data.Counter : 0)} shooters={(data != null && data.Shooters != null ? data.Shooters.Count : 0)}",
+            this
+        );
+#endif
         if (data == null || data.Shooters == null)
         {
             Total = 0;
