@@ -156,7 +156,8 @@ public static class LevelsSecureExportTool
                         {
                             color = (int)shooter.Color,
                             counter = shooter.Counter,
-                            type = shooter.Type
+                            type = shooter.Type,
+                            tieID = shooter.TieID
                         });
                     }
                 }

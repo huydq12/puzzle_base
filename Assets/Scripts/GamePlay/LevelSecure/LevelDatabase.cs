@@ -126,7 +126,8 @@ public static class LevelDatabase
                         {
                             Color = (ObjectColor)shooter.color,
                             Counter = shooter.counter,
-                            Type = shooter.type
+                            Type = shooter.type,
+                            TieID = shooter.tieID
                         });
                     }
                 }

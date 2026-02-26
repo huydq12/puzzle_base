@@ -100,7 +100,8 @@ public class ShooterData
 {
     public ObjectColor Color;
     public int Counter;
-    public int Type;
+    [Sirenix.OdinInspector.LabelText("Element Type")] public int Type;
+    [Sirenix.OdinInspector.LabelText("Tie ID")] public int TieID;
 }
 public class GridCellData
 {

@@ -464,7 +464,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                         ShooterData data = new ShooterData();
                         data.Color = (ObjectColor)unit.color;
                         data.Counter = unit.counter;
-                        data.Type = unit.type;
+                        data.Type = ResolveShooterElementType(unit);
+                        data.TieID = unit.tieID;
                         gate.Shooters.Add(data);
                     }
                 }
@@ -678,6 +679,8 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public int color;
         public int counter;
         public int type;
+        public int elementType;
+        public int tieID;
     }
 
     [Serializable]
@@ -708,6 +711,16 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public float x;
         public float y;
         public float z;
+    }
+
+    private static int ResolveShooterElementType(LevelJsonShooterUnit unit)
+    {
+        if (unit == null) return 0;
+        if (unit.elementType != 0 && unit.type != 0 && unit.elementType != unit.type)
+        {
+            Debug.LogWarning($"ShooterUnit has both type={unit.type} and elementType={unit.elementType}. Using elementType.");
+        }
+        return unit.elementType != 0 ? unit.elementType : unit.type;
     }
 
 }

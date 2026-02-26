@@ -38,6 +38,7 @@ public class ShooterDataDto
     public int color;
     public int counter;
     public int type;
+    public int tieID;
 }
 
 [Serializable]
@@ -92,4 +93,3 @@ public struct Vec3Dto
     public float y;
     public float z;
 }
-
