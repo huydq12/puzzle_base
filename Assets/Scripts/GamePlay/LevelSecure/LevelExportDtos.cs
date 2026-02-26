@@ -20,6 +20,7 @@ public class LevelConfigDto
 
     public List<ColorLineDto> colorLines = new();
     public List<ElevatorDataDto> elevators = new();
+    public List<LineDoorDataDto> lineDoors = new();
     public ConveyorLineDto conveyorLine;
     public CameraSetupDto camera;
 }
@@ -56,6 +57,17 @@ public class ElevatorDataDto
 {
     public Vec2IntDto position;
     public Vec2IntDto size;
+    public List<ColorLineDto> lines = new();
+}
+
+[Serializable]
+public class LineDoorDataDto
+{
+    public Vec2IntDto position;
+    public Vec2IntDto size;
+    public int direction;
+    public int color;
+    public int counter;
     public List<ColorLineDto> lines = new();
 }
 

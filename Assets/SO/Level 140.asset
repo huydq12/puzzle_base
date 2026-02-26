@@ -1800,6 +1800,58 @@ MonoBehaviour:
     ElementTypes: 0000000000000000000000000000000000000000
     Counter: 0
   Elevators: []
+  LineDoors:
+  - Position: {x: 3, y: 1}
+    Size: {x: 5, y: 5}
+    Direction: 0
+    Color: 0
+    Counter: 20
+    Lines:
+    - Color: 3
+      Cells:
+      - {x: 3, y: 5}
+      - {x: 3, y: 4}
+      - {x: 3, y: 3}
+      - {x: 3, y: 2}
+      - {x: 3, y: 1}
+      ElementTypes: 0000000000000000000000000000000000000000
+      Counter: 0
+    - Color: 3
+      Cells:
+      - {x: 5, y: 5}
+      - {x: 5, y: 4}
+      - {x: 5, y: 3}
+      - {x: 5, y: 2}
+      - {x: 5, y: 1}
+      ElementTypes: 0000000000000000000000000000000000000000
+      Counter: 0
+    - Color: 3
+      Cells:
+      - {x: 7, y: 5}
+      - {x: 7, y: 4}
+      - {x: 7, y: 3}
+      - {x: 7, y: 2}
+      - {x: 7, y: 1}
+      ElementTypes: 0000000000000000000000000000000000000000
+      Counter: 0
+    - Color: 1
+      Cells:
+      - {x: 4, y: 1}
+      - {x: 4, y: 2}
+      - {x: 4, y: 3}
+      - {x: 4, y: 4}
+      - {x: 4, y: 5}
+      ElementTypes: 0000000000000000000000000000000000000000
+      Counter: 0
+    - Color: 1
+      Cells:
+      - {x: 6, y: 1}
+      - {x: 6, y: 2}
+      - {x: 6, y: 3}
+      - {x: 6, y: 4}
+      - {x: 6, y: 5}
+      ElementTypes: 0000000000000000000000000000000000000000
+      Counter: 0
   ConveyorLine:
     Cells:
     - {x: 0, y: 13}
@@ -1856,6 +1908,6 @@ MonoBehaviour:
     MinOrthoSize: 0
     Padding: 0
     UsePosition: 1
-    Position: {x: 0, y: 0, z: 0}
+    Position: {x: 0, y: 7, z: 3.7}
     UseOrthographicSize: 0
-    OrthographicSize: 0
+    OrthographicSize: 10

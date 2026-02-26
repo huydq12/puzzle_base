@@ -119,6 +119,7 @@ public static class LevelsSecureExportTool
             cellTypes = new List<int>(rows * columns),
             colorLines = new List<ColorLineDto>(),
             elevators = new List<ElevatorDataDto>(),
+            lineDoors = new List<LineDoorDataDto>(),
             conveyorLine = null,
             camera = new CameraSetupDto
             {
@@ -254,6 +255,55 @@ public static class LevelsSecureExportTool
                 }
 
                 dto.elevators.Add(eDto);
+            }
+        }
+
+        if (config.LineDoors != null)
+        {
+            for (int i = 0; i < config.LineDoors.Count; i++)
+            {
+                var d = config.LineDoors[i];
+                if (d == null) continue;
+
+                var dDto = new LineDoorDataDto
+                {
+                    position = new Vec2IntDto { x = d.Position.x, y = d.Position.y },
+                    size = new Vec2IntDto { x = d.Size.x, y = d.Size.y },
+                    direction = d.Direction,
+                    color = (int)d.Color,
+                    counter = d.Counter,
+                    lines = new List<ColorLineDto>()
+                };
+
+                if (d.Lines != null)
+                {
+                    for (int l = 0; l < d.Lines.Count; l++)
+                    {
+                        var line = d.Lines[l];
+                        if (line == null) continue;
+
+                        var lineDto = new ColorLineDto
+                        {
+                            color = (int)line.Color,
+                            counter = line.Counter,
+                            cells = new List<Vec2IntDto>(),
+                            elementTypes = line.ElementTypes != null ? new List<int>(line.ElementTypes) : new List<int>()
+                        };
+
+                        if (line.Cells != null)
+                        {
+                            for (int c = 0; c < line.Cells.Count; c++)
+                            {
+                                var cell = line.Cells[c];
+                                lineDto.cells.Add(new Vec2IntDto { x = cell.x, y = cell.y });
+                            }
+                        }
+
+                        dDto.lines.Add(lineDto);
+                    }
+                }
+
+                dto.lineDoors.Add(dDto);
             }
         }
 

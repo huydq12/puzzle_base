@@ -315,7 +315,15 @@ public class Shooter : MonoBehaviour
         });
 
         // game logic removal happens immediately; bullet is visual
-        cube.OnHit(Type == 6);
+        ObjectColor hitColor = cube.Color;
+        bool destroyed = cube.OnHit(Type == 6);
+        if (destroyed)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Shooter] LineDoor hit color={hitColor} shooter={name}", this);
+#endif
+            Board.Instance?.NotifyLineDoorHit(hitColor, this);
+        }
 
         // Immediately decrement shooter ammo and handle collect � keeps logic atomic with hit
         Total = Mathf.Max(0, Total - 1);

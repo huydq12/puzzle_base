@@ -47,6 +47,7 @@ public class Board : Singleton<Board>
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
+    private readonly List<(LineDoor door, LineDoorData data, bool opened, bool spawned)> _lineDoors = new();
     private readonly Dictionary<Vector2Int, int> _conveyorTunnelBlockCounts = new();
 
     private readonly List<(ConveyorTunel tunnel, List<Vector2Int> cells)> _activeTunnels = new();
@@ -66,6 +67,7 @@ public class Board : Singleton<Board>
     }
 
     private float _nextElevatorCheckTime;
+    private float _nextLineDoorCheckTime;
 
     protected override void Awake()
     {
@@ -506,6 +508,47 @@ public class Board : Singleton<Board>
         }
     }
 
+    private void SetupLineDoors()
+    {
+        _lineDoors.Clear();
+        _nextLineDoorCheckTime = 0f;
+        if (_currentConfig == null || _currentConfig.LineDoors == null || _currentConfig.LineDoors.Count == 0)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[Board.LineDoor] No LineDoors in config.", this);
+#endif
+            return;
+        }
+        if (_lineDoorPrefab == null) return;
+
+        for (int i = 0; i < _currentConfig.LineDoors.Count; i++)
+        {
+            LineDoorData data = _currentConfig.LineDoors[i];
+            if (data == null) continue;
+            if (data.Size.x <= 0 || data.Size.y <= 0) continue;
+
+            LineDoor door = Instantiate(_lineDoorPrefab);
+            if (door == null) continue;
+            door.transform.SetParent(transform, false);
+
+            Vector3 center = GetRectCenterWorld(data.Position, data.Size);
+            door.transform.position = center;
+            door.transform.rotation = DirectionToRotation(data.Direction);
+
+            door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+
+            door.Setup(data.Color, data.Counter);
+            _lineDoors.Add((door, data, false, false));
+
+            if (data.Counter <= 0)
+                OpenLineDoorAtIndex(_lineDoors.Count - 1);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Board.LineDoor] Spawned door idx={_lineDoors.Count - 1} color={data.Color} counter={data.Counter} pos={data.Position} size={data.Size}", door);
+#endif
+        }
+    }
+
     private Vector3 GetRectCenterWorld(Vector2Int pos, Vector2Int size)
     {
         Vector2Int min = pos;
@@ -520,9 +563,29 @@ public class Board : Singleton<Board>
         return (p0 + p1) * 0.5f;
     }
 
+    private static Quaternion DirectionToRotation(int direction)
+    {
+        float y = 0f;
+        if (direction == 1) y = 45f;
+        else if (direction == 2) y = 90f;
+        else if (direction == 3) y = 135f;
+        else if (direction == 4) y = 180f;
+        else if (direction == 5) y = 225f;
+        else if (direction == 6) y = 270f;
+        else if (direction == 7) y = 315f;
+        else if (direction == 8) y = 360f;
+        return Quaternion.Euler(0f, y, 0f);
+    }
+
     private void Update()
     {
         if (_currentConfig == null) return;
+        UpdateElevators();
+        UpdateLineDoors();
+    }
+
+    private void UpdateElevators()
+    {
         if (_elevators.Count == 0) return;
         if (Time.time < _nextElevatorCheckTime) return;
         _nextElevatorCheckTime = Time.time + 0.1f;
@@ -534,6 +597,20 @@ public class Board : Singleton<Board>
             if (!IsRectEmpty(entry.data.Position, entry.data.Size)) continue;
 
             ActivateElevator(i);
+        }
+    }
+
+    private void UpdateLineDoors()
+    {
+        if (_lineDoors.Count == 0) return;
+        if (Time.time < _nextLineDoorCheckTime) return;
+        _nextLineDoorCheckTime = Time.time + 0.1f;
+
+        for (int i = 0; i < _lineDoors.Count; i++)
+        {
+            var entry = _lineDoors[i];
+            if (!entry.opened || entry.spawned) continue;
+            TrySpawnLineDoorLines(i);
         }
     }
 
@@ -590,6 +667,146 @@ public class Board : Singleton<Board>
             entry.elevator.ActivateAndDisappear(SpawnAllElevatorLines);
         else
             SpawnAllElevatorLines();
+    }
+
+    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
+    {
+        if (_lineDoors == null || _lineDoors.Count == 0) return;
+        if (color == ObjectColor.None) return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Board.LineDoor] Hit color={color} shooter={DescribeShooter(shooter)}", shooter);
+#endif
+
+        for (int i = 0; i < _lineDoors.Count; i++)
+        {
+            var entry = _lineDoors[i];
+            if (entry.opened) continue;
+            if (entry.data == null) continue;
+            if (entry.data.Color != color) continue;
+
+            LineDoor door = entry.door;
+
+            if (door != null)
+            {
+                bool opened = door.Consume(1, () => TrySpawnLineDoorLines(i));
+                entry.data.Counter = door.Remaining;
+                if (opened)
+                {
+                    entry.opened = true;
+                    _lineDoors[i] = entry;
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.data.Counter} opened={entry.opened}", door);
+#endif
+            }
+            else
+            {
+                entry.data.Counter = Mathf.Max(0, entry.data.Counter - 1);
+                if (entry.data.Counter <= 0)
+                {
+                    entry.opened = true;
+                    _lineDoors[i] = entry;
+                    TrySpawnLineDoorLines(i);
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.data.Counter} opened={entry.opened}", this);
+#endif
+            }
+        }
+    }
+
+    private void OpenLineDoorAtIndex(int index)
+    {
+        if (index < 0 || index >= _lineDoors.Count) return;
+        var entry = _lineDoors[index];
+        if (entry.opened) return;
+        entry.opened = true;
+        _lineDoors[index] = entry;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Board.LineDoor] Open door idx={index} color={entry.data?.Color} counter={entry.data?.Counter}", entry.door);
+#endif
+
+        if (entry.door != null)
+            entry.door.Open(() => TrySpawnLineDoorLines(index));
+        else
+            TrySpawnLineDoorLines(index);
+    }
+
+    private void TrySpawnLineDoorLines(int index)
+    {
+        if (index < 0 || index >= _lineDoors.Count) return;
+        var entry = _lineDoors[index];
+        if (entry.spawned) return;
+        if (entry.data == null) return;
+
+        if (!IsRectEmpty(entry.data.Position, entry.data.Size))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (TryGetFirstOccupiedCell(entry.data.Position, entry.data.Size, out GridCell blocked))
+            {
+                Vector2Int bp = blocked != null ? blocked.Position : new Vector2Int(-1, -1);
+                Debug.Log($"[Board.LineDoor] Spawn blocked idx={index} color={entry.data.Color} at cell={bp}", blocked);
+            }
+            else
+            {
+                Debug.Log($"[Board.LineDoor] Spawn blocked idx={index} color={entry.data.Color} (unknown blocker)", this);
+            }
+#endif
+            return;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Board.LineDoor] Spawn lines idx={index} color={entry.data.Color}", this);
+#endif
+        SpawnLineDoorLines(entry.data);
+        entry.spawned = true;
+        _lineDoors[index] = entry;
+    }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private bool TryGetFirstOccupiedCell(Vector2Int pos, Vector2Int size, out GridCell occupied)
+    {
+        occupied = null;
+        if (Cells == null) return false;
+
+        int minX = pos.x;
+        int minY = pos.y;
+        int maxX = pos.x + size.x - 1;
+        int maxY = pos.y + size.y - 1;
+
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+        if (minX < 0 || minY < 0 || maxX >= w || maxY >= h) return false;
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                GridCell cell = Cells[x, y];
+                if (cell == null) continue;
+                if (cell.CubeOnCell != null)
+                {
+                    occupied = cell;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+#endif
+
+    private void SpawnLineDoorLines(LineDoorData data)
+    {
+        if (data == null || data.Lines == null) return;
+        for (int i = 0; i < data.Lines.Count; i++)
+        {
+            float delay = Mathf.Max(0f, _elevatorLineStagger) * i;
+            SpawnLine(data.Lines[i], animateSpawn: true, spawnDelay: delay);
+        }
+        RefreshAllHeadHighlights();
     }
 
 	    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
@@ -1346,6 +1563,7 @@ public class Board : Singleton<Board>
         SetupGrid();
         SetupLine();
         SetupElevators();
+        SetupLineDoors();
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();

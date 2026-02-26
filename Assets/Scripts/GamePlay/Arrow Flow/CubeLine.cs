@@ -75,10 +75,10 @@ public class CubeLine : SerializedMonoBehaviour
             }
         }
     }
-    public void OnHit(bool byRainbow = false)
+    public bool OnHit(bool byRainbow = false)
     {
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
-            return;
+            return false;
 
         if (ElementType == 3 && !_elementType3Revealed)
         {
@@ -90,7 +90,7 @@ public class CubeLine : SerializedMonoBehaviour
 
             SpawnHitEffect();
 
-            return;
+            return false;
         }
         Cantouch = false;
         if (byRainbow)
@@ -101,6 +101,7 @@ public class CubeLine : SerializedMonoBehaviour
         ConveyorController.Instance.RemoveCubeFromPath(this);
         SpawnHitEffect();
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
+        return true;
     }
 
     private void SpawnHitEffect()

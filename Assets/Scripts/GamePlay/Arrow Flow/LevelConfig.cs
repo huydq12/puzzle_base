@@ -31,6 +31,7 @@ public class LevelConfig : SerializedScriptableObject
     [HideInInspector]
     public List<ColorLine> ColorLines = new List<ColorLine>();
     public List<ElevatorData> Elevators = new List<ElevatorData>();
+    public List<LineDoorData> LineDoors = new List<LineDoorData>();
     [InlineProperty]
     public ConveyorLine ConveyorLine;
     public CameraSetupData Camera;
@@ -122,6 +123,17 @@ public class ElevatorData
 {
     public Vector2Int Position;
     public Vector2Int Size;
+    public List<ColorLine> Lines = new List<ColorLine>();
+}
+
+[Serializable]
+public class LineDoorData
+{
+    public Vector2Int Position;
+    public Vector2Int Size;
+    public int Direction;
+    public ObjectColor Color;
+    public int Counter;
     public List<ColorLine> Lines = new List<ColorLine>();
 }
 

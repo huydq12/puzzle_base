@@ -227,6 +227,56 @@ public static class LevelDatabase
             }
         }
 
+        cfg.LineDoors = new List<LineDoorData>();
+        if (dto.lineDoors != null)
+        {
+            for (int i = 0; i < dto.lineDoors.Count; i++)
+            {
+                var d = dto.lineDoors[i];
+                if (d == null) continue;
+
+                var door = new LineDoorData
+                {
+                    Position = new Vector2Int(d.position.x, d.position.y),
+                    Size = new Vector2Int(d.size.x, d.size.y),
+                    Direction = d.direction,
+                    Color = (ObjectColor)d.color,
+                    Counter = d.counter,
+                    Lines = new List<ColorLine>()
+                };
+
+                if (d.lines != null)
+                {
+                    for (int l = 0; l < d.lines.Count; l++)
+                    {
+                        var lineDto = d.lines[l];
+                        if (lineDto == null) continue;
+
+                        var line = new ColorLine
+                        {
+                            Color = (ObjectColor)lineDto.color,
+                            Cells = new List<Vector2Int>(),
+                            ElementTypes = lineDto.elementTypes != null ? new List<int>(lineDto.elementTypes) : new List<int>(),
+                            Counter = lineDto.counter
+                        };
+
+                        if (lineDto.cells != null)
+                        {
+                            for (int c = 0; c < lineDto.cells.Count; c++)
+                            {
+                                var cell = lineDto.cells[c];
+                                line.Cells.Add(new Vector2Int(cell.x, cell.y));
+                            }
+                        }
+
+                        door.Lines.Add(line);
+                    }
+                }
+
+                cfg.LineDoors.Add(door);
+            }
+        }
+
         if (dto.conveyorLine != null)
         {
             var cl = new ConveyorLine
