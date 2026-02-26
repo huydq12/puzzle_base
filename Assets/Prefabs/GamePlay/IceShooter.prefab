@@ -26,16 +26,16 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1033688328206038}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.76, y: 2.7151654, z: 2.182324}
+  m_LocalRotation: {x: 0, y: -0.70710677, z: -0.70710677, w: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2.1}
+  m_LocalScale: {x: 2.288, y: 3.5297146, z: 2.837021}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 224664762995493340}
   - {fileID: 4344954374310066}
   - {fileID: 4068795584557214}
   m_Father: {fileID: 4325281480715360}
-  m_LocalEulerAnglesHint: {x: -90, y: -90, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: -270, z: 90}
 --- !u!33 &33006614559589457
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -222,7 +222,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 22d72346278b29a4ca1e9815edd4d0d6, type: 2}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -263,8 +263,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4325281480715360}
+  - component: {fileID: 98106317666134752}
   m_Layer: 0
-  m_Name: Ice1_
+  m_Name: IceShooter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -287,6 +288,24 @@ Transform:
   - {fileID: 4713794272852797}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
+--- !u!114 &98106317666134752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250219379565622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1846bc1b5e6f42baaee037b070916a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _effect:
+  - {fileID: 198677005969235828}
+  - {fileID: 198346979547717208}
+  - {fileID: 198753966000300020}
+  - {fileID: 198345820144725245}
+  _textCount: {fileID: 4544022285862410777}
 --- !u!1 &1254030420879975
 GameObject:
   m_ObjectHideFlags: 0
@@ -2693,7 +2712,7 @@ Transform:
   m_GameObject: {fileID: 1396126932112591}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.97, z: 0}
+  m_LocalPosition: {x: 0, y: 0.97, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4987,13 +5006,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1416785311602725}
-  m_LocalRotation: {x: -0.000000062839995, y: -1, z: 0.0000006258487, w: 0.000000011782255}
+  m_LocalRotation: {x: -0, y: -1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0.925}
   m_LocalScale: {x: 1.2, y: 0.7653256, z: 0.75810784}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4713794272852797}
-  m_LocalEulerAnglesHint: {x: -179.99992, y: 0.0000013501425, z: -180}
+  m_LocalEulerAnglesHint: {x: -180, y: 0, z: -180}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -0.174}
@@ -5019,7 +5038,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -7215136758503587231, guid: 4397d5da568724ddf84c25da23ca7e3b, type: 2}
+  - {fileID: 2100000, guid: 9feeedab7b8254edcb1dd5643bd6f783, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5064,8 +5083,7 @@ MonoBehaviour:
   m_text: 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4397d5da568724ddf84c25da23ca7e3b, type: 2}
-  m_sharedMaterial: {fileID: -7215136758503587231, guid: 4397d5da568724ddf84c25da23ca7e3b,
-    type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 9feeedab7b8254edcb1dd5643bd6f783, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5089,12 +5107,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
+  m_fontSize: 7.7
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMin: 1
+  m_fontSizeMax: 8
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512

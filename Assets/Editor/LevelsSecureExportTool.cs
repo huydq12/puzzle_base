@@ -143,6 +143,7 @@ public static class LevelsSecureExportTool
                 {
                     position = new Vec3Dto { x = g.Position.x, y = g.Position.y, z = g.Position.z },
                     direction = g.Direction,
+                    counter = g.Counter,
                     shooters = new List<ShooterDataDto>()
                 };
 

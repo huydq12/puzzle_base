@@ -29,6 +29,7 @@ public class GateDataDto
 {
     public Vec3Dto position;
     public int direction;
+    public int counter;
     public List<ShooterDataDto> shooters = new();
 }
 
