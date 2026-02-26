@@ -10,6 +10,24 @@ public class CubeEffect : MonoBehaviour
     [SerializeField] private Ease _travelEase = Ease.InQuad;
     [SerializeField] private float _scaleOutDuration = 0.15f;
 
+    public float TravelDuration
+    {
+        get => _travelDuration;
+        set => _travelDuration = Mathf.Max(0.01f, value);
+    }
+
+    public float ScaleOutDuration
+    {
+        get => _scaleOutDuration;
+        set => _scaleOutDuration = Mathf.Max(0f, value);
+    }
+
+    public Ease TravelEase
+    {
+        get => _travelEase;
+        set => _travelEase = value;
+    }
+
     public void Play(Vector3 from, Vector3 to, ObjectColor color)
     {
         transform.DOKill();

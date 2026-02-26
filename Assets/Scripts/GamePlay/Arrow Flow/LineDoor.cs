@@ -15,8 +15,6 @@ public class LineDoor : MonoBehaviour
 
     [SerializeField] private Animator animator;
 
-    [SerializeField] private CubeEffect cubeEffect;
-
     [SerializeField] private ParticleSystem vfx;
 
     [SerializeField] private Transform pointArrow;
@@ -25,6 +23,8 @@ public class LineDoor : MonoBehaviour
 
     [SerializeField] private SpriteRenderer spriteRendererColor;
     [SerializeField] private List<LineDoorColor> colorTable = new();
+    [SerializeField] private CubeEffect cubeEffect;
+    [SerializeField] private float _cubeEffectDuration = 0.8f;
 
     [Header("Animations")]
     [SerializeField] private string _decreaseAnim = "Decrease";
@@ -47,7 +47,7 @@ public class LineDoor : MonoBehaviour
         UpdateCounterText();
     }
 
-    public bool Consume(int amount, Action onOpened = null)
+    public bool Consume(int amount, Transform source, Action onOpened = null)
     {
         if (IsOpened) return false;
         if (amount <= 0) return false;
@@ -58,6 +58,7 @@ public class LineDoor : MonoBehaviour
         Remaining = next;
         UpdateCounterText();
         PlayDecrease();
+        SpawnCubeEffect(source);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[LineDoor] Consume color={Color} remaining={Remaining} amount={amount}", this);
@@ -138,6 +139,19 @@ public class LineDoor : MonoBehaviour
     {
         if (animator == null || string.IsNullOrEmpty(_decreaseAnim)) return;
         animator.Play(_decreaseAnim, 0, 0f);
+    }
+
+    private void SpawnCubeEffect(Transform source)
+    {
+        if (cubeEffect == null) return;
+        Vector3 from = source != null ? source.position : transform.position;
+        Vector3 to = pointArrow != null ? pointArrow.position : transform.position;
+
+        CubeEffect fx = Instantiate(cubeEffect);
+        if (Board.Instance != null)
+            fx.transform.SetParent(Board.Instance.transform, true);
+        fx.TravelDuration = _cubeEffectDuration;
+        fx.Play(from, to, Color);
     }
 
     private float GetAnimationLength(string animName, AnimationClip clipOverride = null)

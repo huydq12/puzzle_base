@@ -689,7 +689,7 @@ public class Board : Singleton<Board>
 
             if (door != null)
             {
-                bool opened = door.Consume(1, () => TrySpawnLineDoorLines(i));
+                bool opened = door.Consume(1, shooter != null ? shooter.transform : null, () => TrySpawnLineDoorLines(i));
                 entry.data.Counter = door.Remaining;
                 if (opened)
                 {
