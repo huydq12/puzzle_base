@@ -579,17 +579,10 @@ public class Board : Singleton<Board>
         if (_currentConfig.ConveyorLine == null || _currentConfig.ConveyorLine.Cells.IsNullOrEmpty()) return;
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
-        var conveyorCells = FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows);
-        if (conveyorCells.Count < 3)
+        var orderedCells = FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows);
+        if (orderedCells.Count < 2)
         {
             Debug.LogWarning("ConveyorLine has too few valid cells; skipping conveyor setup.");
-            return;
-        }
-
-        var orderedCells = IsClosedNeighborLoop(conveyorCells) ? conveyorCells : BuildOrderedBoundaryCells(conveyorCells);
-        if (orderedCells == null || orderedCells.Count < 3)
-        {
-            Debug.LogWarning("ConveyorLine cannot be ordered into a valid loop; skipping conveyor setup.");
             return;
         }
 
@@ -619,18 +612,31 @@ public class Board : Singleton<Board>
 
         for (int i = 0; i < orderedCells.Count; i++)
         {
-            GridCell prevCell = GetCellAt(orderedCells[(i - 1 + orderedCells.Count) % orderedCells.Count]);
             GridCell currCell = GetCellAt(orderedCells[i]);
-            GridCell nextCell = GetCellAt(orderedCells[(i + 1) % orderedCells.Count]);
+            if (currCell == null)
+            {
+                Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
+                return;
+            }
 
-            if (prevCell == null || currCell == null || nextCell == null)
+            Vector3 curr = currCell.transform.position;
+
+            // Keep conveyor path open: first/last points stay as authored and are not corner-smoothed across the seam.
+            if (i == 0 || i == orderedCells.Count - 1)
+            {
+                allPositions.Add(curr);
+                continue;
+            }
+
+            GridCell prevCell = GetCellAt(orderedCells[i - 1]);
+            GridCell nextCell = GetCellAt(orderedCells[i + 1]);
+            if (prevCell == null || nextCell == null)
             {
                 Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
                 return;
             }
 
             Vector3 prev = prevCell.transform.position;
-            Vector3 curr = currCell.transform.position;
             Vector3 next = nextCell.transform.position;
 
             if (IsRightAngle(prev, curr, next))
@@ -647,26 +653,31 @@ public class Board : Singleton<Board>
             }
         }
 
-        float totalDistance = 0f;
-        for (int i = 0; i < allPositions.Count; i++)
-        {
-            int nextIdx = (i + 1) % allPositions.Count;
-            totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
-        }
         if (allPositions.Count < 2)
         {
             Debug.LogWarning("ConveyorLine produced too few spline points; skipping conveyor setup.");
             return;
         }
 
-        float avgSegmentLength = totalDistance / allPositions.Count;
+        float totalDistance = 0f;
+        for (int i = 0; i < allPositions.Count - 1; i++)
+        {
+            totalDistance += Vector3.Distance(allPositions[i], allPositions[i + 1]);
+        }
+        if (totalDistance <= 0.0001f)
+        {
+            Debug.LogWarning("ConveyorLine length is too small; skipping conveyor setup.");
+            return;
+        }
+
+        float avgSegmentLength = totalDistance / Mathf.Max(1, allPositions.Count - 1);
 
         List<SplinePoint> points = new();
 
-        for (int i = 0; i < allPositions.Count; i++)
+        for (int i = 0; i < allPositions.Count - 1; i++)
         {
             Vector3 curr = allPositions[i];
-            Vector3 next = allPositions[(i + 1) % allPositions.Count];
+            Vector3 next = allPositions[i + 1];
 
             points.Add(CreatePoint(curr));
 
@@ -680,9 +691,13 @@ public class Board : Singleton<Board>
             }
         }
 
-        ConveyorController.Instance.SplineComputer.SetPoints(points.ToArray());
-        ConveyorController.Instance.SplineComputer.Close();
-        ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
+        points.Add(CreatePoint(allPositions[^1]));
+
+        SplineComputer splineComputer = ConveyorController.Instance.SplineComputer;
+        splineComputer.SetPoints(points.ToArray());
+        if (splineComputer.isClosed)
+            splineComputer.Break();
+        splineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
 
         SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
@@ -771,14 +786,6 @@ public class Board : Singleton<Board>
 
         if (currentCells != null)
             groups.Add((currentMeta, currentCells));
-
-        if (groups.Count > 1 && groups[0].meta.SameAs(groups[^1].meta))
-        {
-            var merged = (meta: groups[^1].meta, cells: groups[^1].cells);
-            merged.cells.AddRange(groups[0].cells);
-            groups.RemoveAt(0);
-            groups[^1] = merged;
-        }
 
         for (int i = 0; i < groups.Count; i++)
         {

@@ -88,6 +88,7 @@ public class ConveyorController : Singleton<ConveyorController>
 	    {
 	        if (_arrow == null) return;
 	        float splineLength = _splineComputer.CalculateLength();
+	        bool isClosed = _splineComputer != null && _splineComputer.isClosed;
 
         int total = Mathf.Max(2, Mathf.RoundToInt(splineLength * 0.35f));
 
@@ -107,7 +108,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
                 float moved;
                 percent = _splineComputer.Travel(percent, stepDistance, out moved);
-                if (percent >= 1.0) percent -= 1.0;
+                if (isClosed && percent >= 1.0) percent -= 1.0;
 	        }
 	    }
     public void WinGame()
@@ -231,6 +232,7 @@ public class ConveyorController : Singleton<ConveyorController>
         int slotCount = Mathf.RoundToInt(length / distancePerCube);
         slotCount = Mathf.Max(2, slotCount);
         float stepDistance = length / slotCount;
+        bool isClosed = _splineComputer != null && _splineComputer.isClosed;
 
         SplineSample sample = new SplineSample();
 
@@ -259,7 +261,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
             float moved;
             percent = _splineComputer.Travel(percent, stepDistance, out moved);
-            if (percent >= 1.0) percent -= 1.0;
+            if (isClosed && percent >= 1.0) percent -= 1.0;
         }
 
         EnsureCycleRunning();

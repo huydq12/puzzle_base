@@ -8,25 +8,49 @@ public class GameColorConfig : SerializedScriptableObject
 {
     [DictionaryDrawerSettings(KeyLabel = "Color", ValueLabel = "Materials")]
     public Dictionary<ObjectColor, ColorMaterial> ColorList;
+
+    [System.NonSerialized] private readonly HashSet<ObjectColor> _missingColorWarnings = new();
+
+    private ColorMaterial ResolveColorMaterial(ObjectColor color)
+    {
+        if (ColorList != null && ColorList.TryGetValue(color, out ColorMaterial mapped) && mapped != null)
+            return mapped;
+
+        if (_missingColorWarnings.Add(color))
+        {
+            Debug.LogWarning($"[{nameof(GameColorConfig)}] Missing mapping for color '{color}' on config '{name}'. Using fallback color material if available.");
+        }
+
+        if (ColorList == null) return null;
+
+        foreach (var pair in ColorList)
+        {
+            if (pair.Value != null)
+                return pair.Value;
+        }
+
+        return null;
+    }
+
     public Material GetCubeColor(ObjectColor color)
     {
-        return ColorList[color].Cube;
+        return ResolveColorMaterial(color)?.Cube;
     }
     public Material GetCubeHeadColor(ObjectColor color)
     {
-        return ColorList[color].Head;
+        return ResolveColorMaterial(color)?.Head;
     }
     public Material GetShooterColor(ObjectColor color)
     {
-        return ColorList[color].Shooter;
+        return ResolveColorMaterial(color)?.Shooter;
     }
     public Color GetOutlineShooter(ObjectColor color)
     {
-        return ColorList[color].OutlineColor;
+        return ResolveColorMaterial(color)?.OutlineColor ?? Color.white;
     }
     public Material GetShooterEyeColor(ObjectColor color)
     {
-        return ColorList[color].ShooterEye;
+        return ResolveColorMaterial(color)?.ShooterEye;
     }
 }
 
@@ -43,4 +67,3 @@ public class ColorMaterial
     public Material ShooterEye;
     public Color OutlineColor;
 }
-

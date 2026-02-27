@@ -10,4 +10,6 @@ public enum ObjectColor
     Cyan,
     Brown,
     Teal,
+    Black,
+    White
 }
