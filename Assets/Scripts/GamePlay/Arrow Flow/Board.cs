@@ -1105,13 +1105,7 @@ public class Board : Singleton<Board>
         if (currentCells != null)
             groups.Add((currentMeta, currentCells));
 
-        if (groups.Count > 1 && groups[0].meta.SameAs(groups[^1].meta))
-        {
-            var merged = (meta: groups[^1].meta, cells: groups[^1].cells);
-            merged.cells.AddRange(groups[0].cells);
-            groups.RemoveAt(0);
-            groups[^1] = merged;
-        }
+        // Do not merge first/last tunnel groups even if meta matches.
 
         for (int i = 0; i < groups.Count; i++)
         {

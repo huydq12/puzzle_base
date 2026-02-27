@@ -8,6 +8,7 @@ public class GameColorConfig : SerializedScriptableObject
 {
     [DictionaryDrawerSettings(KeyLabel = "Color", ValueLabel = "Materials")]
     public Dictionary<ObjectColor, ColorMaterial> ColorList;
+
     public Material GetCubeColor(ObjectColor color)
     {
         return TryGetColorMaterial(color, out var mat) ? mat.Cube : null;
@@ -27,6 +28,11 @@ public class GameColorConfig : SerializedScriptableObject
     public Color GetOutlineShooter(ObjectColor color)
     {
         return TryGetColorMaterial(color, out var mat) ? mat.Outline : Color.clear;
+    }
+
+    public Color GetLineDoorColor(ObjectColor color)
+    {
+        return TryGetColorMaterial(color, out var mat) ? mat.LineDoor : Color.white;
     }
 
     private bool TryGetColorMaterial(ObjectColor color, out ColorMaterial mat)
@@ -49,4 +55,5 @@ public class ColorMaterial
     [InlineEditor(InlineEditorObjectFieldModes.Boxed)]
     public Material ShooterEye;
     public Color Outline;
+    public Color LineDoor;
 }

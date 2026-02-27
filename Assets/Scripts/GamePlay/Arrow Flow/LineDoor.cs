@@ -121,6 +121,12 @@ public class LineDoor : MonoBehaviour
     {
         if (spriteRendererColor == null) return;
         UnityEngine.Color c = UnityEngine.Color.white;
+        if (Board.Instance != null && Board.Instance.ColorConfig != null)
+        {
+            c = Board.Instance.ColorConfig.GetLineDoorColor(Color);
+            spriteRendererColor.color = c;
+            return;
+        }
         if (colorTable != null)
         {
             for (int i = 0; i < colorTable.Count; i++)

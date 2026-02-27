@@ -1,13 +1,13 @@
 public enum ObjectColor
 {
     None = -1,
-    Green,
     Red,
+    Green,
     Blue,
-    Purple,
-    Pink,
     Yellow,
     Orange,
+    Purple,
+    Pink,
     Cyan,
     Brown,
     Teal,

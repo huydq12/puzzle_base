@@ -68,6 +68,18 @@ public class ConveyorTunel : MonoBehaviour
             _gate_start.transform.position = new Vector3(worldPositions[0].x, _gateHeight, worldPositions[0].z);
         if (_gate_end != null)
             _gate_end.transform.position = new Vector3(worldPositions[^1].x, _gateHeight, worldPositions[^1].z);
+        if (worldPositions != null && worldPositions.Count >= 2)
+        {
+            Vector3 startDir = worldPositions[1] - worldPositions[0];
+            startDir.y = 0f;
+            if (_gate_start != null && startDir.sqrMagnitude > 0.0001f)
+                _gate_start.transform.rotation = Quaternion.LookRotation(startDir.normalized, Vector3.up);
+
+            Vector3 endDir = worldPositions[^1] - worldPositions[^2];
+            endDir.y = 0f;
+            if (_gate_end != null && endDir.sqrMagnitude > 0.0001f)
+                _gate_end.transform.rotation = Quaternion.LookRotation(endDir.normalized, Vector3.up);
+        }
 
         // If counter is 0, tunnel should be hidden and not block.
         if (Counter <= 0)
