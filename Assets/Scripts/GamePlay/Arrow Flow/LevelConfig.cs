@@ -95,6 +95,7 @@ public class GateData
     public Vector3 Position;
     [Range(0, 7)] public int Direction;
     [Sirenix.OdinInspector.LabelText("Shooter Counter")] public int Counter;
+    [Sirenix.OdinInspector.LabelText("Gate Element Type")] public int ElementType;
     public List<ShooterData> Shooters;
 }
 [HideReferenceObjectPicker]

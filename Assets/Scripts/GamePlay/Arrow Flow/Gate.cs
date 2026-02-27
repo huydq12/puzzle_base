@@ -4,7 +4,7 @@ using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 
-public class Gate : MonoBehaviour
+public class Gate : MonoBehaviour, IGate
 {
     [SerializeField] private Transform _maskDoor;
     [SerializeField] private TextMeshPro _total;
@@ -32,6 +32,8 @@ public class Gate : MonoBehaviour
 
     public bool IsShooterFrozen => _iceShooter != null && _iceShooter.Counter > 0;
 
+    public Transform RootTransform => transform;
+
     public int RemainingShooterCount
     {
         get
@@ -41,6 +43,12 @@ public class Gate : MonoBehaviour
             if (_currentShooterIndex >= _shooterInstances.Count) return 0;
             return _shooterInstances.Count - _currentShooterIndex;
         }
+    }
+
+    public IEnumerable<Shooter> GetCurrentShooters()
+    {
+        if (CurrentShooter != null)
+            yield return CurrentShooter;
     }
 
     public int Total

@@ -58,13 +58,23 @@ public class LineController : Singleton<LineController>
             {
                 System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-                Gate gate = null;
+                IGate gate = null;
                 for (int i = 0; i < hits.Length; i++)
                 {
                     var tr = hits[i].transform;
                     if (tr == null) continue;
-                    gate = tr.GetComponentInParent<Gate>();
-                    if (gate != null) break;
+                    var gateMono = tr.GetComponentInParent<Gate>();
+                    if (gateMono != null)
+                    {
+                        gate = gateMono;
+                        break;
+                    }
+                    var gateDouble = tr.GetComponentInParent<GateDouble>();
+                    if (gateDouble != null)
+                    {
+                        gate = gateDouble;
+                        break;
+                    }
                 }
 
                 if (gate == null) return;

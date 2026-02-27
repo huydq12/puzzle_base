@@ -12,11 +12,12 @@ public class Shuffle : MonoBehaviour
 
     private Action _onHit;
 
-    public IEnumerator Hit(Gate gate, Action onHit = null)
+    public IEnumerator Hit(IGate gate, Action onHit = null)
     {
         _onHit = onHit;
         transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-        transform.position = gate.transform.position + offset;
+        var root = gate != null ? gate.RootTransform : null;
+        transform.position = (root != null ? root.position : Vector3.zero) + offset;
         _animator.Play("ShooterShuffle_");
         yield return new WaitForSeconds(GetAnimationLength("ShooterShuffle_"));
         Destroy(gameObject);

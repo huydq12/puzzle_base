@@ -6,9 +6,11 @@ using UnityEngine;
 public class ShooterController : Singleton<ShooterController>
 {
     [SerializeField] private Gate _gatePrefab;
+    [SerializeField] private GateDouble _gateDoublePrefab;
     [SerializeField] private Shooter _shooterPrefab;
+    [SerializeField] private ShooterDouble _shooterDoublePrefab;
     [SerializeField] private Lock _lockPrefab;
-    [ReadOnly] public List<Gate> Gates;
+    [ReadOnly] public List<IGate> Gates;
     public Shooter ShooterPrefab => _shooterPrefab;
     public Lock LockPrefab => _lockPrefab;
 
@@ -26,23 +28,40 @@ public class ShooterController : Singleton<ShooterController>
         return Quaternion.Euler(0f, y, 0f);
     }
 
-	    public void Setup(List<GateData> datas)
-	    {
-	        if (_gatePrefab == null) return;
-	        Gates = new();
-	        foreach (var data in datas)
-	        {
-	            var gate = Instantiate(_gatePrefab);
-	            if (gate == null) continue;
-	            gate.transform.SetParent(Board.Instance.transform, false);
-	            gate.transform.localPosition = data.Position;
-	            gate.transform.rotation = DirectionToRotation(data.Direction);
-	            gate.Setup(data);
-	            Gates.Add(gate);
-	        }
-	    }
+    public void Setup(List<GateData> datas)
+    {
+        Gates = new();
+        if (datas == null || datas.Count == 0) return;
 
-    public void NotifyGateClosed(Gate gate)
+        foreach (var data in datas)
+        {
+            if (data == null) continue;
+            bool useDouble = data != null && data.ElementType == 6 && _gateDoublePrefab != null;
+            if (useDouble)
+            {
+                var gateDouble = Instantiate(_gateDoublePrefab);
+                if (gateDouble == null) continue;
+                gateDouble.transform.SetParent(Board.Instance.transform, false);
+                gateDouble.transform.localPosition = data.Position;
+                gateDouble.transform.rotation = DirectionToRotation(data.Direction);
+                gateDouble.Setup(data);
+                Gates.Add(gateDouble);
+            }
+            else
+            {
+                if (_gatePrefab == null) continue;
+                var gate = Instantiate(_gatePrefab);
+                if (gate == null) continue;
+                gate.transform.SetParent(Board.Instance.transform, false);
+                gate.transform.localPosition = data.Position;
+                gate.transform.rotation = DirectionToRotation(data.Direction);
+                gate.Setup(data);
+                Gates.Add(gate);
+            }
+        }
+    }
+
+    public void NotifyGateClosed(IGate gate)
     {
         if (gate == null) return;
         if (GameManagerInGame.Instance == null) return;
@@ -51,7 +70,7 @@ public class ShooterController : Singleton<ShooterController>
 
         for (int i = 0; i < Gates.Count; i++)
         {
-            Gate g = Gates[i];
+            IGate g = Gates[i];
             if (g == null || !g.IsClosed)
                 return;
         }
@@ -68,19 +87,19 @@ public class ShooterController : Singleton<ShooterController>
 
         for (int i = 0; i < Gates.Count; i++)
         {
-            Gate gate = Gates[i];
+            IGate gate = Gates[i];
             if (gate == null) continue;
             gate.ConsumeIceCounter(clamped);
         }
     }
 
-    public bool UnlockCurrentLockOnGate(Gate gate, Key key = null)
+    public bool UnlockCurrentLockOnGate(IGate gate, Key key = null)
     {
         if (gate == null) return false;
         return gate.UnlockCurrentLock(key);
     }
 
-    public bool UnlockNextLockOnGate(Gate gate, Key key = null)
+    public bool UnlockNextLockOnGate(IGate gate, Key key = null)
     {
         if (gate == null) return false;
         return gate.UnlockNextLock(key);
@@ -91,7 +110,7 @@ public class ShooterController : Singleton<ShooterController>
         if (Gates == null || Gates.Count == 0) return false;
         for (int i = 0; i < Gates.Count; i++)
         {
-            Gate gate = Gates[i];
+            IGate gate = Gates[i];
             if (gate != null && gate.UnlockCurrentLock(key))
                 return true;
         }
@@ -103,7 +122,7 @@ public class ShooterController : Singleton<ShooterController>
         if (Gates == null || Gates.Count == 0) return false;
         for (int i = 0; i < Gates.Count; i++)
         {
-            Gate gate = Gates[i];
+            IGate gate = Gates[i];
             if (gate != null && gate.UnlockNextLock(key))
                 return true;
         }
@@ -154,9 +173,11 @@ public class ShooterController : Singleton<ShooterController>
         foreach (var gate in Gates)
         {
             if (gate == null || gate.IsClosed) continue;
-            if (gate.CurrentShooter != null && gate.CurrentShooter.Type != 6 && gate.CurrentShooter.Total > 0)
+            foreach (var shooter in gate.GetCurrentShooters())
             {
-                candidates.Add(gate.CurrentShooter);
+                if (shooter == null) continue;
+                if (shooter.Type == 6 || shooter.Total <= 0) continue;
+                candidates.Add(shooter);
             }
         }
 
@@ -166,9 +187,11 @@ public class ShooterController : Singleton<ShooterController>
             foreach (var gate in Gates)
             {
                 if (gate == null || gate.IsClosed) continue;
-                if (gate.CurrentShooter != null && gate.CurrentShooter.Total > 0)
+                foreach (var shooter in gate.GetCurrentShooters())
                 {
-                    candidates.Add(gate.CurrentShooter);
+                    if (shooter == null) continue;
+                    if (shooter.Total > 0)
+                        candidates.Add(shooter);
                 }
             }
         }
@@ -190,11 +213,12 @@ public class ShooterController : Singleton<ShooterController>
         {
             var gate = Gates[i];
             if (gate == null || gate.IsClosed) continue;
-
-            var shooter = gate.CurrentShooter;
-            if (shooter == null) continue;
-            if (shooter.Total <= 0) continue;
-            return true;
+            foreach (var shooter in gate.GetCurrentShooters())
+            {
+                if (shooter == null) continue;
+                if (shooter.Total <= 0) continue;
+                return true;
+            }
         }
 
         return false;
@@ -229,14 +253,14 @@ public class ShooterController : Singleton<ShooterController>
         return shuffledAny;
     }
 
-    public bool CanShuffleShootersOnGate(Gate gate)
+    public bool CanShuffleShootersOnGate(IGate gate)
     {
         if (gate == null) return false;
         if (gate.IsClosed) return false;
         return gate.RemainingShooterCount > 1;
     }
 
-    public bool ShuffleShootersOnGate(Gate gate)
+    public bool ShuffleShootersOnGate(IGate gate)
     {
         if (!CanShuffleShootersOnGate(gate)) return false;
         return gate.ShuffleRemainingShooters();
