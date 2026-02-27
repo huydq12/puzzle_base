@@ -577,12 +577,15 @@ public class ConveyorController : Singleton<ConveyorController>
                 }
 
                 bool standStill = false;
+                bool wrappedByRecreate = false;
 
                 if (_lstPaths[curIndex].CubeSlot == null)
                 {
                     if (curIndex == 0)
                     {
-                        _lstPaths[curIndex].CubeSlot = tempCubeSlot;
+                        CubeLine recreated = RecreateWrappedCube(tempCubeSlot, curIndex);
+                        _lstPaths[curIndex].CubeSlot = recreated ?? tempCubeSlot;
+                        wrappedByRecreate = recreated != null;
                         tempCubeSlot = null;
                     }
                     else
@@ -596,7 +599,7 @@ public class ConveyorController : Singleton<ConveyorController>
                     standStill = true;
                 }
 
-                if (_lstPaths[curIndex].CubeSlot != null && !standStill)
+                if (_lstPaths[curIndex].CubeSlot != null && !standStill && !wrappedByRecreate)
                 {
                     CubeMoving(curIndex, timePerCycle);
                 }
@@ -629,6 +632,36 @@ public class ConveyorController : Singleton<ConveyorController>
 
         slot.CubeSlot.transform.DOMove(targetPos, time).SetEase(Ease.Linear);
         slot.CubeSlot.transform.LookAt(targetPos + dir);
+    }
+
+    private CubeLine RecreateWrappedCube(CubeLine source, int targetIndex)
+    {
+        if (source == null) return null;
+        if (targetIndex < 0 || targetIndex >= _lstPaths.Count) return null;
+
+        var slot = _lstPaths[targetIndex];
+        Vector3 dir = slot.Forward;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
+        Vector3 left = slot.Left;
+        if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
+        Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
+        Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
+
+        Transform parent = source.transform.parent;
+        Vector3 sourceScale = source.transform.localScale;
+
+        CubeLine recreated = Instantiate(source, source.transform.position, source.transform.rotation, parent);
+        if (recreated == null)
+            return null;
+
+        recreated.transform.localScale = sourceScale;
+        recreated.transform.SetPositionAndRotation(targetPos, targetRot);
+
+        source.transform.DOKill();
+        source.gameObject.SetActive(false);
+        Destroy(source.gameObject);
+
+        return recreated;
     }
     private void StartBlink()
     {
