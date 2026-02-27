@@ -47,7 +47,7 @@ public class Board : Singleton<Board>
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
-    private readonly List<(LineDoor door, LineDoorData data, bool opened, bool spawned)> _lineDoors = new();
+    private readonly List<LineDoorEntry> _lineDoors = new();
     private readonly Dictionary<Vector2Int, int> _conveyorTunnelBlockCounts = new();
 
     private readonly List<(ConveyorTunel tunnel, List<Vector2Int> cells)> _activeTunnels = new();
@@ -68,6 +68,15 @@ public class Board : Singleton<Board>
 
     private float _nextElevatorCheckTime;
     private float _nextLineDoorCheckTime;
+
+    private class LineDoorEntry
+    {
+        public LineDoor door;
+        public LineDoorData data;
+        public int remaining;
+        public bool opened;
+        public bool spawned;
+    }
 
     protected override void Awake()
     {
@@ -537,14 +546,23 @@ public class Board : Singleton<Board>
 
             door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
-            door.Setup(data.Color, data.Counter);
-            _lineDoors.Add((door, data, false, false));
+            int remaining = data.Counter;
+            door.Setup(data.Color, remaining);
+            var entry = new LineDoorEntry
+            {
+                door = door,
+                data = data,
+                remaining = remaining,
+                opened = false,
+                spawned = false
+            };
+            _lineDoors.Add(entry);
 
-            if (data.Counter <= 0)
+            if (remaining <= 0)
                 OpenLineDoorAtIndex(_lineDoors.Count - 1);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Board.LineDoor] Spawned door idx={_lineDoors.Count - 1} color={data.Color} counter={data.Counter} pos={data.Position} size={data.Size}", door);
+            Debug.Log($"[Board.LineDoor] Spawned door idx={_lineDoors.Count - 1} color={data.Color} counter={remaining} pos={data.Position} size={data.Size}", door);
 #endif
         }
     }
@@ -690,27 +708,25 @@ public class Board : Singleton<Board>
             if (door != null)
             {
                 bool opened = door.Consume(1, shooter != null ? shooter.transform : null, () => TrySpawnLineDoorLines(i));
-                entry.data.Counter = door.Remaining;
+                entry.remaining = door.Remaining;
                 if (opened)
                 {
                     entry.opened = true;
-                    _lineDoors[i] = entry;
                 }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.data.Counter} opened={entry.opened}", door);
+                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
 #endif
             }
             else
             {
-                entry.data.Counter = Mathf.Max(0, entry.data.Counter - 1);
-                if (entry.data.Counter <= 0)
+                entry.remaining = Mathf.Max(0, entry.remaining - 1);
+                if (entry.remaining <= 0)
                 {
                     entry.opened = true;
-                    _lineDoors[i] = entry;
                     TrySpawnLineDoorLines(i);
                 }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.data.Counter} opened={entry.opened}", this);
+                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", this);
 #endif
             }
         }
@@ -722,10 +738,9 @@ public class Board : Singleton<Board>
         var entry = _lineDoors[index];
         if (entry.opened) return;
         entry.opened = true;
-        _lineDoors[index] = entry;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Board.LineDoor] Open door idx={index} color={entry.data?.Color} counter={entry.data?.Counter}", entry.door);
+        Debug.Log($"[Board.LineDoor] Open door idx={index} color={entry.data?.Color} counter={entry.remaining}", entry.door);
 #endif
 
         if (entry.door != null)
@@ -762,7 +777,6 @@ public class Board : Singleton<Board>
 #endif
         SpawnLineDoorLines(entry.data);
         entry.spawned = true;
-        _lineDoors[index] = entry;
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
