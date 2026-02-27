@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 
 
 #if UNITY_EDITOR

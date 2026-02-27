@@ -36,8 +36,10 @@ public class Board : Singleton<Board>
 
     [HideInInspector] public GridCell[,] Cells;
     [SerializeField] private SpriteRenderer _overlay;
+    [SerializeField] private SplineMesh _mesh;
     [ReadOnly] public BoosterType CurrentBooster;
     [ReadOnly] public bool IsUsingBooster;
+    [SerializeField] private RectTransform _superman;
     public Vector2 Spacing => _spacing;
     public int InitLine => _currentConfig.ColorLines.Count;
     public GameColorConfig ColorConfig => _colorConfig;
@@ -65,6 +67,49 @@ public class Board : Singleton<Board>
 
     private float _nextElevatorCheckTime;
 
+    [Button]
+    public void AnimSuperman()
+    {
+        Sequence seq = DOTween.Sequence();
+
+        // 🚀 Bay vào
+        seq.Append(_superman.DOAnchorPosX(260f, 0.3f)
+            .SetEase(Ease.OutBack));
+
+        seq.AppendInterval(0.25f);
+
+        // 😤 HÍT SÂU
+        seq.Append(_superman.DOScale(0.9f, 0.15f)
+            .SetEase(Ease.InQuad));
+
+        // 💥 BÙNG lên to khi bắt đầu hét
+        seq.Append(_superman.DOScale(1.4f, 0.2f)
+            .SetEase(Ease.OutExpo));
+
+        // 🔊 HÉT KÉO DÀI (nhấp nhô nhẹ)
+        seq.Append(
+            _superman.DOScale(1.45f, 0.12f)
+                .SetLoops(10, LoopType.Yoyo)   // số lần nhấp nhô
+                .SetEase(Ease.InOutSine)
+        );
+
+        // Hạ xuống lại bình thường
+        seq.Append(_superman.DOScale(1f, 0.25f)
+            .SetEase(Ease.InQuad));
+
+        seq.AppendInterval(0.15f);
+
+        // 🛫 Bay về
+        seq.Append(_superman.DOAnchorPosX(-387.2f, 0.3f)
+            .SetEase(Ease.InCubic));
+        seq.AppendCallback(() =>
+        {
+           ShooterController.Instance.Gates.ForEach(gate =>
+           {
+               gate.transform.DOLocalMoveZ(10, 0.35f);
+           }) ;
+        });
+    }
     protected override void Awake()
     {
         base.Awake();
@@ -419,6 +464,10 @@ public class Board : Singleton<Board>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Result);
             GameUI.Instance.Get<UILose>().Show();
+        }
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            AnimSuperman();
         }
         if (Input.GetKeyDown(KeyCode.P))
         {
@@ -1256,16 +1305,36 @@ public class Board : Singleton<Board>
         SetupConveyor();
         SetupShooter();
         RefreshAllHeadHighlights();
+        Camera.main.transform.position = new Vector3(0, 17.5f, 2.43f);
+        Camera.main.orthographicSize = 10.96f;
+        float clipValue = 0f;
+        _mesh.SetClipRange(0, 0);
         Sequence sq = DOTween.Sequence();
-        Camera.main.transform.position = new Vector3(0, 17.5f, 1.96f);
-        Camera.main.orthographicSize = 8.1f;
+
         sq.AppendInterval(1.0f);
-        sq.Append(Camera.main.DOOrthoSize(12, 0.5f));
-        sq.Join(  Camera.main.transform.DOMoveZ(4.0f, 0.5f));
+
+        sq.Append(Camera.main.DOOrthoSize(11.86f, 0.5f));
+        sq.Join(Camera.main.transform.DOMoveZ(4.0f, 0.5f));
+        sq.AppendInterval(0.25f);
+        sq.Append(
+            DOTween.To(
+                () => clipValue,
+                x =>
+                {
+                    clipValue = x;
+                    _mesh.SetClipRange(0f, clipValue);
+                    _mesh.Rebuild();
+                },
+                1f,
+                1.5f
+            ).SetEase(Ease.Linear)
+        );
+
         sq.OnComplete(() =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);
             GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+            ConveyorController.Instance.SpawnArrowAlongSpline();
         });
     }
 }

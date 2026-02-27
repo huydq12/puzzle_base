@@ -84,11 +84,11 @@ public class ConveyorController : Singleton<ConveyorController>
         }
     }
 
-	    void SpawnArrowAlongSpline()
-	    {
-	        if (_arrow == null) return;
-	        float splineLength = _splineComputer.CalculateLength();
-	        bool isClosed = _splineComputer != null && _splineComputer.isClosed;
+    public void SpawnArrowAlongSpline()
+    {
+        if (_arrow == null) return;
+        float splineLength = _splineComputer.CalculateLength();
+        bool isClosed = _splineComputer != null && _splineComputer.isClosed;
 
         int total = Mathf.Max(2, Mathf.RoundToInt(splineLength * 0.35f));
 
@@ -97,20 +97,30 @@ public class ConveyorController : Singleton<ConveyorController>
         float stepDistance = splineLength / (total - 1);
         double percent = 0.0;
 
-	        for (int i = 0; i < total - 1; i++)
-	        {
+        for (int i = 0; i < total - 1; i++)
+        {
             _splineComputer.Evaluate(percent, ref sample);
 
-	            GameObject arrow = Instantiate(_arrow);
-	            if (arrow == null) continue;
-	            arrow.transform.SetParent(Board.Instance.transform, false);
-	            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+            GameObject arrow = Instantiate(_arrow);
+            var sprites = arrow.GetComponentsInChildren<SpriteRenderer>();
 
-                float moved;
-                percent = _splineComputer.Travel(percent, stepDistance, out moved);
-                if (isClosed && percent >= 1.0) percent -= 1.0;
-	        }
-	    }
+            if (arrow == null) continue;
+            foreach (var sprite in sprites)
+            {
+                sprite.DOFade(0, 0);
+            }
+               foreach (var sprite in sprites)
+            {
+                sprite.DOFade(0.5f, 0.25f);
+            }
+            arrow.transform.SetParent(Board.Instance.transform, false);
+            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+
+            float moved;
+            percent = _splineComputer.Travel(percent, stepDistance, out moved);
+            if (isClosed && percent >= 1.0) percent -= 1.0;
+        }
+    }
     public void WinGame()
     {
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
@@ -214,7 +224,7 @@ public class ConveyorController : Singleton<ConveyorController>
         if (_splineComputer != null && _splineComputer.sampleMode != SplineComputer.SampleMode.Uniform)
             _splineComputer.sampleMode = SplineComputer.SampleMode.Uniform;
 
-        SpawnArrowAlongSpline();
+        //  SpawnArrowAlongSpline();
         _isRunning = true;
         _isPaused = false;
 
@@ -366,10 +376,10 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public List<CubeLine> GetConsecutiveCubesByColor(CubeLine clickedCube)
     {
-        List<CubeLine> result = new List<CubeLine>(){ clickedCube };
-        foreach(var slot in _lstPaths)
+        List<CubeLine> result = new List<CubeLine>() { clickedCube };
+        foreach (var slot in _lstPaths)
         {
-            if(slot.CubeSlot != null && slot.CubeSlot.Color == clickedCube.Color)
+            if (slot.CubeSlot != null && slot.CubeSlot.Color == clickedCube.Color)
             {
                 result.Add(slot.CubeSlot);
             }
