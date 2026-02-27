@@ -77,8 +77,12 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public void OnHit(bool byRainbow = false)
     {
+        LogColorState($"OnHit/Start byRainbow={byRainbow}");
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
+        {
+            LogColorState("OnHit/BlockedByIceCounter");
             return;
+        }
 
         if (ElementType == 3 && !_elementType3Revealed)
         {
@@ -87,6 +91,7 @@ public class CubeLine : SerializedMonoBehaviour
                 shifted = _originalColor;
             _baseColor = shifted;
             RefreshColorAndMaterials(Type);
+            LogColorState("OnHit/RevealedInner");
 
             SpawnHitEffect();
 
@@ -100,6 +105,7 @@ public class CubeLine : SerializedMonoBehaviour
 
         ConveyorController.Instance.RemoveCubeFromPath(this);
         SpawnHitEffect();
+        LogColorState("OnHit/Destroy");
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
     }
 
@@ -133,6 +139,7 @@ public class CubeLine : SerializedMonoBehaviour
         _originalColor = color;
         _baseColor = color;
         RefreshColorAndMaterials(Type);
+        LogColorState("SetColor");
     }
 
     public void SetElementType(int elementType)
@@ -141,6 +148,7 @@ public class CubeLine : SerializedMonoBehaviour
         ElementType = elementType;
         RefreshColorAndMaterials(Type);
         Line?.RefreshCounterText();
+        LogColorState("SetElementType");
     }
     public void PlayEffectMelt()
     {
@@ -199,6 +207,7 @@ public class CubeLine : SerializedMonoBehaviour
     {
         Color = _baseColor;
         ApplyMaterials(targetType);
+        LogColorState($"RefreshColorAndMaterials/{targetType}");
     }
 
     private void ApplyMaterials(CubeType targetType)
@@ -374,5 +383,15 @@ public class CubeLine : SerializedMonoBehaviour
 
         if (_doubleHeadCube != null)
             _doubleHeadCube.gameObject.SetActive(false);
+    }
+
+    private void LogColorState(string context)
+    {
+        ObjectColor overlayColor = _originalColor;
+        bool hasOverlay = TryGetElementType3ShiftedColorFromOriginal(offset: 3, out overlayColor);
+        Debug.Log(
+            $"[CubeLine] {name} | {context} | Type={Type} | ElementType={ElementType} | Revealed={_elementType3Revealed} | Color={Color} | Base={_baseColor} | Original={_originalColor} | Overlay={(hasOverlay ? overlayColor.ToString() : "N/A")}",
+            this
+        );
     }
 }

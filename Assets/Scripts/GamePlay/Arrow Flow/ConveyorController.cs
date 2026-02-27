@@ -379,7 +379,8 @@ public class ConveyorController : Singleton<ConveyorController>
         List<CubeLine> result = new List<CubeLine>() { clickedCube };
         foreach (var slot in _lstPaths)
         {
-            if (slot.CubeSlot != null && slot.CubeSlot.Color == clickedCube.Color)
+            // clickedCube is already in result, skip it to avoid double OnHit in destroy flow.
+            if (slot.CubeSlot != null && slot.CubeSlot != clickedCube && slot.CubeSlot.Color == clickedCube.Color)
             {
                 result.Add(slot.CubeSlot);
             }
@@ -657,21 +658,11 @@ public class ConveyorController : Singleton<ConveyorController>
         Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
         Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
 
-        Transform parent = source.transform.parent;
-        Vector3 sourceScale = source.transform.localScale;
-
-        CubeLine recreated = Instantiate(source, source.transform.position, source.transform.rotation, parent);
-        if (recreated == null)
-            return null;
-
-        recreated.transform.localScale = sourceScale;
-        recreated.transform.SetPositionAndRotation(targetPos, targetRot);
-
+        // Keep the same runtime instance so color-state fields (_baseColor/_originalColor/revealed)
+        // are preserved for ElementType 3 cubes.
         source.transform.DOKill();
-        source.gameObject.SetActive(false);
-        Destroy(source.gameObject);
-
-        return recreated;
+        source.transform.SetPositionAndRotation(targetPos, targetRot);
+        return source;
     }
     private void StartBlink()
     {
