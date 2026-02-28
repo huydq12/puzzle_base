@@ -52,6 +52,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    [SerializeField] private int _debugAddCoinAmount = 100;
+#endif
 
     private new void Awake()
     {
@@ -75,6 +78,16 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     void Start()
     {
         StartGame(CurrentLevel);
+    }
+
+    private void Update()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            InventoryManager.Instance?.AddCoin(_debugAddCoinAmount);
+        }
+#endif
     }
     public void PlayVfxWin()
     {

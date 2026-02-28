@@ -351,6 +351,11 @@ public class ConveyorController : Singleton<ConveyorController>
         return _totalPathSlotTaken > 0;
     }
 
+    public bool HasAnyCubePendingOrOnConveyor()
+    {
+        return _totalPathSlotTaken > 0 || _waitingToEnterQueue.Count > 0;
+    }
+
     public void SetAllCubesBringToTop(bool value)
     {
         for (int i = 0; i < _lstPaths.Count; i++)

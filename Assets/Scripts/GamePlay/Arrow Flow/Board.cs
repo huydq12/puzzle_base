@@ -68,6 +68,7 @@ public class Board : Singleton<Board>
 
     private float _nextElevatorCheckTime;
     private float _nextLineDoorCheckTime;
+    private float _nextWinCheckTime;
 
     private class LineDoorEntry
     {
@@ -600,6 +601,44 @@ public class Board : Singleton<Board>
         if (_currentConfig == null) return;
         UpdateElevators();
         UpdateLineDoors();
+        UpdateWinConditionByCubeState();
+    }
+
+    public bool HasAnyCubeOnBoard()
+    {
+        if (Cells == null) return false;
+
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                GridCell cell = Cells[x, y];
+                if (cell != null && cell.IsOccupied) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void UpdateWinConditionByCubeState()
+    {
+        if (Time.time < _nextWinCheckTime) return;
+        _nextWinCheckTime = Time.time + 0.1f;
+
+        if (GameManagerInGame.Instance == null) return;
+        if (GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing) return;
+
+        if (HasAnyCubeOnBoard()) return;
+
+        ConveyorController conveyor = ConveyorController.Instance;
+        if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor()) return;
+
+        if (conveyor != null)
+            conveyor.WinGame();
+        else
+            GameManagerInGame.Instance.SetWin();
     }
 
     private void UpdateElevators()
