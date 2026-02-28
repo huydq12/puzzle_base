@@ -152,6 +152,66 @@ public class Board : Singleton<Board>
             return false;
         }
 
+        public bool TryConsumeBatch(ObjectColor outerColor, int count, out ObjectColor innerColor)
+        {
+            innerColor = ObjectColor.None;
+
+            int clamped = Mathf.Max(0, count);
+            if (clamped <= 0) return false;
+            if (_totalRemaining < clamped) return false;
+
+            if (!_outerRemaining.TryGetValue(outerColor, out int outerRem) || outerRem < clamped)
+            {
+                return false;
+            }
+
+            List<ObjectColor> candidates = null;
+            foreach (var kv in _innerRemaining)
+            {
+                ObjectColor c = kv.Key;
+                if (c == ObjectColor.None) continue;
+                if (c == outerColor) continue;
+                if (kv.Value < clamped) continue;
+
+                candidates ??= new List<ObjectColor>();
+                candidates.Add(c);
+            }
+
+            if (candidates == null || candidates.Count == 0) return false;
+
+            candidates.Sort((a, b) =>
+            {
+                int ra = _innerRemaining.TryGetValue(a, out int va) ? va : 0;
+                int rb = _innerRemaining.TryGetValue(b, out int vb) ? vb : 0;
+                int cmp = rb.CompareTo(ra);
+                return cmp != 0 ? cmp : ((int)a).CompareTo((int)b);
+            });
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                ObjectColor candidate = candidates[i];
+                if (!_innerRemaining.TryGetValue(candidate, out int innerRem) || innerRem < clamped) continue;
+
+                // Simulate consuming a whole line: innerColor repeated `clamped` times.
+                _innerRemaining[candidate] = innerRem - clamped;
+                _outerRemaining[outerColor] = outerRem - clamped;
+                _totalRemaining -= clamped;
+
+                if (IsFeasible())
+                {
+                    innerColor = candidate;
+                    return true;
+                }
+
+                // Rollback.
+                _totalRemaining += clamped;
+                _outerRemaining[outerColor] = outerRem;
+                _innerRemaining[candidate] = innerRem;
+            }
+
+            return false;
+        }
+
         private bool IsFeasible()
         {
             // Feasibility for inequality-only constraint (inner != outer):
@@ -967,6 +1027,22 @@ public class Board : Singleton<Board>
 	        if (line == null || line.Cells == null || line.Cells.Count == 0) return;
 
 	        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
+	        int lineElementType3Count = 0;
+	        if (line.ElementTypes != null)
+	        {
+	            int count = Mathf.Min(line.ElementTypes.Count, line.Cells.Count);
+	            for (int i = 0; i < count; i++)
+	            {
+	                if (line.ElementTypes[i] == 3) lineElementType3Count++;
+	            }
+	        }
+
+	        bool hasLineInnerColor = false;
+	        ObjectColor lineInnerColor = ObjectColor.None;
+	        if (lineElementType3Count > 0 && _elementType3InnerAllocator != null)
+	        {
+	            hasLineInnerColor = _elementType3InnerAllocator.TryConsumeBatch(line.Color, lineElementType3Count, out lineInnerColor);
+	        }
 
 	        Line lineGo = Instantiate(_linePrefab);
 	        lineGo.transform.SetParent(transform, false);
@@ -997,9 +1073,16 @@ public class Board : Singleton<Board>
             cube.SetColor(line.Color);
             int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
             cube.SetElementType(elementType);
-            if (elementType == 3 && _elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
+            if (elementType == 3)
             {
-                cube.SetElementType3InnerColor(innerColor);
+                if (hasLineInnerColor)
+                {
+                    cube.SetElementType3InnerColor(lineInnerColor);
+                }
+                else if (_elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
+                {
+                    cube.SetElementType3InnerColor(innerColor);
+                }
             }
             if (lineGo.ElementTypes != null && i < lineGo.ElementTypes.Count)
                 lineGo.ElementTypes[i] = elementType;
@@ -1501,6 +1584,22 @@ public class Board : Singleton<Board>
         foreach (var line in _currentConfig.ColorLines)
         {
             bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
+            int lineElementType3Count = 0;
+            if (line != null && line.Cells != null && line.ElementTypes != null)
+            {
+                int count = Mathf.Min(line.ElementTypes.Count, line.Cells.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    if (line.ElementTypes[i] == 3) lineElementType3Count++;
+                }
+            }
+
+            bool hasLineInnerColor = false;
+            ObjectColor lineInnerColor = ObjectColor.None;
+            if (lineElementType3Count > 0 && _elementType3InnerAllocator != null)
+            {
+                hasLineInnerColor = _elementType3InnerAllocator.TryConsumeBatch(line.Color, lineElementType3Count, out lineInnerColor);
+            }
 
             Line lineColor = Instantiate(_linePrefab);
             lineColor.transform.SetParent(transform, false);
@@ -1529,9 +1628,16 @@ public class Board : Singleton<Board>
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
                 cube.SetElementType(elementType);
-                if (elementType == 3 && _elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
+                if (elementType == 3)
                 {
-                    cube.SetElementType3InnerColor(innerColor);
+                    if (hasLineInnerColor)
+                    {
+                        cube.SetElementType3InnerColor(lineInnerColor);
+                    }
+                    else if (_elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
+                    {
+                        cube.SetElementType3InnerColor(innerColor);
+                    }
                 }
 
                 if (lineColor.ElementTypes != null && i < lineColor.ElementTypes.Count)
