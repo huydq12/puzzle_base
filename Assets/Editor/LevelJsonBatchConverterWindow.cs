@@ -18,7 +18,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
     [SerializeField] private Vector2 spacing = Vector2.one;
 
-    [SerializeField] private float shooterLocalXOffset = -3f;
+    [SerializeField] private float shooterLocalXOffset = 0f;
 
     private enum ShooterPositionMode
     {
@@ -38,12 +38,12 @@ public class LevelJsonBatchConverterWindow : EditorWindow
     {
         if (jsonFolder == null)
         {
-            jsonFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>("Assets/Resources/Levels");
+            jsonFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>("Assets/Levels");
         }
 
         if (soFolder == null)
         {
-            soFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>("Assets/Resources/Levels/SO");
+            soFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>("Assets/SO");
         }
     }
 

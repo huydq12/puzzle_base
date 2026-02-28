@@ -44,6 +44,7 @@ public class Board : Singleton<Board>
     public int InitLine => _currentConfig.ColorLines.Count;
     public GameColorConfig ColorConfig => _colorConfig;
     private LevelConfig _currentConfig;
+    private Queue<ObjectColor> _elementType3InnerQueue;
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
@@ -1382,18 +1383,18 @@ public class Board : Singleton<Board>
 
 
 
-	    private void SetupLine()
-	    {
+    private void SetupLine()
+    {
         _iceLines.Clear();
 
-	        foreach (var line in _currentConfig.ColorLines)
-	        {
-	            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
+        foreach (var line in _currentConfig.ColorLines)
+        {
+            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
 
-	            Line lineColor = Instantiate(_linePrefab);
-	            lineColor.transform.SetParent(transform, false);
-	            lineColor.transform.localPosition = Vector3.zero;
-	            lineColor.transform.localRotation = Quaternion.identity;
+            Line lineColor = Instantiate(_linePrefab);
+            lineColor.transform.SetParent(transform, false);
+            lineColor.transform.localPosition = Vector3.zero;
+            lineColor.transform.localRotation = Quaternion.identity;
 
             lineColor.Color = line.Color;
             lineColor.InitializeCounter(line.Counter);
@@ -1404,23 +1405,29 @@ public class Board : Singleton<Board>
             var cells = line.Cells;
             int last = cells.Count - 1;
 
-	            for (int i = 0; i < cells.Count; i++)
-	            {
-	                Vector2Int curr = cells[i];
+            for (int i = 0; i < cells.Count; i++)
+            {
+                Vector2Int curr = cells[i];
                 Vector2Int? prev = i > 0 ? cells[i - 1] : (Vector2Int?)null;
-	                Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
-	                GridCell cell = GetCellAt(curr);
-	                CubeLine cube = Instantiate(_cubePrefab);
-	                cube.transform.SetParent(lineColor.transform, false);
-	                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
+                Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
+                GridCell cell = GetCellAt(curr);
+                CubeLine cube = Instantiate(_cubePrefab);
+                cube.transform.SetParent(lineColor.transform, false);
+                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
 
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
                 cube.SetElementType(elementType);
+                if (elementType == 3 && _elementType3InnerQueue != null && _elementType3InnerQueue.Count > 0)
+                {
+                    cube.SetElementType3InnerColor(_elementType3InnerQueue.Dequeue());
+                }
+
                 if (lineColor.ElementTypes != null && i < lineColor.ElementTypes.Count)
                     lineColor.ElementTypes[i] = elementType;
                 cell.CubeOnCell = cube;
                 cube.Cell = cell;
+
                 if (i == last)
                 {
                     cube.SetType(CubeType.Head);
@@ -1430,7 +1437,6 @@ public class Board : Singleton<Board>
 
                     cube.transform.localRotation = Quaternion.Euler(0f, yaw + 180, 0f);
                 }
-
                 else if (prev.HasValue && next.HasValue && IsCorner(prev.Value, curr, next.Value))
                 {
                     cube.SetType(CubeType.Corner);
@@ -1445,6 +1451,7 @@ public class Board : Singleton<Board>
                 {
                     cube.SetType(CubeType.Normal);
                 }
+
                 cube.Line = lineColor;
                 lineColor.Cubes.Add(cube);
             }
@@ -1457,6 +1464,137 @@ public class Board : Singleton<Board>
             lineColor.RefreshCounterText();
             lineColor.InitializeBombIfNeeded();
         }
+    }
+
+    private static Queue<ObjectColor> BuildElementType3InnerQueue(LevelConfig config)
+    {
+        if (config == null) return null;
+
+        var outerCountByColor = new Dictionary<ObjectColor, int>();
+        int elementType3Count = 0;
+
+        void ConsiderLine(ColorLine line)
+        {
+            if (line == null || line.Cells == null) return;
+
+            int count = line.Cells.Count;
+            if (count <= 0) return;
+
+            if (!outerCountByColor.TryGetValue(line.Color, out int prevOuter))
+                prevOuter = 0;
+            outerCountByColor[line.Color] = prevOuter + count;
+
+            if (line.ElementTypes == null) return;
+
+            int etCount = Mathf.Min(line.ElementTypes.Count, count);
+            for (int c = 0; c < etCount; c++)
+            {
+                if (line.ElementTypes[c] == 3)
+                    elementType3Count++;
+            }
+        }
+
+        if (config.ColorLines != null)
+        {
+            for (int i = 0; i < config.ColorLines.Count; i++)
+            {
+                ConsiderLine(config.ColorLines[i]);
+            }
+        }
+
+        if (config.Elevators != null)
+        {
+            for (int e = 0; e < config.Elevators.Count; e++)
+            {
+                ElevatorData elevator = config.Elevators[e];
+                if (elevator == null || elevator.Lines == null) continue;
+                for (int l = 0; l < elevator.Lines.Count; l++)
+                {
+                    ConsiderLine(elevator.Lines[l]);
+                }
+            }
+        }
+
+        if (config.LineDoors != null)
+        {
+            for (int d = 0; d < config.LineDoors.Count; d++)
+            {
+                LineDoorData door = config.LineDoors[d];
+                if (door == null || door.Lines == null) continue;
+                for (int l = 0; l < door.Lines.Count; l++)
+                {
+                    ConsiderLine(door.Lines[l]);
+                }
+            }
+        }
+
+        if (elementType3Count <= 0) return null;
+
+        var supplyByColor = new Dictionary<ObjectColor, int>();
+        if (config.Shooters != null)
+        {
+            for (int g = 0; g < config.Shooters.Count; g++)
+            {
+                GateData gate = config.Shooters[g];
+                if (gate == null || gate.Shooters == null) continue;
+
+                for (int s = 0; s < gate.Shooters.Count; s++)
+                {
+                    ShooterData shooter = gate.Shooters[s];
+                    if (shooter == null) continue;
+                    if (shooter.Color == ObjectColor.None) continue;
+                    if (shooter.Type == 6) continue; // rainbow is not tied to a single color
+
+                    int amount = Mathf.Max(0, shooter.Counter);
+                    if (amount <= 0) continue;
+
+                    if (!supplyByColor.TryGetValue(shooter.Color, out int prevSupply))
+                        prevSupply = 0;
+                    supplyByColor[shooter.Color] = prevSupply + amount;
+                }
+            }
+        }
+
+        var innerNeededByColor = new Dictionary<ObjectColor, int>();
+        int totalInnerNeeded = 0;
+
+        foreach (ObjectColor color in (ObjectColor[])Enum.GetValues(typeof(ObjectColor)))
+        {
+            if (color == ObjectColor.None) continue;
+
+            supplyByColor.TryGetValue(color, out int supply);
+            outerCountByColor.TryGetValue(color, out int outer);
+
+            int needed = supply - outer;
+            if (needed < 0)
+            {
+                // Authored data mismatch (or rainbow supply): fall back to deterministic color-shift mapping.
+                return null;
+            }
+
+            if (needed > 0)
+            {
+                innerNeededByColor[color] = needed;
+                totalInnerNeeded += needed;
+            }
+        }
+
+        if (totalInnerNeeded != elementType3Count)
+        {
+            // Totals don't line up; avoid assigning incorrect inner colors.
+            return null;
+        }
+
+        var q = new Queue<ObjectColor>(elementType3Count);
+        foreach (ObjectColor color in (ObjectColor[])Enum.GetValues(typeof(ObjectColor)))
+        {
+            if (color == ObjectColor.None) continue;
+            if (!innerNeededByColor.TryGetValue(color, out int count)) continue;
+            for (int i = 0; i < count; i++)
+                q.Enqueue(color);
+        }
+
+        return q;
     }
 
     public GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
@@ -1607,6 +1745,7 @@ public class Board : Singleton<Board>
 
         Clear();
         _currentConfig = config;
+        _elementType3InnerQueue = BuildElementType3InnerQueue(config);
         SetupGrid();
         SetupLine();
         SetupElevators();

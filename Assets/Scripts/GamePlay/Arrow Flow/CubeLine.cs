@@ -39,6 +39,8 @@ public class CubeLine : SerializedMonoBehaviour
     private bool _elementType3Revealed;
     private ObjectColor _baseColor;
     private ObjectColor _originalColor;
+    private bool _hasElementType3InnerColor;
+    private ObjectColor _elementType3InnerColor;
 
     public bool Cantouch
     {
@@ -52,6 +54,16 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public bool IsElementType3Revealed => _elementType3Revealed;
     public ObjectColor OriginalColor => _originalColor;
+
+    public void SetElementType3InnerColor(ObjectColor innerColor)
+    {
+        _hasElementType3InnerColor = innerColor != ObjectColor.None;
+        _elementType3InnerColor = innerColor;
+        if (ElementType == 3)
+        {
+            RefreshColorAndMaterials(Type);
+        }
+    }
     public void ShowWarning()
     {
         _warningHeadEffect.Stop();
@@ -139,6 +151,8 @@ public class CubeLine : SerializedMonoBehaviour
     public void SetElementType(int elementType)
     {
         _elementType3Revealed = false;
+        _hasElementType3InnerColor = false;
+        _elementType3InnerColor = ObjectColor.None;
         ElementType = elementType;
         RefreshColorAndMaterials(Type);
         Line?.RefreshCounterText();
@@ -178,6 +192,12 @@ public class CubeLine : SerializedMonoBehaviour
 
     private bool TryGetElementType3ShiftedColorFromOriginal(int offset, out ObjectColor shiftedColor)
     {
+        if (_hasElementType3InnerColor)
+        {
+            shiftedColor = _elementType3InnerColor;
+            return shiftedColor != ObjectColor.None && shiftedColor != _originalColor;
+        }
+
         int baseIdx = System.Array.IndexOf(ElementType3ColorIndexOrder, _originalColor);
         if (baseIdx < 0)
         {
@@ -186,14 +206,28 @@ public class CubeLine : SerializedMonoBehaviour
         }
 
         int idx = baseIdx - offset;
-        if (idx < 0 || idx >= ElementType3ColorIndexOrder.Length)
+        if (idx < 0)
+        {
+            // Out-of-range for the usual backward shift (baseIdx < offset):
+            // shift forward instead so the 2-layer cube always changes to a different color.
+            int forwardIdx = baseIdx + (offset + 1);
+            if (forwardIdx >= 0 && forwardIdx < ElementType3ColorIndexOrder.Length)
+            {
+                shiftedColor = ElementType3ColorIndexOrder[forwardIdx];
+                return shiftedColor != _originalColor;
+            }
+
+            shiftedColor = _originalColor;
+            return false;
+        }
+        if (idx >= ElementType3ColorIndexOrder.Length)
         {
             shiftedColor = _originalColor;
             return false;
         }
 
         shiftedColor = ElementType3ColorIndexOrder[idx];
-        return true;
+        return shiftedColor != _originalColor;
     }
 
     private void RefreshColorAndMaterials(CubeType targetType)
@@ -342,6 +376,8 @@ public class CubeLine : SerializedMonoBehaviour
         _elementType3Revealed = false;
         _baseColor = ObjectColor.Green;
         _originalColor = ObjectColor.Green;
+        _hasElementType3InnerColor = false;
+        _elementType3InnerColor = ObjectColor.None;
 
         transform.localScale = Vector3.one;
         transform.rotation = Quaternion.identity;

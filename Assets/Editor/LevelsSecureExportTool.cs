@@ -57,7 +57,8 @@ public static class LevelsSecureExportTool
     [MenuItem("Tools/Levels/Export Secure Levels (JSON)...")]
     private static void ExportAllLevelsJson()
     {
-        const string sourceFolder = "Assets/Levels/SO";
+        // Keep consistent with the encrypted export: in this repo LevelConfig assets live under `Assets/SO`.
+        const string sourceFolder = "Assets/SO";
 
         string outputPath = EditorUtility.SaveFilePanel(
             "Export Secure Levels to JSON",
