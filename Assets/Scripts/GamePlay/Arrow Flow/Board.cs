@@ -44,7 +44,7 @@ public class Board : Singleton<Board>
     public int InitLine => _currentConfig.ColorLines.Count;
     public GameColorConfig ColorConfig => _colorConfig;
     private LevelConfig _currentConfig;
-    private Queue<ObjectColor> _elementType3InnerQueue;
+    private ElementType3InnerAllocator _elementType3InnerAllocator;
 
     private readonly List<Line> _iceLines = new();
     private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
@@ -78,6 +78,98 @@ public class Board : Singleton<Board>
         public int remaining;
         public bool opened;
         public bool spawned;
+    }
+
+    private sealed class ElementType3InnerAllocator
+    {
+        private readonly Dictionary<ObjectColor, int> _innerRemaining;
+        private readonly Dictionary<ObjectColor, int> _outerRemaining;
+        private int _totalRemaining;
+
+        public ElementType3InnerAllocator(Dictionary<ObjectColor, int> innerNeededByColor, Dictionary<ObjectColor, int> twoLayerOuterByColor, int total)
+        {
+            _innerRemaining = innerNeededByColor ?? new Dictionary<ObjectColor, int>();
+            _outerRemaining = twoLayerOuterByColor ?? new Dictionary<ObjectColor, int>();
+            _totalRemaining = total;
+        }
+
+        public bool TryConsume(ObjectColor outerColor, out ObjectColor innerColor)
+        {
+            innerColor = ObjectColor.None;
+
+            if (_totalRemaining <= 0) return false;
+
+            if (!_outerRemaining.TryGetValue(outerColor, out int outerRem) || outerRem <= 0)
+            {
+                return false;
+            }
+
+            // Deterministic candidate order: highest remaining first, tie by enum value.
+            List<ObjectColor> candidates = null;
+            foreach (var kv in _innerRemaining)
+            {
+                ObjectColor c = kv.Key;
+                if (c == ObjectColor.None) continue;
+                if (c == outerColor) continue;
+                if (kv.Value <= 0) continue;
+
+                candidates ??= new List<ObjectColor>();
+                candidates.Add(c);
+            }
+
+            if (candidates == null || candidates.Count == 0) return false;
+
+            candidates.Sort((a, b) =>
+            {
+                int ra = _innerRemaining.TryGetValue(a, out int va) ? va : 0;
+                int rb = _innerRemaining.TryGetValue(b, out int vb) ? vb : 0;
+                int cmp = rb.CompareTo(ra);
+                return cmp != 0 ? cmp : ((int)a).CompareTo((int)b);
+            });
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                ObjectColor candidate = candidates[i];
+                if (!_innerRemaining.TryGetValue(candidate, out int rem) || rem <= 0) continue;
+
+                // Simulate consuming this candidate.
+                _innerRemaining[candidate] = rem - 1;
+                _outerRemaining[outerColor] = outerRem - 1;
+                _totalRemaining--;
+
+                if (IsFeasible())
+                {
+                    innerColor = candidate;
+                    return true;
+                }
+
+                // Rollback.
+                _totalRemaining++;
+                _outerRemaining[outerColor] = outerRem;
+                _innerRemaining[candidate] = rem;
+            }
+
+            return false;
+        }
+
+        private bool IsFeasible()
+        {
+            // Feasibility for inequality-only constraint (inner != outer):
+            // for each color x: remainingInner[x] <= totalRemaining - remainingOuter[x].
+            foreach (ObjectColor color in (ObjectColor[])Enum.GetValues(typeof(ObjectColor)))
+            {
+                if (color == ObjectColor.None) continue;
+
+                int innerRem = _innerRemaining.TryGetValue(color, out int i) ? i : 0;
+                if (innerRem <= 0) continue;
+
+                int outerRem = _outerRemaining.TryGetValue(color, out int o) ? o : 0;
+                if (innerRem > _totalRemaining - outerRem)
+                    return false;
+            }
+
+            return true;
+        }
     }
 
     protected override void Awake()
@@ -167,17 +259,24 @@ public class Board : Singleton<Board>
         float limit = minOrthoSize > 0f ? minOrthoSize : 12f;
         float minPosX = Mathf.Infinity;
         float maxPosX = Mathf.NegativeInfinity;
+        float minPosZ = Mathf.Infinity;
+        float maxPosZ = Mathf.NegativeInfinity;
 
         foreach (Transform child in transform)
         {
             float childPosX = child.position.x;
+            float childPosZ = child.position.z;
 
             if (childPosX < minPosX) minPosX = childPosX;
             if (childPosX > maxPosX) maxPosX = childPosX;
+            if (childPosZ < minPosZ) minPosZ = childPosZ;
+            if (childPosZ > maxPosZ) maxPosZ = childPosZ;
         }
         float padding = paddingCamera > 0f ? paddingCamera : _paddingCamera;
-        float halfSizeBoard = (maxPosX - minPosX + _cellSize * 2f + padding * 2f) / (2f * mainCam.aspect);
-        mainCam.orthographicSize = Mathf.Max(halfSizeBoard, limit);
+        float width = maxPosX - minPosX + _cellSize * 2f + padding * 2f;
+        float height = maxPosZ - minPosZ + _cellSize * 2f + padding * 2f;
+        float required = Mathf.Max(height / 2f, width / (2f * mainCam.aspect));
+        mainCam.orthographicSize = Mathf.Max(required, limit);
         SyncEffectCameraFromMainInternal();
     }
     public void UseHammer()
@@ -898,6 +997,10 @@ public class Board : Singleton<Board>
             cube.SetColor(line.Color);
             int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
             cube.SetElementType(elementType);
+            if (elementType == 3 && _elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
+            {
+                cube.SetElementType3InnerColor(innerColor);
+            }
             if (lineGo.ElementTypes != null && i < lineGo.ElementTypes.Count)
                 lineGo.ElementTypes[i] = elementType;
             cell.CubeOnCell = cube;
@@ -1418,9 +1521,9 @@ public class Board : Singleton<Board>
                 cube.SetColor(line.Color);
                 int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
                 cube.SetElementType(elementType);
-                if (elementType == 3 && _elementType3InnerQueue != null && _elementType3InnerQueue.Count > 0)
+                if (elementType == 3 && _elementType3InnerAllocator != null && _elementType3InnerAllocator.TryConsume(line.Color, out ObjectColor innerColor))
                 {
-                    cube.SetElementType3InnerColor(_elementType3InnerQueue.Dequeue());
+                    cube.SetElementType3InnerColor(innerColor);
                 }
 
                 if (lineColor.ElementTypes != null && i < lineColor.ElementTypes.Count)
@@ -1466,12 +1569,13 @@ public class Board : Singleton<Board>
         }
     }
 
-    private static Queue<ObjectColor> BuildElementType3InnerQueue(LevelConfig config)
+    private static ElementType3InnerAllocator BuildElementType3InnerAllocator(LevelConfig config)
     {
         if (config == null) return null;
 
         var outerCountByColor = new Dictionary<ObjectColor, int>();
         int elementType3Count = 0;
+        var twoLayerOuterByColor = new Dictionary<ObjectColor, int>();
 
         void ConsiderLine(ColorLine line)
         {
@@ -1487,10 +1591,21 @@ public class Board : Singleton<Board>
             if (line.ElementTypes == null) return;
 
             int etCount = Mathf.Min(line.ElementTypes.Count, count);
+            int lineTwoLayer = 0;
             for (int c = 0; c < etCount; c++)
             {
                 if (line.ElementTypes[c] == 3)
+                {
                     elementType3Count++;
+                    lineTwoLayer++;
+                }
+            }
+
+            if (lineTwoLayer > 0)
+            {
+                if (!twoLayerOuterByColor.TryGetValue(line.Color, out int prev))
+                    prev = 0;
+                twoLayerOuterByColor[line.Color] = prev + lineTwoLayer;
             }
         }
 
@@ -1585,16 +1700,20 @@ public class Board : Singleton<Board>
             return null;
         }
 
-        var q = new Queue<ObjectColor>(elementType3Count);
         foreach (ObjectColor color in (ObjectColor[])Enum.GetValues(typeof(ObjectColor)))
         {
             if (color == ObjectColor.None) continue;
-            if (!innerNeededByColor.TryGetValue(color, out int count)) continue;
-            for (int i = 0; i < count; i++)
-                q.Enqueue(color);
+            innerNeededByColor.TryGetValue(color, out int inner);
+            twoLayerOuterByColor.TryGetValue(color, out int outerTwoLayer);
+
+            // Can't assign inner color to cubes that already have the same outer color.
+            if (inner > elementType3Count - outerTwoLayer)
+            {
+                return null;
+            }
         }
 
-        return q;
+        return new ElementType3InnerAllocator(innerNeededByColor, twoLayerOuterByColor, elementType3Count);
     }
 
     public GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
@@ -1745,7 +1864,7 @@ public class Board : Singleton<Board>
 
         Clear();
         _currentConfig = config;
-        _elementType3InnerQueue = BuildElementType3InnerQueue(config);
+        _elementType3InnerAllocator = BuildElementType3InnerAllocator(config);
         SetupGrid();
         SetupLine();
         SetupElevators();
