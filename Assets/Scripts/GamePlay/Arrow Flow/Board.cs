@@ -1069,6 +1069,14 @@ public class Board : Singleton<Board>
             return;
         }
 
+        // Ensure runtime grid cells are marked as Conveyor even if the serialized Cells[,] is out of sync.
+        for (int i = 0; i < orderedCells.Count; i++)
+        {
+            GridCell cell = GetCellAt(orderedCells[i]);
+            if (cell != null)
+                cell.CellType = GridCellType.Conveyor;
+        }
+
         Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(_currentConfig.ConveyorLine);
 
         List<Vector2> conveyorPolygon = new();
