@@ -104,10 +104,10 @@ public class Board : Singleton<Board>
             .SetEase(Ease.InCubic));
         seq.AppendCallback(() =>
         {
-           ShooterController.Instance.Gates.ForEach(gate =>
-           {
-               gate.transform.DOLocalMoveZ(10, 0.35f);
-           }) ;
+            ShooterController.Instance.Gates.ForEach(gate =>
+            {
+                gate.transform.DOLocalMoveZ(10, 0.35f);
+            });
         });
     }
     protected override void Awake()
@@ -543,7 +543,8 @@ public class Board : Singleton<Board>
             SpawnAllElevatorLines();
     }
 
-    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
+    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f,
+                       Func<Vector2Int, float> getDiagDelay = null)
     {
         if (line == null || line.Cells == null || line.Cells.Count == 0) return;
 
@@ -581,12 +582,18 @@ public class Board : Singleton<Board>
             cell.ShowRenderer(true);
             cube.Cell = cell;
 
-            if (animateSpawn && _elevatorCubeScaleDuration > 0f)
+            // ✅ Diagonal wave delay
+            if (animateSpawn)
             {
                 Vector3 targetScale = cube.transform.localScale;
                 cube.transform.localScale = Vector3.zero;
-                float delay = Mathf.Max(0f, spawnDelay) + Mathf.Max(0f, _elevatorCubeScaleStagger) * i;
-                cube.transform.DOScale(targetScale, _elevatorCubeScaleDuration).SetDelay(delay).SetEase(Ease.OutQuad);
+
+                float diagDelay = getDiagDelay != null ? getDiagDelay(curr) : 0f;
+                float delay = Mathf.Max(0f, spawnDelay) + diagDelay;
+
+                cube.transform.DOScale(targetScale, 0.25f * 2)
+                    .SetDelay(delay)
+                    .SetEase(Ease.OutBack);
             }
 
             if (i == last)
@@ -1083,75 +1090,23 @@ public class Board : Singleton<Board>
     {
         _iceLines.Clear();
 
-        foreach (var line in _currentConfig.ColorLines)
+        int rows = _currentConfig.Rows;
+        int columns = _currentConfig.Columns;
+        int maxDiag = (columns - 1) + (rows - 1);
+
+        for (int li = 0; li < _currentConfig.ColorLines.Count; li++)
         {
-            bool lineHasIce = line != null && line.ElementTypes != null && line.ElementTypes.Contains(2);
+            SpawnLine(_currentConfig.ColorLines[li],
+                      animateSpawn: true,
+                      spawnDelay: 0f,
+                      getDiagDelay: (curr) =>
+                      {
+                          float diag = (columns - 1 - curr.x) + (rows - 1 - curr.y);
 
-            Line lineColor = Instantiate(_linePrefab);
-            lineColor.transform.SetParent(transform, false);
-            lineColor.transform.localPosition = Vector3.zero;
-            lineColor.transform.localRotation = Quaternion.identity;
-
-            lineColor.Color = line.Color;
-            lineColor.InitializeCounter(line.Counter);
-            lineColor.SetIsIceLine(lineHasIce);
-            lineColor.Cubes = new List<CubeLine>();
-
-            var cells = line.Cells;
-            int last = cells.Count - 1;
-
-            for (int i = 0; i < cells.Count; i++)
-            {
-                Vector2Int curr = cells[i];
-                Vector2Int? prev = i > 0 ? cells[i - 1] : (Vector2Int?)null;
-                Vector2Int? next = i < last ? cells[i + 1] : (Vector2Int?)null;
-                GridCell cell = GetCellAt(curr);
-                CubeLine cube = Instantiate(_cubePrefab);
-                cube.transform.SetParent(lineColor.transform, false);
-                cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
-
-                cube.SetColor(line.Color);
-                int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
-                cube.SetElementType(elementType);
-                cell.CubeOnCell = cube;
-                cube.Cell = cell;
-                if (i == last)
-                {
-                    cube.SetType(CubeType.Head);
-
-                    Direction dir = DirFromDelta(curr - prev.Value);
-                    float yaw = GetYawFromDirection(dir);
-
-                    cube.transform.localRotation = Quaternion.Euler(0f, yaw + 180, 0f);
-                }
-
-                else if (prev.HasValue && next.HasValue && IsCorner(prev.Value, curr, next.Value))
-                {
-                    cube.SetType(CubeType.Corner);
-
-                    Direction inDir = DirFromDelta(curr - prev.Value);
-                    Direction outDir = DirFromDelta(next.Value - curr);
-
-                    float yaw = GetCornerYaw(inDir, outDir);
-                    cube.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-                }
-                else
-                {
-                    cube.SetType(CubeType.Normal);
-                }
-                cube.Line = lineColor;
-                lineColor.Cubes.Add(cube);
-            }
-
-            if (lineHasIce)
-            {
-                _iceLines.Add(lineColor);
-            }
-
-            lineColor.RefreshCounterText();
+                          return (diag / Mathf.Max(1, maxDiag)) * 0.6f * 2;
+                      });
         }
     }
-
     public GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
     {
         Vector2Int dir = curr - prev;
@@ -1309,9 +1264,18 @@ public class Board : Singleton<Board>
         Camera.main.orthographicSize = 10.96f;
         float clipValue = 0f;
         _mesh.SetClipRange(0, 0);
+        _superman.anchoredPosition = new Vector2(2264, 1691);
+          _superman.transform.eulerAngles = new Vector3(0,0, 35);
+          _superman.transform.localScale = new Vector3(-1,1,1);
+        _superman.DOAnchorPos(new Vector2(-390, 165), 2f).OnComplete(() =>
+        {
+            _superman.transform.rotation = Quaternion.identity;
+            _superman.transform.localScale = Vector3.one;
+            _superman.anchoredPosition = new Vector2(-328.2f,326.7f);
+        });
         Sequence sq = DOTween.Sequence();
 
-        sq.AppendInterval(1.0f);
+        sq.AppendInterval(2.0f);
 
         sq.Append(Camera.main.DOOrthoSize(11.86f, 0.5f));
         sq.Join(Camera.main.transform.DOMoveZ(4.0f, 0.5f));
