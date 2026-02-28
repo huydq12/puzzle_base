@@ -9,33 +9,6 @@ public static class LevelsCameraAutoConfigTool
     [MenuItem("Tools/Levels/Fix Camera Ortho From Board Size (Assets/SO)")]
     private static void FixCameraOrthoForAllLevelsInAssetsSO()
     {
-        Board board = UnityEngine.Object.FindFirstObjectByType<Board>();
-        if (board == null)
-        {
-            EditorUtility.DisplayDialog(
-                "Fix Camera Ortho",
-                "No `Board` found in the open scene.\n\nOpen the gameplay scene that contains the Board (e.g. `Assets/Scenes/_Game/Scene/Game.unity`) and run this again.",
-                "OK"
-            );
-            return;
-        }
-
-        Vector2 spacing = board.Spacing;
-
-        SerializedObject boardSo = new SerializedObject(board);
-        float cellSize = boardSo.FindProperty("_cellSize")?.floatValue ?? 0f;
-        float defaultPadding = boardSo.FindProperty("_paddingCamera")?.floatValue ?? 0f;
-
-        if (cellSize <= 0f)
-        {
-            EditorUtility.DisplayDialog(
-                "Fix Camera Ortho",
-                "Board `_cellSize` is not set (<= 0). Aborting to avoid writing wrong camera sizes.",
-                "OK"
-            );
-            return;
-        }
-
         const string sourceFolder = "Assets/SO";
         string[] guids = AssetDatabase.FindAssets("t:LevelConfig", new[] { sourceFolder });
         if (guids == null || guids.Length == 0)
@@ -47,6 +20,18 @@ public static class LevelsCameraAutoConfigTool
             );
             return;
         }
+
+        // Simple size-based camera rules (grid-size driven):
+        // - Map bigger => Position.y bigger
+        // - Map bigger => OrthographicSize bigger
+        // Example:
+        //   5x5 => y=13, ortho=8
+        //   6x6 => y=13, ortho=8.5
+        const int baseDim = 5;
+        const float baseY = 13f;
+        const float baseOrtho = 8f;
+        const float orthoStepPerCell = 0.5f;
+        const float yIncreasePerCell = 0.2f;
 
         int updated = 0;
         int skipped = 0;
@@ -67,22 +52,24 @@ public static class LevelsCameraAutoConfigTool
 
                 int columns = Mathf.Max(1, config.Columns);
                 int rows = Mathf.Max(1, config.Rows);
-                float padding = config.Camera.Padding > 0f ? config.Camera.Padding : defaultPadding;
-
-                // Matches Board.SetupCamera() logic, but stored in "reference aspect" 9:16 so it can be scaled at runtime.
-                float refAspect = 9f / 16f;
-                float width = (columns - 1) * spacing.x;
-                float height = (rows - 1) * spacing.y;
-                float widthPlus = width + cellSize * 2f + padding * 2f;
-                float heightPlus = height + cellSize * 2f + padding * 2f;
-                float orthoRef = Mathf.Max(heightPlus / 2f, widthPlus / (2f * refAspect));
 
                 float minSize = config.Camera.MinOrthoSize > 0f ? config.Camera.MinOrthoSize : 0f;
-                orthoRef = Mathf.Max(orthoRef, minSize);
+                int maxDim = Mathf.Max(columns, rows);
+
+                float orthoSize = baseOrtho + Mathf.Max(0, maxDim - baseDim) * orthoStepPerCell;
+                if (orthoSize < minSize) orthoSize = minSize;
 
                 config.Camera.Enabled = true;
                 config.Camera.UseOrthographicSize = true;
-                config.Camera.OrthographicSize = orthoRef;
+                config.Camera.OrthographicSize = orthoSize;
+
+                Vector3 pos = config.Camera.Position;
+                pos.x = 0f;
+                pos.z = 0f;
+                float camY = baseY - Mathf.Max(0, maxDim - baseDim) * yIncreasePerCell;
+                pos.y = camY;
+                config.Camera.UsePosition = true;
+                config.Camera.Position = pos;
 
                 EditorUtility.SetDirty(config);
                 updated++;
