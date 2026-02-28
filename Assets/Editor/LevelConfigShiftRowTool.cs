@@ -101,6 +101,54 @@ public static class LevelConfigShiftRowTool
         EditorUtility.DisplayDialog("Fix Connectivity", $"Done.\nUpdated: {updated}\nSkipped: {skipped}", "OK");
     }
 
+    [MenuItem("Tools/Levels/Sync Selected LevelConfig Cells From ConveyorLine")]
+    private static void SyncSelectedLevelConfigCellsFromConveyorLine()
+    {
+        Object[] selected = Selection.objects;
+        if (selected == null || selected.Length == 0)
+        {
+            EditorUtility.DisplayDialog("Sync Cells", "Select one or more `LevelConfig` assets in Project window.", "OK");
+            return;
+        }
+
+        int updated = 0;
+        int skipped = 0;
+
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+
+            for (int i = 0; i < selected.Length; i++)
+            {
+                if (selected[i] is not LevelConfig config)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                bool changed = SyncCellsFromConveyorLine(config);
+                if (changed)
+                {
+                    EditorUtility.SetDirty(config);
+                    updated++;
+                }
+                else
+                {
+                    skipped++;
+                }
+            }
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        EditorUtility.DisplayDialog("Sync Cells", $"Done.\nUpdated: {updated}\nSkipped: {skipped}", "OK");
+    }
+
     [MenuItem("Tools/Levels/Insert Empty Row Between Row 4 and 5")]
     private static void InsertEmptyRowBetweenRow4And5()
     {
@@ -335,6 +383,170 @@ public static class LevelConfigShiftRowTool
         InsertEmptyColumnIntoConveyor(config.ConveyorLine, insertAtX);
 
         return true;
+    }
+
+    internal static bool InsertEmptyRowBeforeOneBased(LevelConfig config, int beforeRowOneBased)
+    {
+        // Insert "before row N" == insert at y = N-1 (0-based) == after row N-1.
+        if (beforeRowOneBased <= 1) return InsertEmptyRowAfterOneBased(config, 0);
+        return InsertEmptyRowAfterOneBased(config, beforeRowOneBased - 1);
+    }
+
+    internal static bool InsertEmptyColumnBeforeOneBased(LevelConfig config, int beforeColumnOneBased)
+    {
+        // Insert "before column N" == insert at x = N-1 (0-based) == after column N-1.
+        if (beforeColumnOneBased <= 1) return InsertEmptyColumnAfterOneBased(config, 0);
+        return InsertEmptyColumnAfterOneBased(config, beforeColumnOneBased - 1);
+    }
+
+    internal static bool RemoveRowOneBased(LevelConfig config, int rowOneBased)
+    {
+        if (config == null) return false;
+        if (config.Columns <= 0 || config.Rows <= 0) return false;
+        if (rowOneBased <= 0) return false;
+
+        int removeAtY = rowOneBased - 1;
+        int cols = config.Columns;
+        int oldRows = config.Rows;
+        if (removeAtY < 0 || removeAtY >= oldRows) return false;
+        if (oldRows <= 1) return false;
+
+        int newRows = oldRows - 1;
+        config.Rows = newRows;
+
+        GridCellData[,] oldCells = config.Cells;
+        GridCellData[,] newCells = new GridCellData[cols, newRows];
+        for (int x = 0; x < cols; x++)
+        {
+            for (int y = 0; y < newRows; y++)
+                newCells[x, y] = new GridCellData { CellType = GridCellType.Normal };
+        }
+
+        if (oldCells != null && oldCells.GetLength(0) == cols && oldCells.GetLength(1) == oldRows)
+        {
+            for (int x = 0; x < cols; x++)
+            {
+                for (int y = 0; y < oldRows; y++)
+                {
+                    if (y == removeAtY) continue;
+                    GridCellData c = oldCells[x, y];
+                    if (c == null) continue;
+                    int ny = y > removeAtY ? y - 1 : y;
+                    if (ny >= 0 && ny < newRows)
+                        newCells[x, ny].CellType = c.CellType;
+                }
+            }
+        }
+
+        config.Cells = newCells;
+
+        RemoveRowFromColorLines(config.ColorLines, removeAtY);
+        RemoveRowFromElevators(config.Elevators, removeAtY);
+        RemoveRowFromLineDoors(config.LineDoors, removeAtY);
+        RemoveRowFromConveyor(config.ConveyorLine, removeAtY);
+
+        return true;
+    }
+
+    internal static bool RemoveColumnOneBased(LevelConfig config, int columnOneBased)
+    {
+        if (config == null) return false;
+        if (config.Columns <= 0 || config.Rows <= 0) return false;
+        if (columnOneBased <= 0) return false;
+
+        int removeAtX = columnOneBased - 1;
+        int oldCols = config.Columns;
+        int rows = config.Rows;
+        if (removeAtX < 0 || removeAtX >= oldCols) return false;
+        if (oldCols <= 1) return false;
+
+        int newCols = oldCols - 1;
+        config.Columns = newCols;
+
+        GridCellData[,] oldCells = config.Cells;
+        GridCellData[,] newCells = new GridCellData[newCols, rows];
+        for (int x = 0; x < newCols; x++)
+        {
+            for (int y = 0; y < rows; y++)
+                newCells[x, y] = new GridCellData { CellType = GridCellType.Normal };
+        }
+
+        if (oldCells != null && oldCells.GetLength(0) == oldCols && oldCells.GetLength(1) == rows)
+        {
+            for (int x = 0; x < oldCols; x++)
+            {
+                if (x == removeAtX) continue;
+                for (int y = 0; y < rows; y++)
+                {
+                    GridCellData c = oldCells[x, y];
+                    if (c == null) continue;
+                    int nx = x > removeAtX ? x - 1 : x;
+                    if (nx >= 0 && nx < newCols)
+                        newCells[nx, y].CellType = c.CellType;
+                }
+            }
+        }
+
+        config.Cells = newCells;
+
+        RemoveColumnFromColorLines(config.ColorLines, removeAtX);
+        RemoveColumnFromElevators(config.Elevators, removeAtX);
+        RemoveColumnFromLineDoors(config.LineDoors, removeAtX);
+        RemoveColumnFromConveyor(config.ConveyorLine, removeAtX);
+
+        return true;
+    }
+
+    private static bool SyncCellsFromConveyorLine(LevelConfig config)
+    {
+        if (config == null) return false;
+        if (config.Columns <= 0 || config.Rows <= 0) return false;
+        if (config.Cells == null || config.Cells.GetLength(0) != config.Columns || config.Cells.GetLength(1) != config.Rows) return false;
+
+        bool changed = false;
+
+        for (int x = 0; x < config.Columns; x++)
+        {
+            for (int y = 0; y < config.Rows; y++)
+            {
+                GridCellData cell = config.Cells[x, y];
+                if (cell == null)
+                {
+                    config.Cells[x, y] = new GridCellData { CellType = GridCellType.Normal };
+                    changed = true;
+                    continue;
+                }
+
+                if (cell.CellType != GridCellType.Normal)
+                {
+                    cell.CellType = GridCellType.Normal;
+                    changed = true;
+                }
+            }
+        }
+
+        if (config.ConveyorLine == null || config.ConveyorLine.Cells == null) return changed;
+
+        for (int i = 0; i < config.ConveyorLine.Cells.Count; i++)
+        {
+            Vector2Int p = config.ConveyorLine.Cells[i];
+            if (p.x < 0 || p.x >= config.Columns || p.y < 0 || p.y >= config.Rows) continue;
+            GridCellData cell = config.Cells[p.x, p.y];
+            if (cell == null)
+            {
+                config.Cells[p.x, p.y] = new GridCellData { CellType = GridCellType.Conveyor };
+                changed = true;
+                continue;
+            }
+
+            if (cell.CellType != GridCellType.Conveyor)
+            {
+                cell.CellType = GridCellType.Conveyor;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     private static bool FixConnectivity(LevelConfig config)
@@ -947,6 +1159,180 @@ public static class LevelConfigShiftRowTool
         }
 
         return changed;
+    }
+
+    private static void RemoveRowFromColorLines(List<ColorLine> lines, int removeAtY)
+    {
+        if (lines == null) return;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            ColorLine line = lines[i];
+            if (line == null || line.Cells == null || line.Cells.Count == 0) continue;
+
+            bool syncElementTypes = line.ElementTypes != null && line.ElementTypes.Count == line.Cells.Count;
+            for (int j = line.Cells.Count - 1; j >= 0; j--)
+            {
+                Vector2Int p = line.Cells[j];
+                if (p.y == removeAtY)
+                {
+                    line.Cells.RemoveAt(j);
+                    if (syncElementTypes) line.ElementTypes.RemoveAt(j);
+                    continue;
+                }
+
+                if (p.y > removeAtY)
+                {
+                    p.y -= 1;
+                    line.Cells[j] = p;
+                }
+            }
+        }
+    }
+
+    private static void RemoveColumnFromColorLines(List<ColorLine> lines, int removeAtX)
+    {
+        if (lines == null) return;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            ColorLine line = lines[i];
+            if (line == null || line.Cells == null || line.Cells.Count == 0) continue;
+
+            bool syncElementTypes = line.ElementTypes != null && line.ElementTypes.Count == line.Cells.Count;
+            for (int j = line.Cells.Count - 1; j >= 0; j--)
+            {
+                Vector2Int p = line.Cells[j];
+                if (p.x == removeAtX)
+                {
+                    line.Cells.RemoveAt(j);
+                    if (syncElementTypes) line.ElementTypes.RemoveAt(j);
+                    continue;
+                }
+
+                if (p.x > removeAtX)
+                {
+                    p.x -= 1;
+                    line.Cells[j] = p;
+                }
+            }
+        }
+    }
+
+    private static void RemoveRowFromElevators(List<ElevatorData> elevators, int removeAtY)
+    {
+        if (elevators == null) return;
+        for (int i = 0; i < elevators.Count; i++)
+        {
+            ElevatorData e = elevators[i];
+            if (e == null) continue;
+            if (e.Position.y > removeAtY)
+                e.Position = new Vector2Int(e.Position.x, e.Position.y - 1);
+            else if (e.Position.y == removeAtY)
+                e.Position = new Vector2Int(e.Position.x, Mathf.Max(0, e.Position.y - 1));
+            RemoveRowFromColorLines(e.Lines, removeAtY);
+        }
+    }
+
+    private static void RemoveColumnFromElevators(List<ElevatorData> elevators, int removeAtX)
+    {
+        if (elevators == null) return;
+        for (int i = 0; i < elevators.Count; i++)
+        {
+            ElevatorData e = elevators[i];
+            if (e == null) continue;
+            if (e.Position.x > removeAtX)
+                e.Position = new Vector2Int(e.Position.x - 1, e.Position.y);
+            else if (e.Position.x == removeAtX)
+                e.Position = new Vector2Int(Mathf.Max(0, e.Position.x - 1), e.Position.y);
+            RemoveColumnFromColorLines(e.Lines, removeAtX);
+        }
+    }
+
+    private static void RemoveRowFromLineDoors(List<LineDoorData> doors, int removeAtY)
+    {
+        if (doors == null) return;
+        for (int i = 0; i < doors.Count; i++)
+        {
+            LineDoorData d = doors[i];
+            if (d == null) continue;
+            if (d.Position.y > removeAtY)
+                d.Position = new Vector2Int(d.Position.x, d.Position.y - 1);
+            else if (d.Position.y == removeAtY)
+                d.Position = new Vector2Int(d.Position.x, Mathf.Max(0, d.Position.y - 1));
+            RemoveRowFromColorLines(d.Lines, removeAtY);
+        }
+    }
+
+    private static void RemoveColumnFromLineDoors(List<LineDoorData> doors, int removeAtX)
+    {
+        if (doors == null) return;
+        for (int i = 0; i < doors.Count; i++)
+        {
+            LineDoorData d = doors[i];
+            if (d == null) continue;
+            if (d.Position.x > removeAtX)
+                d.Position = new Vector2Int(d.Position.x - 1, d.Position.y);
+            else if (d.Position.x == removeAtX)
+                d.Position = new Vector2Int(Mathf.Max(0, d.Position.x - 1), d.Position.y);
+            RemoveColumnFromColorLines(d.Lines, removeAtX);
+        }
+    }
+
+    private static void RemoveRowFromConveyor(ConveyorLine conveyor, int removeAtY)
+    {
+        if (conveyor == null || conveyor.Cells == null || conveyor.Cells.Count == 0) return;
+
+        bool syncTypes = conveyor.Types != null && conveyor.Types.Count == conveyor.Cells.Count;
+        bool syncCounters = conveyor.Counters != null && conveyor.Counters.Count == conveyor.Cells.Count;
+        bool syncHoles = conveyor.IsHoles != null && conveyor.IsHoles.Count == conveyor.Cells.Count;
+
+        for (int i = conveyor.Cells.Count - 1; i >= 0; i--)
+        {
+            Vector2Int p = conveyor.Cells[i];
+            if (p.y == removeAtY)
+            {
+                conveyor.Cells.RemoveAt(i);
+                if (syncTypes) conveyor.Types.RemoveAt(i);
+                if (syncCounters) conveyor.Counters.RemoveAt(i);
+                if (syncHoles) conveyor.IsHoles.RemoveAt(i);
+                continue;
+            }
+
+            if (p.y > removeAtY)
+            {
+                p.y -= 1;
+                conveyor.Cells[i] = p;
+            }
+        }
+    }
+
+    private static void RemoveColumnFromConveyor(ConveyorLine conveyor, int removeAtX)
+    {
+        if (conveyor == null || conveyor.Cells == null || conveyor.Cells.Count == 0) return;
+
+        bool syncTypes = conveyor.Types != null && conveyor.Types.Count == conveyor.Cells.Count;
+        bool syncCounters = conveyor.Counters != null && conveyor.Counters.Count == conveyor.Cells.Count;
+        bool syncHoles = conveyor.IsHoles != null && conveyor.IsHoles.Count == conveyor.Cells.Count;
+
+        for (int i = conveyor.Cells.Count - 1; i >= 0; i--)
+        {
+            Vector2Int p = conveyor.Cells[i];
+            if (p.x == removeAtX)
+            {
+                conveyor.Cells.RemoveAt(i);
+                if (syncTypes) conveyor.Types.RemoveAt(i);
+                if (syncCounters) conveyor.Counters.RemoveAt(i);
+                if (syncHoles) conveyor.IsHoles.RemoveAt(i);
+                continue;
+            }
+
+            if (p.x > removeAtX)
+            {
+                p.x -= 1;
+                conveyor.Cells[i] = p;
+            }
+        }
     }
 
     private static void ShiftConveyorRight(ConveyorLine conveyor)
