@@ -37,8 +37,8 @@ public class ShooterController : Singleton<ShooterController>
 	            gate.transform.SetParent(Board.Instance.transform, false);
 	            gate.transform.localPosition = data.Position;
 	            gate.transform.rotation = DirectionToRotation(data.Direction);
-	            gate.Setup(data);
-	            Gates.Add(gate);
+            Gates.Add(gate);
+            gate.Setup(data);
 	        }
 	    }
 
@@ -58,6 +58,12 @@ public class ShooterController : Singleton<ShooterController>
 
         if (ConveyorController.Instance != null)
             ConveyorController.Instance.WinGame();
+    }
+
+    public void RemoveGate(Gate gate)
+    {
+        if (gate == null || Gates == null) return;
+        Gates.Remove(gate);
     }
 
     public void ConsumeShooterIceStep(int amount)

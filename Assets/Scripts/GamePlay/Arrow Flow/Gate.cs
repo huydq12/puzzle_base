@@ -105,6 +105,7 @@ public class Gate : MonoBehaviour
             Shooters = new List<ShooterData>(data.Shooters);
             Total = Shooters.Count;
         }
+
         _shooterInstances.Clear();
         _locksByIndex.Clear();
         _currentShooterIndex = 0;
@@ -174,6 +175,13 @@ public class Gate : MonoBehaviour
 
         int iceCounter = data != null ? data.Counter : 0;
         InitializeIceShooter(iceCounter);
+
+        if (Shooters == null || Shooters.Count == 0)
+        {
+            ShooterController.Instance?.RemoveGate(this);
+            gameObject.SetActive(false);
+            return;
+        }
     }
 
     public bool ShuffleRemainingShooters()
