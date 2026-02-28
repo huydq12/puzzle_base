@@ -57,6 +57,26 @@ public class Outline : MonoBehaviour
     }
   }
 
+  public float OutlineDistanceScale
+  {
+    get { return outlineDistanceScale; }
+    set
+    {
+      outlineDistanceScale = value;
+      needsUpdate = true;
+    }
+  }
+
+  public float OutlineOrthoScale
+  {
+    get { return outlineOrthoScale; }
+    set
+    {
+      outlineOrthoScale = value;
+      needsUpdate = true;
+    }
+  }
+
   [Serializable]
   private class ListVector3
   {
@@ -71,6 +91,12 @@ public class Outline : MonoBehaviour
 
   [SerializeField, Range(0f, 10f)]
   private float outlineWidth = 2f;
+
+  [SerializeField, Range(0f, 0.2f)]
+  private float outlineDistanceScale = 0.02f;
+
+  [SerializeField, Range(0f, 0.5f)]
+  private float outlineOrthoScale = 0.05f;
 
   [Header("Optional")]
 
@@ -330,6 +356,8 @@ public class Outline : MonoBehaviour
 
     // Apply properties according to mode
     outlineFillMaterial.SetColor("_OutlineColor", outlineColor);
+    outlineFillMaterial.SetFloat("_OutlineDistanceScale", outlineDistanceScale);
+    outlineFillMaterial.SetFloat("_OutlineOrthoScale", outlineOrthoScale);
 
     switch (outlineMode)
     {

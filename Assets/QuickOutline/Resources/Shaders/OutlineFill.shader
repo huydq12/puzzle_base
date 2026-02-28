@@ -12,6 +12,8 @@ Shader "Custom/Outline Fill" {
 
     _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
     _OutlineWidth("Outline Width", Range(0, 10)) = 2
+    _OutlineDistanceScale("Outline Distance Scale", Range(0, 0.2)) = 0.02
+    _OutlineOrthoScale("Outline Ortho Scale", Range(0, 0.5)) = 0.05
   }
 
   SubShader {
@@ -55,6 +57,8 @@ Shader "Custom/Outline Fill" {
 
       uniform fixed4 _OutlineColor;
       uniform float _OutlineWidth;
+      uniform float _OutlineDistanceScale;
+      uniform float _OutlineOrthoScale;
 
       v2f vert(appdata input) {
         v2f output;
@@ -66,7 +70,11 @@ Shader "Custom/Outline Fill" {
         float3 viewPosition = UnityObjectToViewPos(input.vertex);
         float3 viewNormal = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, normal));
 
-        output.position = UnityViewToClipPos(viewPosition + viewNormal * -viewPosition.z * _OutlineWidth / 1000.0);
+        float dist = max(0.0, -viewPosition.z);
+        float distanceScale = min(6.0, 1.0 + dist * _OutlineDistanceScale);
+        float orthoScale = 1.0 + unity_OrthoParams.y * _OutlineOrthoScale * unity_OrthoParams.w;
+        float scale = _OutlineWidth * 0.01 * distanceScale * orthoScale;
+        output.position = UnityViewToClipPos(viewPosition + viewNormal * scale);
         output.color = _OutlineColor;
 
         return output;
