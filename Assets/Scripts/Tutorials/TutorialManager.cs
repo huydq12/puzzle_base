@@ -14,7 +14,10 @@ public enum TutorialType
 	RunwayBlocker = 7,
 	TiedShooters = 8,
 	FrozenTunnel = 9,
-	Bomb = 10
+	Bomb = 10,
+	Lock = 11,
+	LineDoor = 12
+
 	//Ice = 33,
 	//   Gate = 6,
 	//   LockItem = 15,

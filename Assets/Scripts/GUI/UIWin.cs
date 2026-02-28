@@ -16,6 +16,11 @@ public class UIWin : UIPopup
     [SerializeField] private int rewardCoin;
     [SerializeField] private TextMeshProUGUI txt_coin_reward;
 
+    [SerializeField] private Image iconElementNext;
+    [SerializeField] private Image iconElementNextFill;
+    [SerializeField] private Image img_slide_next_element;
+    [SerializeField] private TextMeshProUGUI txt_fill_element_next;
+
     [SerializeField] private GameObject currencyPrefab;
     [SerializeField] private RectTransform spawnPos;
     [SerializeField] private Transform target;
@@ -23,7 +28,6 @@ public class UIWin : UIPopup
 
     private readonly List<GameObject> activeFx = new List<GameObject>();
 
-    [SerializeField] private Image img_slide_next_element;
     private Tween coinCountTween;
     private Tween slideFillTween;
 
@@ -110,7 +114,6 @@ public class UIWin : UIPopup
 
     private void UpdateNextTutorialFill()
     {
-        if (img_slide_next_element == null) return;
         if (GameManagerInGame.Instance == null) return;
 
         int currentLevelAfterWin = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
@@ -126,9 +129,55 @@ public class UIWin : UIPopup
         float toFill = CalcSegmentFill(completedLevel, prevMilestone, nextMilestone);
         float fromFill = CalcSegmentFill(Mathf.Max(1, completedLevel - 1), prevMilestone, nextMilestone);
 
-        img_slide_next_element.fillAmount = fromFill;
-        slideFillTween = DOTween.To(() => img_slide_next_element.fillAmount, v => img_slide_next_element.fillAmount = v, toFill, 0.6f)
-            .SetEase(Ease.OutQuad);
+        ApplyNextElementVisual(nextMilestone);
+
+        if (iconElementNextFill != null) iconElementNextFill.fillAmount = fromFill;
+        if (img_slide_next_element != null) img_slide_next_element.fillAmount = fromFill;
+
+        if (iconElementNextFill != null || img_slide_next_element != null)
+        {
+            float tweenValue = fromFill;
+            slideFillTween = DOTween.To(() => tweenValue, v =>
+            {
+                tweenValue = v;
+                if (iconElementNextFill != null) iconElementNextFill.fillAmount = 1-v;
+                if (img_slide_next_element != null) img_slide_next_element.fillAmount = v;
+            }, toFill, 0.6f).SetEase(Ease.OutQuad);
+        }
+
+        if (txt_fill_element_next != null)
+        {
+            int percent = Mathf.RoundToInt(toFill * 100f);
+            txt_fill_element_next.text = $"{percent}%";
+        }
+    }
+
+    private void ApplyNextElementVisual(int nextMilestone)
+    {
+        Sprite icon = null;
+
+        var cfg = TutorialPopupService.Config;
+        if (cfg != null && nextMilestone > 0)
+        {
+            var entry = cfg.GetEntry(nextMilestone);
+            if (entry != null)
+            {
+                icon = entry.icon;
+            }
+        }
+
+        if (iconElementNext != null)
+        {
+            iconElementNext.sprite = icon;
+            iconElementNext.enabled = icon != null;
+        }
+
+        if (iconElementNextFill != null)
+        {
+            iconElementNextFill.sprite = icon;
+            iconElementNextFill.enabled = icon != null;
+        }
+
     }
 
     private static float CalcSegmentFill(int level, int prevMilestone, int nextMilestone)

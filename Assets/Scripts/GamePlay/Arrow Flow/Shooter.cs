@@ -408,7 +408,11 @@ public class Shooter : MonoBehaviour
             if (Type == 1)
             {
                 Type = 0;
-                _hiddenEffect.Play();
+                if (_hiddenEffect != null)
+                {
+                    _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    _hiddenEffect.Play();
+                }
             }
         }
 
