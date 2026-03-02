@@ -14,6 +14,7 @@ public enum ShooterRole
 
 public class Shooter : MonoBehaviour
 {
+    public const int RainbowType = 999;
     [SerializeField] private Renderer _renderer;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
@@ -54,6 +55,8 @@ public class Shooter : MonoBehaviour
     private Vector3 _idleBaseEuler;
     private Vector3 _idleBaseScale;
     private bool _hasIdleBase;
+
+    public bool IsRainbow => Type == RainbowType;
 
     public int Total
     {
@@ -278,8 +281,8 @@ public class Shooter : MonoBehaviour
 
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
-                // choose first cube that matches color (or any color if rainbow Type 6) and is not placed on a cell
-                bool colorMatches = Type == 6 || cube.Color == Color;
+                // choose first cube that matches color (or any color if rainbow) and is not placed on a cell
+                bool colorMatches = IsRainbow || cube.Color == Color;
                 if (cube != _lastHit && colorMatches && cube.Cell == null)
                 {
                     // record the exact hit so the visual bullet travels to the raycast hit point
@@ -316,7 +319,7 @@ public class Shooter : MonoBehaviour
 
         // game logic removal happens immediately; bullet is visual
         ObjectColor hitColor = cube.Color;
-        bool destroyed = cube.OnHit(Type == 6);
+        bool destroyed = cube.OnHit(IsRainbow);
         if (destroyed)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -379,7 +382,7 @@ public class Shooter : MonoBehaviour
 
     public void SetRainbow()
     {
-        Type = 6;
+        Type = RainbowType;
         ApplyMaterial();
     }
 
@@ -389,7 +392,7 @@ public class Shooter : MonoBehaviour
 
         Material material = null;
         Material eyeMaterial = null;
-        if (Type == 6)
+        if (IsRainbow)
         {
             material = _materialType6;
             eyeMaterial = _materialType6;

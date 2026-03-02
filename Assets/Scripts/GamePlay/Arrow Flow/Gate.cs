@@ -542,8 +542,8 @@ public class Gate : MonoBehaviour
             Shooter shooter = _shooterInstances[i];
             if (shooter == null || shooter.Total <= 0) continue;
 
-            // Check if shooter matches: either same color, or rainbow mode checking Type == 6
-            bool matches = rainbowOnly ? (shooter.Type == 6) : (shooter.Color == color);
+            // Check if shooter matches: either same color, or rainbow-only mode
+            bool matches = rainbowOnly ? shooter.IsRainbow : (shooter.Color == color);
             if (!matches) continue;
 
             int reduceAmount = Mathf.Min(shooter.Total, remaining);
@@ -564,8 +564,8 @@ public class Gate : MonoBehaviour
         if (amount <= 0 || CurrentShooter == null) return amount;
         if (CurrentShooter.Total <= 0) return amount;
 
-        // Check if shooter matches: either same color, or rainbow mode checking Type == 6
-        bool matches = rainbowOnly ? (CurrentShooter.Type == 6) : (CurrentShooter.Color == color);
+        // Check if shooter matches: either same color, or rainbow-only mode
+        bool matches = rainbowOnly ? CurrentShooter.IsRainbow : (CurrentShooter.Color == color);
         if (!matches) return amount;
 
         int reduceAmount = Mathf.Min(CurrentShooter.Total, amount);

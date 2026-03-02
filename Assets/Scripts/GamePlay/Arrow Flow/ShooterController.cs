@@ -125,14 +125,14 @@ public class ShooterController : Singleton<ShooterController>
             remaining = gate.ReduceCurrentShooterTotal(color, remaining, rainbowOnly: false);
         }
 
-        // Third pass: reduce non-current rainbow shooters (Type == 6)
+        // Third pass: reduce non-current rainbow shooters
         foreach (var gate in Gates)
         {
             if (gate == null || remaining <= 0) continue;
             remaining = gate.ReduceNonCurrentShooterTotal(color, remaining, rainbowOnly: true);
         }
 
-        // Fourth pass: reduce current rainbow shooters (Type == 6)
+        // Fourth pass: reduce current rainbow shooters
         foreach (var gate in Gates)
         {
             if (gate == null || remaining <= 0) continue;
@@ -144,12 +144,12 @@ public class ShooterController : Singleton<ShooterController>
     {
         if (Gates == null || Gates.Count == 0) return false;
 
-        // Collect all current shooters that are not rainbow (Type != 6) and not closed
+        // Collect all current shooters that are not rainbow and not closed
         List<Shooter> candidates = new List<Shooter>();
         foreach (var gate in Gates)
         {
             if (gate == null || gate.IsClosed) continue;
-            if (gate.CurrentShooter != null && gate.CurrentShooter.Type != 6 && gate.CurrentShooter.Total > 0)
+            if (gate.CurrentShooter != null && !gate.CurrentShooter.IsRainbow && gate.CurrentShooter.Total > 0)
             {
                 candidates.Add(gate.CurrentShooter);
             }

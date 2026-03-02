@@ -1803,7 +1803,7 @@ public class Board : Singleton<Board>
                     ShooterData shooter = gate.Shooters[s];
                     if (shooter == null) continue;
                     if (shooter.Color == ObjectColor.None) continue;
-                    if (shooter.Type == 6) continue; // rainbow is not tied to a single color
+                    if (shooter.Type == Shooter.RainbowType) continue; // rainbow is not tied to a single color
 
                     int amount = Mathf.Max(0, shooter.Counter);
                     if (amount <= 0) continue;
