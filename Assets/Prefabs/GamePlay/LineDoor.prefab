@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4373327832592003}
@@ -70,8 +70,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 95081707246000044}
-  cubeEffect: {fileID: 8034142700927244117, guid: 62cc57bf727cf4d0fba41c917f7ee1d5,
-    type: 3}
   vfx: {fileID: 198497693883520885}
   pointArrow: {fileID: 4373327832592003}
   countText: {fileID: 4355775487170295952}
@@ -101,11 +99,14 @@ MonoBehaviour:
     Value: {r: 0, g: 0, b: 0, a: 1}
   - Color: 11
     Value: {r: 1, g: 1, b: 1, a: 1}
-  cubeEffect: {fileID: 8034142700927244117, guid: 62cc57bf727cf4d0fba41c917f7ee1d5, type: 3}
+  cubeEffect: {fileID: 8034142700927244117, guid: 62cc57bf727cf4d0fba41c917f7ee1d5,
+    type: 3}
+  _cubeEffectDuration: 0.8
   _decreaseAnim: Decrease
   _openAnim: Open
   _decreaseClip: {fileID: 7400000, guid: 12f41005a68e17a448cb1f02fd8922a3, type: 2}
   _openClip: {fileID: 7400000, guid: 429b4ac6dcb16dc45b73a972aa727ec4, type: 2}
+  sizeLineDoor: {fileID: 1749298680155147}
 --- !u!1 &1035359743601619
 GameObject:
   m_ObjectHideFlags: 0
@@ -12274,7 +12275,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0.24, z: 0}
-  m_LocalScale: {x: 0.85, y: 0.8695185, z: 0.85}
+  m_LocalScale: {x: 0.85, y: 0.85, z: 0.85}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4251140428632234}

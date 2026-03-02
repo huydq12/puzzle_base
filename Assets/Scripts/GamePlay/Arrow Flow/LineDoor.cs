@@ -32,6 +32,8 @@ public class LineDoor : MonoBehaviour
     [SerializeField] private AnimationClip _decreaseClip;
     [SerializeField] private AnimationClip _openClip;
 
+    [SerializeField] private GameObject sizeLineDoor;
+
     public ObjectColor Color { get; private set; }
     public int Remaining { get; private set; }
     public bool IsOpened { get; private set; }
