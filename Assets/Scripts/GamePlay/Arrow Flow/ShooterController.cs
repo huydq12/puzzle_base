@@ -203,7 +203,7 @@ public class ShooterController : Singleton<ShooterController>
         {
             var gate = Gates[i];
             if (gate == null || gate.IsClosed) continue;
-            if (gate.RemainingShooterCount > 1) return true;
+            if (gate.CanShuffleUpcomingShooters()) return true;
         }
 
         return false;
@@ -228,7 +228,7 @@ public class ShooterController : Singleton<ShooterController>
     {
         if (gate == null) return false;
         if (gate.IsClosed) return false;
-        return gate.RemainingShooterCount > 1;
+        return gate.CanShuffleUpcomingShooters();
     }
 
     public bool ShuffleShootersOnGate(Gate gate)

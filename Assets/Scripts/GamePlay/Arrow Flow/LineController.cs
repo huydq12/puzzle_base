@@ -69,7 +69,19 @@ public class LineController : Singleton<LineController>
 
                 if (gate == null) return;
 
-                if (ShooterController.Instance == null || !ShooterController.Instance.CanShuffleShootersOnGate(gate)) return;
+                if (ShooterController.Instance == null) return;
+                if (!ShooterController.Instance.CanShuffleShootersOnGate(gate))
+                {
+                    if (GameUI.Instance != null)
+                    {
+                        var toast = GameUI.Instance.Get<UINotification>();
+                        if (toast != null)
+                        {
+                            toast.ShowToast("This gate must have at least 2 shooters.");
+                        }
+                    }
+                    return;
+                }
 
                 if (InventoryManager.Instance == null) return;
                 bool used = InventoryManager.Instance.UseBoosterType2();

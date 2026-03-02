@@ -23,6 +23,12 @@ public class Gate : MonoBehaviour
     private Shooter NextShooter { get; set; }
     private Shooter QueueShooter { get; set; }
     private int _currentShooterIndex = 0;
+
+    private struct ShuffleShooterEntry
+    {
+        public int SourceIndex;
+        public ShooterData Data;
+    }
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
     private bool _isSingleShooterMode = false;
@@ -186,30 +192,53 @@ public class Gate : MonoBehaviour
 
     public bool ShuffleRemainingShooters()
     {
-        if (IsClosed) return false;
+        if (!CanShuffleUpcomingShooters()) return false;
         if (Shooters == null || _shooterInstances == null) return false;
         if (_currentShooterIndex < 0 || _currentShooterIndex >= Shooters.Count) return false;
 
-        int remaining = Shooters.Count - _currentShooterIndex;
+        int startIndex = _currentShooterIndex;
+        int remaining = Shooters.Count - startIndex;
         if (remaining <= 1) return false;
 
-        var movable = new List<ShooterData>(remaining);
-        for (int i = _currentShooterIndex; i < Shooters.Count; i++)
+        var indices = new List<int>(remaining);
+        for (int i = startIndex; i < Shooters.Count; i++)
         {
             if (IsLockIndex(i)) continue;
-            movable.Add(Shooters[i]);
+            indices.Add(i);
         }
 
-        if (movable.Count <= 1) return false;
+        if (indices.Count <= 1) return false;
+
+        var movable = new List<ShuffleShooterEntry>(indices.Count);
+        for (int i = 0; i < indices.Count; i++)
+        {
+            int idx = indices[i];
+            ShooterData src = Shooters[idx];
+            Shooter inst = idx >= 0 && idx < _shooterInstances.Count ? _shooterInstances[idx] : null;
+            int currentTotal = inst != null ? inst.Total : (src != null ? src.Counter : 0);
+
+            movable.Add(new ShuffleShooterEntry
+            {
+                SourceIndex = idx,
+                Data = CloneShooterData(src, currentTotal)
+            });
+        }
+
         movable.Shuffle();
 
-        int moveIdx = 0;
-        for (int i = _currentShooterIndex; i < Shooters.Count; i++)
+        // Ensure the current shooter changes (when possible).
+        if (movable.Count > 1 && movable[0].SourceIndex == _currentShooterIndex)
         {
-            if (IsLockIndex(i)) continue;
-            ShooterData data = movable[moveIdx++];
-            Shooters[i] = data;
-            Shooter inst = _shooterInstances[i];
+            (movable[0], movable[1]) = (movable[1], movable[0]);
+        }
+
+        for (int i = 0; i < indices.Count; i++)
+        {
+            int idx = indices[i];
+            ShooterData data = movable[i].Data;
+            Shooters[idx] = data;
+
+            Shooter inst = idx >= 0 && idx < _shooterInstances.Count ? _shooterInstances[idx] : null;
             if (inst == null) continue;
             inst.SetColor(data.Color);
             inst.SetType(data.Type);
@@ -218,6 +247,37 @@ public class Gate : MonoBehaviour
 
         UpdateShooterRoles();
         return true;
+    }
+
+    private static ShooterData CloneShooterData(ShooterData src, int counter)
+    {
+        if (src == null) return null;
+        return new ShooterData
+        {
+            Color = src.Color,
+            Counter = counter,
+            Type = src.Type,
+            TieID = src.TieID
+        };
+    }
+
+    public bool CanShuffleUpcomingShooters()
+    {
+        if (IsClosed) return false;
+        if (Shooters == null) return false;
+
+        int startIndex = _currentShooterIndex;
+        if (startIndex < 0 || startIndex >= Shooters.Count) return false;
+
+        int movable = 0;
+        for (int i = startIndex; i < Shooters.Count; i++)
+        {
+            if (IsLockIndex(i)) continue;
+            movable++;
+            if (movable > 1) return true;
+        }
+
+        return false;
     }
 
     [Button]
