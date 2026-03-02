@@ -8,7 +8,10 @@ public class Elevator : MonoBehaviour
     [SerializeField] private SpriteRenderer rightGate;
     [SerializeField] private Vector2 leftGateSize;
     [SerializeField] private Vector2 rightGateSize;
-    [SerializeField] private Transform border;
+    [SerializeField] private float leftGateStartSizeX = 1.7f;
+    [SerializeField] private float rightGateStartSizeX = -1.7f;
+    [SerializeField] private SpriteRenderer border;
+    [SerializeField] private Vector2 borderSize;
     [SerializeField] private float openDuration = 0.35f;
     [SerializeField] private float spawnDelayAfterOpen = 0.2f;
     [SerializeField] private float holdOpenDuration = 0.25f;
@@ -19,6 +22,7 @@ public class Elevator : MonoBehaviour
     private Vector3 _rightGateStart;
     private Vector2 _leftGateSizeStart;
     private Vector2 _rightGateSizeStart;
+    private Vector2 _borderSizeStart;
     private bool _hasActivated;
 
     private void Awake()
