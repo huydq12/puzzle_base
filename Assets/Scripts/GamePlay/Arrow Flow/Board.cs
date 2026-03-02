@@ -483,9 +483,9 @@ public class Board : Singleton<Board>
 
         for (int i = 0; i < ShooterController.Instance.Gates.Count; i++)
         {
-            Gate gate = ShooterController.Instance.Gates[i];
+            IGate gate = ShooterController.Instance.Gates[i];
             if (gate == null) continue;
-            SetLayerRecursively(gate.transform, layer);
+            SetLayerRecursively(gate.RootTransform, layer);
         }
     }
 

@@ -33,7 +33,7 @@ public class Shooter : MonoBehaviour
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public int Type;
     [ReadOnly] public bool CanShoot;
-    [ReadOnly] public Gate Gate;
+    [ReadOnly] public IGate Gate;
     private RaycastHit _hit;
     private Vector3 _originalScale;
     private CubeLine _lastHit;
