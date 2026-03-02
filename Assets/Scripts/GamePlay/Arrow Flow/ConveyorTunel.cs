@@ -21,6 +21,12 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private float _shooterVfxTravelDuration = 0.25f;
     [SerializeField] private float _shooterVfxArcHeight = 1.5f;
 
+    [Header("Spline Corner Rounding")]
+    [SerializeField] private bool _roundCorners = true;
+    [SerializeField] private float _cornerRadius = 0.35f;
+    [SerializeField] private int _cornerSegments = 4;
+    [SerializeField] private float _cornerMinAngle = 5f;
+
     [SerializeField] private ParticleSystem _particleSystemHole1;
     [SerializeField] private ParticleSystem _particleSystemHole2;
 
@@ -118,10 +124,14 @@ public class ConveyorTunel : MonoBehaviour
 
         _splineComputer.space = SplineComputer.Space.World;
 
-        SplinePoint[] points = new SplinePoint[worldPositions.Count];
-        for (int i = 0; i < worldPositions.Count; i++)
+        IReadOnlyList<Vector3> splinePositions = worldPositions;
+        if (_roundCorners && worldPositions.Count >= 3 && _cornerRadius > 0f && _cornerSegments > 0)
+            splinePositions = GenerateRoundedPath(worldPositions, _cornerRadius, _cornerSegments, _cornerMinAngle);
+
+        SplinePoint[] points = new SplinePoint[splinePositions.Count];
+        for (int i = 0; i < splinePositions.Count; i++)
         {
-            SplinePoint point = new SplinePoint(worldPositions[i] + Vector3.up * _splineHeight)
+            SplinePoint point = new SplinePoint(splinePositions[i] + Vector3.up * _splineHeight)
             {
                 type = SplinePoint.Type.SmoothMirrored,
                 size = _splineHeight
@@ -134,6 +144,82 @@ public class ConveyorTunel : MonoBehaviour
 
         if (_splineMesh != null)
             _splineMesh.RebuildImmediate();
+    }
+
+    private static List<Vector3> GenerateRoundedPath(IReadOnlyList<Vector3> positions, float radius, int segments, float minAngleDeg)
+    {
+        List<Vector3> result = new List<Vector3>(positions.Count + Mathf.Max(0, positions.Count - 2) * segments);
+        if (positions == null || positions.Count == 0) return result;
+
+        const float eps = 0.0001f;
+        float minAngle = Mathf.Clamp(minAngleDeg, 0f, 179f);
+
+        void AddIfFar(Vector3 p)
+        {
+            if (result.Count == 0)
+            {
+                result.Add(p);
+                return;
+            }
+
+            Vector3 last = result[result.Count - 1];
+            if ((p - last).sqrMagnitude > eps * eps)
+                result.Add(p);
+        }
+
+        AddIfFar(positions[0]);
+
+        for (int i = 1; i < positions.Count - 1; i++)
+        {
+            Vector3 prev = positions[i - 1];
+            Vector3 cur = positions[i];
+            Vector3 next = positions[i + 1];
+
+            Vector3 d1 = cur - prev;
+            Vector3 d2 = next - cur;
+            d1.y = 0f;
+            d2.y = 0f;
+
+            float len1 = d1.magnitude;
+            float len2 = d2.magnitude;
+            if (len1 < eps || len2 < eps)
+            {
+                AddIfFar(cur);
+                continue;
+            }
+
+            Vector3 u1 = d1 / len1;
+            Vector3 u2 = d2 / len2;
+
+            float angle = Vector3.Angle(u1, u2);
+            if (angle < minAngle || Mathf.Abs(180f - angle) < minAngle)
+            {
+                AddIfFar(cur);
+                continue;
+            }
+
+            float r = Mathf.Min(radius, len1 * 0.5f, len2 * 0.5f);
+            if (r < eps)
+            {
+                AddIfFar(cur);
+                continue;
+            }
+
+            Vector3 p = cur - u1 * r;
+            Vector3 q = cur + u2 * r;
+
+            AddIfFar(p);
+            for (int s = 1; s < segments; s++)
+            {
+                float t = s / (float)segments;
+                Vector3 bez = QuadraticBezier(p, cur, q, t);
+                AddIfFar(bez);
+            }
+            AddIfFar(q);
+        }
+
+        AddIfFar(positions[positions.Count - 1]);
+        return result;
     }
 
     public void SetCounter(int counter)

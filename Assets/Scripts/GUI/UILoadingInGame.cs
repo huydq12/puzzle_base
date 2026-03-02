@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -10,19 +9,14 @@ public class UILoadingInGame : Singleton<UILoadingInGame>
     [SerializeField] public GameObject holder;
     [SerializeField] public TextMeshProUGUI textLoading;
 
-    [SerializeField] public Image playerIcon1;
-    [SerializeField] public Image playerIcon2;
+    [SerializeField] public Image IconGame;
 
     private Tween _textTween;
-    private Sequence _icon1Seq;
-    private Sequence _icon2Seq;
-    private Vector2 _icon1BasePos;
-    private Vector2 _icon2BasePos;
-    private Vector3 _icon1BaseScale;
-    private Vector3 _icon2BaseScale;
-    private Quaternion _icon1BaseRot;
-    private Quaternion _icon2BaseRot;
-    private bool _iconBasesCached;
+    private Sequence _iconGameSeq;
+    private Vector3 _iconGameBaseScale;
+    private Vector2 _iconGameBaseAnchoredPos;
+    private Color _iconGameBaseColor;
+    private bool _iconGameBaseCached;
     private Coroutine _dotsRoutine;
     private string _baseText;
     private const float DotsIntervalSeconds = 0.35f;
@@ -37,62 +31,41 @@ public class UILoadingInGame : Singleton<UILoadingInGame>
     {
         HolderOrSelf().SetActive(true);
 
-        if (!_iconBasesCached)
+        if (!_iconGameBaseCached && IconGame != null)
         {
-            if (playerIcon1 != null)
-            {
-                _icon1BasePos = playerIcon1.rectTransform.anchoredPosition;
-                _icon1BaseScale = playerIcon1.rectTransform.localScale;
-                _icon1BaseRot = playerIcon1.rectTransform.localRotation;
-            }
-
-            if (playerIcon2 != null)
-            {
-                _icon2BasePos = playerIcon2.rectTransform.anchoredPosition;
-                _icon2BaseScale = playerIcon2.rectTransform.localScale;
-                _icon2BaseRot = playerIcon2.rectTransform.localRotation;
-            }
-
-            _iconBasesCached = true;
+            RectTransform baseRt = IconGame.rectTransform;
+            _iconGameBaseScale = baseRt.localScale;
+            _iconGameBaseAnchoredPos = baseRt.anchoredPosition;
+            _iconGameBaseColor = IconGame.color;
+            _iconGameBaseCached = true;
         }
 
-        if (playerIcon1 != null)
+        if (IconGame != null)
         {
-            _icon1Seq?.Kill();
-            var rt = playerIcon1.rectTransform;
-            rt.anchoredPosition = _icon1BasePos;
-            rt.localScale = _icon1BaseScale;
-            rt.localRotation = _icon1BaseRot;
+            _iconGameSeq?.Kill();
 
-            _icon1Seq = DOTween.Sequence().SetUpdate(true);
-            _icon1Seq.Append(rt.DOAnchorPos(_icon1BasePos + new Vector2(-14f, 6f), 0.06f).SetEase(Ease.OutQuad));
-            _icon1Seq.Join(rt.DOPunchRotation(new Vector3(0f, 0f, 10f), 0.12f, 14, 0.9f));
-            _icon1Seq.Join(rt.DOPunchScale(_icon1BaseScale * 0.08f, 0.12f, 10, 0.9f));
-            _icon1Seq.Append(rt.DOAnchorPos(_icon1BasePos, 0.09f).SetEase(Ease.InQuad));
-            _icon1Seq.AppendInterval(0.06f);
-            _icon1Seq.SetLoops(-1, LoopType.Restart);
-        }
+            RectTransform rt = IconGame.rectTransform;
+            rt.localScale = _iconGameBaseScale;
+            rt.anchoredPosition = _iconGameBaseAnchoredPos;
+            IconGame.color = _iconGameBaseColor;
 
-        if (playerIcon2 != null)
-        {
-            _icon2Seq?.Kill();
-            var rt = playerIcon2.rectTransform;
-            rt.anchoredPosition = _icon2BasePos;
-            rt.localScale = _icon2BaseScale;
-            rt.localRotation = _icon2BaseRot;
+            const float cycleDuration = 0.9f;
+            const float floatY = 10f;
+            float targetAlpha = Mathf.Clamp01(_iconGameBaseColor.a * 0.65f);
 
-            _icon2Seq = DOTween.Sequence().SetUpdate(true);
-            _icon2Seq.Append(rt.DOAnchorPos(_icon2BasePos + new Vector2(-10f, 4f), 0.06f).SetEase(Ease.OutQuad));
-            _icon2Seq.Join(rt.DOPunchRotation(new Vector3(0f, 0f, -8f), 0.12f, 12, 0.9f));
-            _icon2Seq.Join(rt.DOPunchScale(_icon2BaseScale * 0.06f, 0.12f, 10, 0.9f));
-            _icon2Seq.Append(rt.DOAnchorPos(_icon2BasePos, 0.09f).SetEase(Ease.InQuad));
-            _icon2Seq.AppendInterval(0.08f);
-            _icon2Seq.SetLoops(-1, LoopType.Restart);
+            _iconGameSeq = DOTween.Sequence().SetUpdate(true);
+            _iconGameSeq.Append(rt.DOAnchorPos(_iconGameBaseAnchoredPos + new Vector2(0f, floatY), cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.Join(rt.DOScale(_iconGameBaseScale * 1.06f, cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.Join(IconGame.DOFade(targetAlpha, cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.Append(rt.DOAnchorPos(_iconGameBaseAnchoredPos, cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.Join(rt.DOScale(_iconGameBaseScale, cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.Join(IconGame.DOFade(_iconGameBaseColor.a, cycleDuration * 0.5f).SetEase(Ease.InOutSine));
+            _iconGameSeq.SetLoops(-1, LoopType.Restart);
         }
 
         if (textLoading != null)
         {
-            _baseText = "LOADING DATA";
+            _baseText = "Voodoo";
             textLoading.text = _baseText;
 
             _textTween?.Kill();
@@ -120,16 +93,10 @@ public class UILoadingInGame : Singleton<UILoadingInGame>
             _textTween = null;
         }
 
-        if (_icon1Seq != null)
+        if (_iconGameSeq != null)
         {
-            _icon1Seq.Kill();
-            _icon1Seq = null;
-        }
-
-        if (_icon2Seq != null)
-        {
-            _icon2Seq.Kill();
-            _icon2Seq = null;
+            _iconGameSeq.Kill();
+            _iconGameSeq = null;
         }
 
         if (textLoading != null)
@@ -138,18 +105,11 @@ public class UILoadingInGame : Singleton<UILoadingInGame>
             if (!string.IsNullOrEmpty(_baseText)) textLoading.text = _baseText;
         }
 
-        if (playerIcon1 != null)
+        if (IconGame != null && _iconGameBaseCached)
         {
-            playerIcon1.rectTransform.anchoredPosition = _icon1BasePos;
-            playerIcon1.rectTransform.localScale = _icon1BaseScale;
-            playerIcon1.rectTransform.localRotation = _icon1BaseRot;
-        }
-
-        if (playerIcon2 != null)
-        {
-            playerIcon2.rectTransform.anchoredPosition = _icon2BasePos;
-            playerIcon2.rectTransform.localScale = _icon2BaseScale;
-            playerIcon2.rectTransform.localRotation = _icon2BaseRot;
+            IconGame.rectTransform.localScale = _iconGameBaseScale;
+            IconGame.rectTransform.anchoredPosition = _iconGameBaseAnchoredPos;
+            IconGame.color = _iconGameBaseColor;
         }
         HolderOrSelf().SetActive(false);
     }
