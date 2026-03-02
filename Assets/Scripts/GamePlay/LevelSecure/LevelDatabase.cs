@@ -114,6 +114,7 @@ public static class LevelDatabase
                     Position = new Vector3(g.position.x, g.position.y, g.position.z),
                     Direction = g.direction,
                     Counter = g.counter,
+                    ElementType = g.elementType,
                     Shooters = new List<ShooterData>()
                 };
 

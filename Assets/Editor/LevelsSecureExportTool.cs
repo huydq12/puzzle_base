@@ -57,7 +57,6 @@ public static class LevelsSecureExportTool
     [MenuItem("Tools/Levels/Export Secure Levels (JSON)...")]
     private static void ExportAllLevelsJson()
     {
-        // Keep consistent with the encrypted export: in this repo LevelConfig assets live under `Assets/SO`.
         const string sourceFolder = "Assets/SO";
 
         string outputPath = EditorUtility.SaveFilePanel(
@@ -146,6 +145,7 @@ public static class LevelsSecureExportTool
                     position = new Vec3Dto { x = g.Position.x, y = g.Position.y, z = g.Position.z },
                     direction = g.Direction,
                     counter = g.Counter,
+                    elementType = g.ElementType,
                     shooters = new List<ShooterDataDto>()
                 };
 

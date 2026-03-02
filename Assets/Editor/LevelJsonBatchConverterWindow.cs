@@ -480,6 +480,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 GateData gate = new GateData();
                 gate.Direction = shooter.direction;
                 gate.Counter = shooter.counter;
+                gate.ElementType = shooter.elementType;
                 float px = shooter.position != null ? shooter.position.x : 0f;
                 float py = shooter.position != null ? shooter.position.y : 0f;
 
@@ -699,6 +700,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         public LevelJsonFloat2 position;
         public int direction;
         public int counter;
+        public int elementType;
         public List<LevelJsonShooterUnit> shooterUnits;
         public List<LevelJsonArrow> arrowData;
     }
