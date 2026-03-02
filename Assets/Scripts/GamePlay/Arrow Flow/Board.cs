@@ -705,14 +705,14 @@ public class Board : Singleton<Board>
             door.transform.position = center;
             door.transform.rotation = DirectionToRotation(data.Direction);
 
-            door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+	            door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
-            int remaining = data.Counter;
-            door.Setup(data.Color, remaining);
-            var entry = new LineDoorEntry
-            {
-                door = door,
-                data = data,
+	            int remaining = data.Counter;
+	            door.Setup(data.Color, remaining, data.Size);
+	            var entry = new LineDoorEntry
+	            {
+	                door = door,
+	                data = data,
                 remaining = remaining,
                 opened = false,
                 spawned = false
@@ -886,50 +886,61 @@ public class Board : Singleton<Board>
             SpawnAllElevatorLines();
     }
 
-    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
-    {
-        if (_lineDoors == null || _lineDoors.Count == 0) return;
-        if (color == ObjectColor.None) return;
+	    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
+	    {
+	        NotifyLineDoorHit(color, 1, shooter != null ? shooter.transform : null, shooter);
+	    }
+
+	    public void NotifyLineDoorHit(ObjectColor color, int amount, Transform source = null)
+	    {
+	        NotifyLineDoorHit(color, amount, source, shooter: null);
+	    }
+
+	    private void NotifyLineDoorHit(ObjectColor color, int amount, Transform source, Shooter shooter)
+	    {
+	        if (_lineDoors == null || _lineDoors.Count == 0) return;
+	        if (color == ObjectColor.None) return;
+	        if (amount <= 0) return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Board.LineDoor] Hit color={color} shooter={DescribeShooter(shooter)}", shooter);
+	        Debug.Log($"[Board.LineDoor] Hit color={color} shooter={DescribeShooter(shooter)}", shooter);
 #endif
 
-        for (int i = 0; i < _lineDoors.Count; i++)
-        {
-            var entry = _lineDoors[i];
-            if (entry.opened) continue;
-            if (entry.data == null) continue;
-            if (entry.data.Color != color) continue;
+	        for (int i = 0; i < _lineDoors.Count; i++)
+	        {
+	            var entry = _lineDoors[i];
+	            if (entry.opened) continue;
+	            if (entry.data == null) continue;
+	            if (entry.data.Color != color) continue;
 
-            LineDoor door = entry.door;
+	            LineDoor door = entry.door;
 
-            if (door != null)
-            {
-                bool opened = door.Consume(1, shooter != null ? shooter.transform : null, () => TrySpawnLineDoorLines(i));
-                entry.remaining = door.Remaining;
-                if (opened)
-                {
-                    entry.opened = true;
-                }
+	            if (door != null)
+	            {
+	                bool opened = door.Consume(amount, source, () => TrySpawnLineDoorLines(i));
+	                entry.remaining = door.Remaining;
+	                if (opened)
+	                {
+	                    entry.opened = true;
+	                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
+	                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
 #endif
-            }
-            else
-            {
-                entry.remaining = Mathf.Max(0, entry.remaining - 1);
-                if (entry.remaining <= 0)
-                {
-                    entry.opened = true;
-                    TrySpawnLineDoorLines(i);
-                }
+	            }
+	            else
+	            {
+	                entry.remaining = Mathf.Max(0, entry.remaining - amount);
+	                if (entry.remaining <= 0)
+	                {
+	                    entry.opened = true;
+	                    TrySpawnLineDoorLines(i);
+	                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", this);
+	                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", this);
 #endif
-            }
-        }
-    }
+	            }
+	        }
+	    }
 
     private void OpenLineDoorAtIndex(int index)
     {

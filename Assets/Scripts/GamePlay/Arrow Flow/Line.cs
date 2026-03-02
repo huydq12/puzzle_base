@@ -727,15 +727,16 @@ public class Line : MonoBehaviour
         for (int i = 0; i < Cubes.Count; i++)
             Cubes[i].ShowWarning();
     }
-    public void DestroyLine()
-    {
-        ResetMoveState();
+	    public void DestroyLine()
+	    {
+	        ResetMoveState();
 
-        Board.Instance.NotifyAnyLineEnteredConveyor();
+	        Board.Instance.NotifyAnyLineEnteredConveyor();
 
-        // Track destroyed cubes by color
-        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
-        bool destroyedKey = false;
+	        // Track destroyed cubes by color
+	        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
+	        Dictionary<ObjectColor, int> fullyDestroyedByColor = new Dictionary<ObjectColor, int>();
+	        bool destroyedKey = false;
 
         for (int i = Cubes.Count - 1; i >= 0; i--)
         {
@@ -760,17 +761,21 @@ public class Line : MonoBehaviour
 
                 cube.OnHit();
             }
-            else
-            {
-                // Actually destroy the cube
-                // Use current Color for cubes that are fully destroyed
-                ObjectColor cubeColor = cube.Color;
-                if (!destroyedByColor.ContainsKey(cubeColor))
-                    destroyedByColor[cubeColor] = 0;
-                destroyedByColor[cubeColor]++;
+	            else
+	            {
+	                // Actually destroy the cube
+	                // Use current Color for cubes that are fully destroyed
+	                ObjectColor cubeColor = cube.Color;
+	                if (!destroyedByColor.ContainsKey(cubeColor))
+	                    destroyedByColor[cubeColor] = 0;
+	                destroyedByColor[cubeColor]++;
 
-                if (cube.ElementType == _keyElementType)
-                    destroyedKey = true;
+	                if (!fullyDestroyedByColor.ContainsKey(cubeColor))
+	                    fullyDestroyedByColor[cubeColor] = 0;
+	                fullyDestroyedByColor[cubeColor]++;
+
+	                if (cube.ElementType == _keyElementType)
+	                    destroyedKey = true;
 
                 if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
                 {
@@ -786,16 +791,25 @@ public class Line : MonoBehaviour
             }
         }
 
-        // Reduce shooters for each color
-        foreach (var kvp in destroyedByColor)
-        {
-            ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
-        }
+	        // Reduce shooters for each color
+	        foreach (var kvp in destroyedByColor)
+	        {
+	            ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
+	        }
 
-        if (Cubes.Count == 0)
-        {
-            if (destroyedKey)
-                ReleaseKeyIfNeeded("cube_destroyed", force: true);
+	        // Hammer destroys cubes too, so they should also count toward LineDoor (same-color) consumption.
+	        if (Board.Instance != null)
+	        {
+	            foreach (var kvp in fullyDestroyedByColor)
+	            {
+	                Board.Instance.NotifyLineDoorHit(kvp.Key, kvp.Value);
+	            }
+	        }
+
+	        if (Cubes.Count == 0)
+	        {
+	            if (destroyedKey)
+	                ReleaseKeyIfNeeded("cube_destroyed", force: true);
             else
                 ReleaseKeyIfNeeded("line_empty");
             Destroy(gameObject);

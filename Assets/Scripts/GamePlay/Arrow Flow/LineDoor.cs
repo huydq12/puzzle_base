@@ -35,17 +35,33 @@ public class LineDoor : MonoBehaviour
     [SerializeField] private GameObject sizeLineDoor;
 
     public ObjectColor Color { get; private set; }
+    public Vector2Int Size { get; private set; }
     public int Remaining { get; private set; }
     public bool IsOpened { get; private set; }
 
     public Transform ArrowPoint => pointArrow != null ? pointArrow : transform;
 
+    private bool _capturedSizeBaseScale;
+    private Vector3 _sizeBaseLocalScale;
+
     public void Setup(ObjectColor color, int counter)
     {
+        Size = Vector2Int.one;
         Color = color;
         Remaining = Mathf.Max(0, counter);
         IsOpened = false;
         ApplyColor();
+        UpdateCounterText();
+    }
+
+    public void Setup(ObjectColor color, int counter, Vector2Int size)
+    {
+        Size = new Vector2Int(Mathf.Max(1, size.x), Mathf.Max(1, size.y));
+        Color = color;
+        Remaining = Mathf.Max(0, counter);
+        IsOpened = false;
+        ApplyColor();
+        ApplySize();
         UpdateCounterText();
     }
 
@@ -141,6 +157,22 @@ public class LineDoor : MonoBehaviour
             }
         }
         spriteRendererColor.color = c;
+    }
+
+    private void ApplySize()
+    {
+        if (sizeLineDoor == null) return;
+
+        if (!_capturedSizeBaseScale)
+        {
+            _capturedSizeBaseScale = true;
+            _sizeBaseLocalScale = sizeLineDoor.transform.localScale;
+        }
+
+        // Mapping: authored 5x5 => localScale 0.85 (prefab baseline), scale proportionally by Size.
+        float scaleX = Size.x / 5f;
+        float scaleZ = Size.y / 5f;
+        sizeLineDoor.transform.localScale = Vector3.Scale(_sizeBaseLocalScale, new Vector3(scaleX, 1f, scaleZ));
     }
 
     private void PlayDecrease()
