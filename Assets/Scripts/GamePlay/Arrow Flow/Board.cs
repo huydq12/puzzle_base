@@ -831,30 +831,50 @@ public class Board : Singleton<Board>
         }
     }
 
-    private bool IsRectEmpty(Vector2Int pos, Vector2Int size)
-    {
-        int minX = pos.x;
-        int minY = pos.y;
-        int maxX = pos.x + size.x - 1;
-        int maxY = pos.y + size.y - 1;
+	    private bool IsRectEmpty(Vector2Int pos, Vector2Int size)
+	    {
+	        int minX = pos.x;
+	        int minY = pos.y;
+	        int maxX = pos.x + size.x - 1;
+	        int maxY = pos.y + size.y - 1;
 
         if (Cells == null) return false;
         int w = Cells.GetLength(0);
         int h = Cells.GetLength(1);
         if (minX < 0 || minY < 0 || maxX >= w || maxY >= h) return false;
 
-        for (int x = minX; x <= maxX; x++)
-        {
-            for (int y = minY; y <= maxY; y++)
-            {
-                GridCell cell = Cells[x, y];
-                if (cell == null) continue;
-                if (cell.CubeOnCell != null) return false;
-            }
-        }
+	        for (int x = minX; x <= maxX; x++)
+	        {
+	            for (int y = minY; y <= maxY; y++)
+	            {
+	                if (IsCellBlockedByClosedLineDoor(new Vector2Int(x, y))) return false;
+	                GridCell cell = Cells[x, y];
+	                if (cell == null) continue;
+	                if (cell.CubeOnCell != null) return false;
+	            }
+	        }
 
-        return true;
-    }
+	        return true;
+	    }
+
+	    private bool IsCellBlockedByClosedLineDoor(Vector2Int cellPos)
+	    {
+	        if (_lineDoors == null || _lineDoors.Count == 0) return false;
+	        for (int i = 0; i < _lineDoors.Count; i++)
+	        {
+	            var entry = _lineDoors[i];
+	            if (entry.opened) continue;
+	            if (entry.data == null) continue;
+	            if (IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size)) return true;
+	        }
+	        return false;
+	    }
+
+	    private static bool IsPointInsideRect(Vector2Int p, Vector2Int pos, Vector2Int size)
+	    {
+	        if (size.x <= 0 || size.y <= 0) return false;
+	        return p.x >= pos.x && p.y >= pos.y && p.x < pos.x + size.x && p.y < pos.y + size.y;
+	    }
     public GridCell CellTaptInTutorialControl()
     {
         return GetCellAt(new Vector2Int(2, 1));
@@ -1859,24 +1879,24 @@ public class Board : Singleton<Board>
         }
         return null;
     }
-    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
-    {
-        Vector2Int dir = curr - prev;
-        Vector2Int p = curr + dir;
+	    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
+	    {
+	        Vector2Int dir = curr - prev;
+	        Vector2Int p = curr + dir;
 
         int w = Cells.GetLength(0);
         int h = Cells.GetLength(1);
 
-        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
-        {
-            GridCell c = GetCellAt(p);
-            if (c != null && c.IsOccupied)
-                return c;
+	        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
+	        {
+	            GridCell c = GetCellAt(p);
+	            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p)))
+	                return c;
 
-            p += dir;
-        }
-        return null;
-    }
+	            p += dir;
+	        }
+	        return null;
+	    }
 
 	    private void SetupGrid()
 	    {

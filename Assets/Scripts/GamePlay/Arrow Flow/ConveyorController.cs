@@ -369,14 +369,23 @@ public class ConveyorController : Singleton<ConveyorController>
 
     public List<CubeLine> GetConsecutiveCubesByColor(CubeLine clickedCube)
     {
-        List<CubeLine> result = new List<CubeLine>(){ clickedCube };
-        foreach(var slot in _lstPaths)
+        if (clickedCube == null) return new List<CubeLine>();
+
+        HashSet<CubeLine> seen = new HashSet<CubeLine>();
+        List<CubeLine> result = new List<CubeLine>();
+
+        if (seen.Add(clickedCube))
+            result.Add(clickedCube);
+
+        foreach (var slot in _lstPaths)
         {
-            if(slot.CubeSlot != null && slot.CubeSlot.Color == clickedCube.Color)
-            {
-                result.Add(slot.CubeSlot);
-            }
+            CubeLine cube = slot.CubeSlot;
+            if (cube == null) continue;
+            if (cube.Color != clickedCube.Color) continue;
+            if (seen.Add(cube))
+                result.Add(cube);
         }
+
         return result;
     }
 
@@ -385,22 +394,39 @@ public class ConveyorController : Singleton<ConveyorController>
         Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
         if (cubes == null || cubes.Count == 0) return destroyedByColor;
 
+        Transform source = null;
+
         foreach (var cube in cubes)
         {
             if (cube == null) continue;
+            if (source == null) source = cube.transform;
 
-            // Check if cube will only reveal (ElementType 3 not yet revealed)
-            bool willOnlyReveal = cube.ElementType == 3 && !cube.IsElementType3Revealed;
+            bool willRevealTwoLayer = cube.ElementType == 3 && !cube.IsElementType3Revealed;
+            ObjectColor preHitColor = cube.Color;
+            ObjectColor outerColor = cube.OriginalColor;
 
-            // For 2-layer cubes revealing outer layer, use OriginalColor (outer)
-            // For fully destroyed cubes, use Color (current color)
-            ObjectColor colorToReduce = willOnlyReveal ? cube.OriginalColor : cube.Color;
+            bool destroyed = cube.OnHit();
+            if (destroyed)
+            {
+                if (!destroyedByColor.ContainsKey(preHitColor))
+                    destroyedByColor[preHitColor] = 0;
+                destroyedByColor[preHitColor]++;
+            }
+            else if (willRevealTwoLayer)
+            {
+                // Revealed 2-layer cube: consume outer layer count only (LineDoor should not progress yet).
+                if (!destroyedByColor.ContainsKey(outerColor))
+                    destroyedByColor[outerColor] = 0;
+                destroyedByColor[outerColor]++;
+            }
+        }
 
-            if (!destroyedByColor.ContainsKey(colorToReduce))
-                destroyedByColor[colorToReduce] = 0;
-            destroyedByColor[colorToReduce]++;
-
-            cube.OnHit();
+        if (Board.Instance != null)
+        {
+            foreach (var kvp in destroyedByColor)
+            {
+                Board.Instance.NotifyLineDoorHit(kvp.Key, kvp.Value, source);
+            }
         }
 
         return destroyedByColor;
