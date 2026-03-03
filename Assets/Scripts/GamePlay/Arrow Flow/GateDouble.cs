@@ -453,7 +453,7 @@ public class GateDouble : MonoBehaviour, IGate
             Shooter s = lane[i];
             if (s == null) continue;
             int tie = s.TieID;
-            if (tie == -1) continue;
+            if (tie <= 0) continue;
             if (!map.ContainsKey(tie))
                 map[tie] = s;
         }
@@ -595,7 +595,7 @@ public class GateDouble : MonoBehaviour, IGate
     {
         if (shooter == null) return false;
         int tie = shooter.TieID;
-        if (tie == -1) return false;
+        if (tie <= 0) return false;
         if (otherLane == null || otherLane.Count == 0) return false;
 
         for (int i = 0; i < otherLane.Count; i++)
@@ -612,7 +612,7 @@ public class GateDouble : MonoBehaviour, IGate
     private static bool IsTiePair(Shooter s1, Shooter s2)
     {
         if (s1 == null || s2 == null) return false;
-        if (s1.TieID == -1 || s2.TieID == -1) return false;
+        if (s1.TieID <= 0 || s2.TieID <= 0) return false;
         return s1.TieID == s2.TieID;
     }
 
