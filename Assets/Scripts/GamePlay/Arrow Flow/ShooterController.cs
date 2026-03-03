@@ -275,6 +275,7 @@ public class ShooterController : Singleton<ShooterController>
         if (gate == null) return false;
         if (gate.IsClosed) return false;
         if (gate is Gate concreteGate) return concreteGate.CanShuffleUpcomingShooters();
+        if (gate is GateDouble concreteGateDouble) return concreteGateDouble.CanShuffleUpcomingShooters();
         return gate.RemainingShooterCount > 1;
     }
 
@@ -306,13 +307,13 @@ public class ShooterController : Singleton<ShooterController>
         return shuffledAny;
     }
 
-    public bool CanShuffleShootersOnGate(Gate gate)
+    public bool CanShuffleShootersOnGate(IGate gate)
     {
         if (gate == null) return false;
         return CanShuffleGate(gate);
     }
 
-    public bool ShuffleShootersOnGate(Gate gate)
+    public bool ShuffleShootersOnGate(IGate gate)
     {
         if (!CanShuffleShootersOnGate(gate)) return false;
         return gate.ShuffleRemainingShooters();

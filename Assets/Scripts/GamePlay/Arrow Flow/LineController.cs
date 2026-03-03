@@ -58,13 +58,24 @@ public class LineController : Singleton<LineController>
             {
                 System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-                Gate gate = null;
+                IGate gate = null;
                 for (int i = 0; i < hits.Length; i++)
                 {
                     var tr = hits[i].transform;
                     if (tr == null) continue;
-                    gate = tr.GetComponentInParent<Gate>();
-                    if (gate != null) break;
+                    Gate singleGate = tr.GetComponentInParent<Gate>();
+                    if (singleGate != null)
+                    {
+                        gate = singleGate;
+                        break;
+                    }
+
+                    GateDouble doubleGate = tr.GetComponentInParent<GateDouble>();
+                    if (doubleGate != null)
+                    {
+                        gate = doubleGate;
+                        break;
+                    }
                 }
 
                 if (gate == null) return;
@@ -102,7 +113,7 @@ public class LineController : Singleton<LineController>
 
                 var shuffle = Instantiate(_shufflePrefab);
 
-                StartCoroutine(shuffle.Hit(gate, onHit: () =>
+                StartCoroutine(shuffle.Hit(gate.RootTransform, onHit: () =>
                 {
                     bool success = ShooterController.Instance.ShuffleShootersOnGate(gate);
                     if (!success)

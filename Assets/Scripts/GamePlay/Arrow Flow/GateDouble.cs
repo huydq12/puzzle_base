@@ -238,6 +238,10 @@ public class GateDouble : MonoBehaviour, IGate
     public void CloseGate()
     {
         IsClosed = true;
+
+        if (_crossConnectionMesh != null)
+            ClearTieConnections();
+
         if (_closeEffect != null)
         {
             _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -347,18 +351,36 @@ public class GateDouble : MonoBehaviour, IGate
         return changed;
     }
 
+    public bool CanShuffleUpcomingShooters()
+    {
+        if (IsClosed) return false;
+        bool lane1CanShuffle = _lane1 != null && _lane1.Count > 1;
+        bool lane2CanShuffle = _lane2 != null && _lane2.Count > 1;
+        return lane1CanShuffle || lane2CanShuffle;
+    }
+
     private static bool ShuffleUpcomingInLane(List<Shooter> lane)
     {
         if (lane == null) return false;
-        if (lane.Count <= 2) return false; // nothing meaningful to shuffle
+        if (lane.Count <= 1) return false;
 
-        List<Shooter> upcoming = lane.GetRange(1, lane.Count - 1);
-        upcoming.Shuffle();
-        for (int i = 1; i < lane.Count; i++)
+        List<Shooter> shuffled = new List<Shooter>(lane);
+        shuffled.Shuffle();
+
+        // Ensure visible change on head shooter when possible.
+        if (shuffled.Count > 1 && shuffled[0] == lane[0])
         {
-            lane[i] = upcoming[i - 1];
+            (shuffled[0], shuffled[1]) = (shuffled[1], shuffled[0]);
         }
-        return true;
+
+        bool changed = false;
+        for (int i = 0; i < lane.Count; i++)
+        {
+            if (lane[i] != shuffled[i]) changed = true;
+            lane[i] = shuffled[i];
+        }
+
+        return changed;
     }
 
     public void CollectCurrentShooter()
