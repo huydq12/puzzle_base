@@ -16,6 +16,9 @@ public class GateDouble : MonoBehaviour, IGate
     [SerializeField] private Transform _currentShooterHolder_2;
     [SerializeField] private Transform _nextShooterHolder_2;
     [SerializeField] private Transform _queueShooterHolder_2;
+
+    [SerializeField] private CrossConnectionMesh _crossConnectionMesh;
+    
     [SerializeField] private ParticleSystem _collectEffect;
     [SerializeField] private ParticleSystem _closeEffect;
 
@@ -23,7 +26,8 @@ public class GateDouble : MonoBehaviour, IGate
 
     private readonly List<Shooter> _lane1 = new List<Shooter>();
     private readonly List<Shooter> _lane2 = new List<Shooter>();
-    private readonly HashSet<Shooter> _doneShooters = new HashSet<Shooter>();
+    private readonly HashSet<int> _doneShooterIds = new HashSet<int>();
+    private readonly Dictionary<int, CrossConnectionMesh> _connectionsByTieId = new Dictionary<int, CrossConnectionMesh>();
 
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
@@ -214,6 +218,8 @@ public class GateDouble : MonoBehaviour, IGate
 
         ApplyLaneRoles(_lane1, 0);
         ApplyLaneRoles(_lane2, 1);
+
+        UpdateTieConnections();
     }
 
     private void ApplyLaneRoles(List<Shooter> lane, int laneIndex)
@@ -323,9 +329,7 @@ public class GateDouble : MonoBehaviour, IGate
         shooter.Total -= reduceAmount;
         int remaining = amount - reduceAmount;
         if (shooter.Total <= 0)
-        {
             MarkShooterDoneIfNeeded(shooter);
-        }
         return remaining;
     }
 
@@ -370,6 +374,129 @@ public class GateDouble : MonoBehaviour, IGate
         return lane[0];
     }
 
+    private void UpdateTieConnections()
+    {
+        if (_crossConnectionMesh == null)
+        {
+            ClearTieConnections();
+            return;
+        }
+
+        var lane1ByTie = new Dictionary<int, Shooter>();
+        var lane2ByTie = new Dictionary<int, Shooter>();
+
+        CollectFirstShooterByTie(_lane1, lane1ByTie);
+        CollectFirstShooterByTie(_lane2, lane2ByTie);
+
+        var activeTieIds = new HashSet<int>();
+        foreach (var kv in lane1ByTie)
+        {
+            int tie = kv.Key;
+            if (!lane2ByTie.TryGetValue(tie, out Shooter other)) continue;
+            Shooter left = kv.Value;
+            Shooter right = other;
+            if (left == null || right == null) continue;
+
+            activeTieIds.Add(tie);
+            CrossConnectionMesh conn = GetOrCreateConnection(tie);
+            UpdateConnectionTransformAndMaterials(conn, left, right);
+        }
+
+        if (_connectionsByTieId.Count > 0)
+        {
+            var toRemove = new List<int>();
+            foreach (var kv in _connectionsByTieId)
+            {
+                if (!activeTieIds.Contains(kv.Key))
+                    toRemove.Add(kv.Key);
+            }
+
+            for (int i = 0; i < toRemove.Count; i++)
+            {
+                int tie = toRemove[i];
+                if (_connectionsByTieId.TryGetValue(tie, out CrossConnectionMesh conn))
+                {
+                    if (conn != null) Destroy(conn.gameObject);
+                }
+                _connectionsByTieId.Remove(tie);
+            }
+        }
+    }
+
+    private static void CollectFirstShooterByTie(List<Shooter> lane, Dictionary<int, Shooter> map)
+    {
+        if (lane == null || map == null) return;
+        for (int i = 0; i < lane.Count; i++)
+        {
+            Shooter s = lane[i];
+            if (s == null) continue;
+            int tie = s.TieID;
+            if (tie == -1) continue;
+            if (!map.ContainsKey(tie))
+                map[tie] = s;
+        }
+    }
+
+    private CrossConnectionMesh GetOrCreateConnection(int tieId)
+    {
+        if (_connectionsByTieId.TryGetValue(tieId, out CrossConnectionMesh existing) && existing != null)
+            return existing;
+
+        CrossConnectionMesh created = Instantiate(_crossConnectionMesh, transform);
+        created.name = $"CrossConnectionMesh_Tie{tieId}";
+        created.gameObject.SetActive(true);
+        _connectionsByTieId[tieId] = created;
+        return created;
+    }
+
+    private void UpdateConnectionTransformAndMaterials(CrossConnectionMesh conn, Shooter a, Shooter b)
+    {
+        if (conn == null || a == null || b == null) return;
+
+        Vector3 pa = a.transform.position;
+        Vector3 pb = b.transform.position;
+
+        // Based on distance between 2 shooters:
+        // - posX/posZ: midpoint in GateDouble local space
+        // - scaleZ: distance - 1
+        Vector3 midWorld = (pa + pb) * 0.5f;
+        Vector3 midLocal = transform.InverseTransformPoint(midWorld);
+
+        Vector3 lp = conn.transform.localPosition;
+        conn.transform.localPosition = new Vector3(midLocal.x, lp.y, midLocal.z);
+
+        Vector3 dir = pb - pa;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.0001f)
+            conn.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+
+        float distance = Vector3.Distance(pa, pb);
+        float scaleZ = Mathf.Max(0f, distance - 1f);
+        Vector3 ls = conn.transform.localScale;
+        ls.z = scaleZ;
+        conn.transform.localScale = ls;
+
+        Material m0 = null;
+        Material m1 = null;
+        if (Board.Instance != null && Board.Instance.ColorConfig != null)
+        {
+            m0 = Board.Instance.ColorConfig.GetShooterColor(a.Color);
+            m1 = Board.Instance.ColorConfig.GetShooterColor(b.Color);
+        }
+        conn.SetMaterials(m0, m1, useSharedMaterials: true);
+    }
+
+    private void ClearTieConnections()
+    {
+        if (_connectionsByTieId.Count == 0) return;
+        foreach (var kv in _connectionsByTieId)
+        {
+            CrossConnectionMesh conn = kv.Value;
+            if (conn != null) Destroy(conn.gameObject);
+        }
+        _connectionsByTieId.Clear();
+    }
+
     private bool TryAdvanceCurrentShooterIfPossible(bool playCollectEffect)
     {
         if (IsClosed) return false;
@@ -397,17 +524,21 @@ public class GateDouble : MonoBehaviour, IGate
                 break;
             }
 
+            bool block1 = done1 && IsTiedToAliveShooter(s1, _lane2);
+            bool block2 = done2 && IsTiedToAliveShooter(s2, _lane1);
             bool removedThisLoop = false;
-            if (done1)
+            if (done1 && !block1)
             {
-                removedAny |= RemoveCurrentFromLane(_lane1);
-                removedThisLoop = true;
+                bool removed = RemoveCurrentFromLane(_lane1);
+                removedAny |= removed;
+                removedThisLoop |= removed;
             }
 
-            if (done2)
+            if (done2 && !block2)
             {
-                removedAny |= RemoveCurrentFromLane(_lane2);
-                removedThisLoop = true;
+                bool removed = RemoveCurrentFromLane(_lane2);
+                removedAny |= removed;
+                removedThisLoop |= removed;
             }
 
             if (!removedThisLoop) break;
@@ -427,10 +558,27 @@ public class GateDouble : MonoBehaviour, IGate
         return removedAny;
     }
 
+    private static bool IsTiedToAliveShooter(Shooter shooter, List<Shooter> otherLane)
+    {
+        if (shooter == null) return false;
+        int tie = shooter.TieID;
+        if (tie == -1) return false;
+        if (otherLane == null || otherLane.Count == 0) return false;
+
+        for (int i = 0; i < otherLane.Count; i++)
+        {
+            Shooter other = otherLane[i];
+            if (other == null) continue;
+            if (other.TieID != tie) continue;
+            if (other.Total > 0) return true;
+        }
+
+        return false;
+    }
+
     private static bool IsTiePair(Shooter s1, Shooter s2)
     {
         if (s1 == null || s2 == null) return false;
-        if (s1.Type != 6 || s2.Type != 6) return false;
         if (s1.TieID == -1 || s2.TieID == -1) return false;
         return s1.TieID == s2.TieID;
     }
@@ -448,7 +596,6 @@ public class GateDouble : MonoBehaviour, IGate
     private void DestroyShooter(Shooter shooter, bool immediate = false)
     {
         if (shooter == null) return;
-        _doneShooters.Remove(shooter);
         Board.Instance?.NotifyShooterDisappeared(shooter, "GateDouble.RemoveGroup");
         if (immediate)
         {
@@ -466,7 +613,8 @@ public class GateDouble : MonoBehaviour, IGate
     {
         if (shooter == null) return;
         if (shooter.Total > 0) return;
-        if (_doneShooters.Add(shooter))
+        int id = shooter.GetInstanceID();
+        if (_doneShooterIds.Add(id))
         {
             Total = Mathf.Max(0, Total - 1);
         }
@@ -474,6 +622,8 @@ public class GateDouble : MonoBehaviour, IGate
 
     private void ClearShooters()
     {
+        ClearTieConnections();
+
         if (_lane1.Count > 0)
         {
             for (int i = 0; i < _lane1.Count; i++)
@@ -492,7 +642,7 @@ public class GateDouble : MonoBehaviour, IGate
 
         _lane1.Clear();
         _lane2.Clear();
-        _doneShooters.Clear();
+        _doneShooterIds.Clear();
         Total = 0;
     }
 }
