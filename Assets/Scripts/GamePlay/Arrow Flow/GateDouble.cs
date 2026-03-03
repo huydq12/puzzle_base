@@ -18,7 +18,7 @@ public class GateDouble : MonoBehaviour, IGate
     [SerializeField] private Transform _queueShooterHolder_2;
 
     [SerializeField] private CrossConnectionMesh _crossConnectionMesh;
-    
+   
     [SerializeField] private ParticleSystem _collectEffect;
     [SerializeField] private ParticleSystem _closeEffect;
 
@@ -453,28 +453,39 @@ public class GateDouble : MonoBehaviour, IGate
     {
         if (conn == null || a == null || b == null) return;
 
-        Vector3 pa = a.transform.position;
-        Vector3 pb = b.transform.position;
+        Vector3 paLocal = transform.InverseTransformPoint(a.transform.position);
+        Vector3 pbLocal = transform.InverseTransformPoint(b.transform.position);
 
-        // Based on distance between 2 shooters:
-        // - posX/posZ: midpoint in GateDouble local space
-        // - scaleZ: distance - 1
-        Vector3 midWorld = (pa + pb) * 0.5f;
-        Vector3 midLocal = transform.InverseTransformPoint(midWorld);
+        // Connection is internal to GateDouble, so compute in GateDouble local space.
+        Vector3 midLocal = (paLocal + pbLocal) * 0.5f;
+        conn.transform.localPosition = new Vector3(
+            midLocal.x,
+            2.5f,
+            midLocal.z
+        );
 
-        Vector3 lp = conn.transform.localPosition;
-        conn.transform.localPosition = new Vector3(midLocal.x, lp.y, midLocal.z);
-
-        Vector3 dir = pb - pa;
+        Vector3 dir = pbLocal - paLocal;
         dir.y = 0f;
         if (dir.sqrMagnitude > 0.0001f)
-            conn.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            conn.transform.localRotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
 
-        float distance = Vector3.Distance(pa, pb);
+        float distance = Vector3.Distance(paLocal, pbLocal);
         float scaleZ = Mathf.Max(0f, distance - 1f);
         Vector3 ls = conn.transform.localScale;
         ls.z = scaleZ;
         conn.transform.localScale = ls;
+
+        // Prefab mesh pivot is not centered, so align rendered center back to midpoint.
+        conn.AlignVisualCenterToLocalXZ(
+            new Vector3(midLocal.x, 0f, midLocal.z),
+            transform
+        );
+
+        conn.transform.localPosition = new Vector3(
+            conn.transform.localPosition.x + 1f ,
+            1.8f,
+            conn.transform.localPosition.z + 0.2f
+        );
 
         Material m0 = null;
         Material m1 = null;

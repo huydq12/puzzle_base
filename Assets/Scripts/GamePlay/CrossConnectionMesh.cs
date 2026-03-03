@@ -54,6 +54,54 @@ public sealed class CrossConnectionMesh : MonoBehaviour
         r.sharedMaterials = _defaultSharedMaterials;
     }
 
+    public void AlignVisualCenterToWorldXZ(Vector3 worldPoint)
+    {
+        var r = GetRenderer();
+        if (r == null)
+        {
+            var p = transform.position;
+            transform.position = new Vector3(worldPoint.x, p.y, worldPoint.z);
+            return;
+        }
+
+        var mesh = r.sharedMesh;
+        if (mesh == null)
+        {
+            var p = transform.position;
+            transform.position = new Vector3(worldPoint.x, p.y, worldPoint.z);
+            return;
+        }
+
+        // Use mesh-local bounds center to avoid frame-dependent world AABB drift.
+        Vector3 visualCenterWorld = transform.TransformPoint(mesh.bounds.center);
+        Vector3 delta = worldPoint - visualCenterWorld;
+        transform.position += new Vector3(delta.x, 0f, delta.z);
+    }
+
+    public void AlignVisualCenterToLocalXZ(Vector3 localPoint, Transform relativeTo)
+    {
+        if (relativeTo == null)
+        {
+            AlignVisualCenterToWorldXZ(localPoint);
+            return;
+        }
+
+        var r = GetRenderer();
+        if (r == null || r.sharedMesh == null)
+        {
+            Vector3 lp = transform.localPosition;
+            transform.localPosition = new Vector3(localPoint.x, lp.y, localPoint.z);
+            return;
+        }
+
+        Vector3 visualCenterWorld = transform.TransformPoint(r.sharedMesh.bounds.center);
+        Vector3 visualCenterLocal = relativeTo.InverseTransformPoint(visualCenterWorld);
+        Vector3 deltaLocal = localPoint - visualCenterLocal;
+
+        Vector3 posLocal = transform.localPosition;
+        transform.localPosition = new Vector3(posLocal.x + deltaLocal.x, posLocal.y, posLocal.z + deltaLocal.z);
+    }
+
     public static void Apply(GameObject target, Material material0, Material material1, bool useSharedMaterials = true)
     {
         if (target == null) return;
@@ -78,4 +126,3 @@ public sealed class CrossConnectionMesh : MonoBehaviour
         else r.materials = mats;
     }
 }
-
