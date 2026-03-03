@@ -643,9 +643,11 @@ public class Board : Singleton<Board>
             return new Vector2Int(d.x > 0 ? 1 : -1, 0);
         return new Vector2Int(0, d.y > 0 ? 1 : -1);
     }
+
     private void SetupShooter()
     {
-        ShooterController.Instance.Setup(_currentConfig.Shooters);
+        if (_currentConfig == null) return;
+        ShooterController.Instance.Setup(_currentConfig.Gates, _currentConfig.GatesDouble);
     }
 
 	    private void SetupElevators()
@@ -1791,26 +1793,80 @@ public class Board : Singleton<Board>
         if (elementType3Count <= 0) return null;
 
         var supplyByColor = new Dictionary<ObjectColor, int>();
-        if (config.Shooters != null)
+        if (config.Gates != null || config.GatesDouble != null)
         {
-            for (int g = 0; g < config.Shooters.Count; g++)
+            if (config.Gates != null)
             {
-                GateData gate = config.Shooters[g];
-                if (gate == null || gate.Shooters == null) continue;
-
-                for (int s = 0; s < gate.Shooters.Count; s++)
+                for (int g = 0; g < config.Gates.Count; g++)
                 {
-                    ShooterData shooter = gate.Shooters[s];
-                    if (shooter == null) continue;
-                    if (shooter.Color == ObjectColor.None) continue;
-                    if (shooter.Type == Shooter.RainbowType) continue; // rainbow is not tied to a single color
+                    GateData gate = config.Gates[g];
+                    if (gate == null || gate.Shooters == null) continue;
 
-                    int amount = Mathf.Max(0, shooter.Counter);
-                    if (amount <= 0) continue;
+                    for (int s = 0; s < gate.Shooters.Count; s++)
+                    {
+                        ShooterData shooter = gate.Shooters[s];
+                        if (shooter == null) continue;
+                        if (shooter.Color == ObjectColor.None) continue;
+                        if (shooter.Type == Shooter.RainbowType) continue; // rainbow is not tied to a single color
 
-                    if (!supplyByColor.TryGetValue(shooter.Color, out int prevSupply))
-                        prevSupply = 0;
-                    supplyByColor[shooter.Color] = prevSupply + amount;
+                        int amount = Mathf.Max(0, shooter.Counter);
+                        if (amount <= 0) continue;
+
+                        if (!supplyByColor.TryGetValue(shooter.Color, out int prevSupply))
+                            prevSupply = 0;
+                        supplyByColor[shooter.Color] = prevSupply + amount;
+                    }
+                }
+            }
+
+            if (config.GatesDouble != null)
+            {
+                for (int gd = 0; gd < config.GatesDouble.Count; gd++)
+                {
+                    GateDataDouble gate = config.GatesDouble[gd];
+                    if (gate == null || gate.ShootersDouble == null) continue;
+
+                    for (int i = 0; i < gate.ShootersDouble.Count; i++)
+                    {
+                        ShooterDataDouble entry = gate.ShootersDouble[i];
+                        if (entry == null) continue;
+
+                        if (entry.ShootersLeft != null)
+                        {
+                            for (int s = 0; s < entry.ShootersLeft.Count; s++)
+                            {
+                                ShooterData shooter = entry.ShootersLeft[s];
+                                if (shooter == null) continue;
+                                if (shooter.Color == ObjectColor.None) continue;
+                                if (shooter.Type == Shooter.RainbowType) continue;
+
+                                int amount = Mathf.Max(0, shooter.Counter);
+                                if (amount <= 0) continue;
+
+                                if (!supplyByColor.TryGetValue(shooter.Color, out int prevSupply))
+                                    prevSupply = 0;
+                                supplyByColor[shooter.Color] = prevSupply + amount;
+                            }
+                        }
+
+                        if (entry.ShootersRight != null)
+                        {
+                            for (int s = 0; s < entry.ShootersRight.Count; s++)
+                            {
+                                ShooterData shooter = entry.ShootersRight[s];
+                                if (shooter == null) continue;
+                                if (shooter.Color == ObjectColor.None) continue;
+                                if (shooter.Type == Shooter.RainbowType) continue;
+
+                                int amount = Mathf.Max(0, shooter.Counter);
+                                if (amount <= 0) continue;
+
+                                if (!supplyByColor.TryGetValue(shooter.Color, out int prevSupply))
+                                    prevSupply = 0;
+                                supplyByColor[shooter.Color] = prevSupply + amount;
+                            }
+                        }
+                    }
                 }
             }
         }

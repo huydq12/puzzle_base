@@ -21,7 +21,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: Shooters
+    - Name: Gates
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[GateData, Assembly-CSharp]], mscorlib
     - Name: 
@@ -49,6 +49,9 @@ MonoBehaviour:
       Entry: 3
       Data: 4
     - Name: Counter
+      Entry: 3
+      Data: 0
+    - Name: ElementType
       Entry: 3
       Data: 0
     - Name: Shooters
@@ -199,6 +202,9 @@ MonoBehaviour:
     - Name: Counter
       Entry: 3
       Data: 0
+    - Name: ElementType
+      Entry: 3
+      Data: 0
     - Name: Shooters
       Entry: 7
       Data: 10|System.Collections.Generic.List`1[[ShooterData, Assembly-CSharp]],
@@ -329,24 +335,28 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: GatesDouble
+      Entry: 7
+      Data: 17|System.Collections.Generic.List`1[[GateDataDouble, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: Cells
       Entry: 7
-      Data: 17|GridCellData[,], Assembly-CSharp
+      Data: 18|GridCellData[,], Assembly-CSharp
     - Name: 
       Entry: 12
       Data: 513
     - Name: ranks
       Entry: 1
       Data: 19|27
-    - Name: 
-      Entry: 7
-      Data: 18|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
     - Name: 
       Entry: 7
       Data: 19|GridCellData, Assembly-CSharp
@@ -370,7 +380,7 @@ MonoBehaviour:
       Data: 21|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -559,7 +569,7 @@ MonoBehaviour:
       Data: 42|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -604,7 +614,7 @@ MonoBehaviour:
       Data: 47|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -613,7 +623,7 @@ MonoBehaviour:
       Data: 48|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -802,7 +812,7 @@ MonoBehaviour:
       Data: 69|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -811,7 +821,7 @@ MonoBehaviour:
       Data: 70|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -838,7 +848,7 @@ MonoBehaviour:
       Data: 73|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -847,7 +857,7 @@ MonoBehaviour:
       Data: 74|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1054,7 +1064,7 @@ MonoBehaviour:
       Data: 97|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1063,7 +1073,7 @@ MonoBehaviour:
       Data: 98|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1072,7 +1082,7 @@ MonoBehaviour:
       Data: 99|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1081,7 +1091,7 @@ MonoBehaviour:
       Data: 100|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1306,7 +1316,7 @@ MonoBehaviour:
       Data: 125|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1324,7 +1334,7 @@ MonoBehaviour:
       Data: 127|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1540,7 +1550,7 @@ MonoBehaviour:
       Data: 151|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1549,7 +1559,7 @@ MonoBehaviour:
       Data: 152|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1558,7 +1568,7 @@ MonoBehaviour:
       Data: 153|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1567,7 +1577,7 @@ MonoBehaviour:
       Data: 154|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1774,7 +1784,7 @@ MonoBehaviour:
       Data: 177|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1783,7 +1793,7 @@ MonoBehaviour:
       Data: 178|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1801,7 +1811,7 @@ MonoBehaviour:
       Data: 180|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1810,7 +1820,7 @@ MonoBehaviour:
       Data: 181|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2017,7 +2027,7 @@ MonoBehaviour:
       Data: 204|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2026,7 +2036,7 @@ MonoBehaviour:
       Data: 205|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2044,7 +2054,7 @@ MonoBehaviour:
       Data: 207|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2053,7 +2063,7 @@ MonoBehaviour:
       Data: 208|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2260,7 +2270,7 @@ MonoBehaviour:
       Data: 231|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2269,7 +2279,7 @@ MonoBehaviour:
       Data: 232|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2287,7 +2297,7 @@ MonoBehaviour:
       Data: 234|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2296,7 +2306,7 @@ MonoBehaviour:
       Data: 235|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2512,7 +2522,7 @@ MonoBehaviour:
       Data: 259|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2521,7 +2531,7 @@ MonoBehaviour:
       Data: 260|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2530,7 +2540,7 @@ MonoBehaviour:
       Data: 261|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2539,7 +2549,7 @@ MonoBehaviour:
       Data: 262|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2764,7 +2774,7 @@ MonoBehaviour:
       Data: 287|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2782,7 +2792,7 @@ MonoBehaviour:
       Data: 289|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2998,7 +3008,7 @@ MonoBehaviour:
       Data: 313|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3007,7 +3017,7 @@ MonoBehaviour:
       Data: 314|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3016,7 +3026,7 @@ MonoBehaviour:
       Data: 315|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3025,7 +3035,7 @@ MonoBehaviour:
       Data: 316|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3232,7 +3242,7 @@ MonoBehaviour:
       Data: 339|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3241,7 +3251,7 @@ MonoBehaviour:
       Data: 340|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3259,7 +3269,7 @@ MonoBehaviour:
       Data: 342|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3268,7 +3278,7 @@ MonoBehaviour:
       Data: 343|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3475,7 +3485,7 @@ MonoBehaviour:
       Data: 366|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3484,7 +3494,7 @@ MonoBehaviour:
       Data: 367|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3502,7 +3512,7 @@ MonoBehaviour:
       Data: 369|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3511,7 +3521,7 @@ MonoBehaviour:
       Data: 370|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3718,7 +3728,7 @@ MonoBehaviour:
       Data: 393|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3727,7 +3737,7 @@ MonoBehaviour:
       Data: 394|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3745,7 +3755,7 @@ MonoBehaviour:
       Data: 396|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3754,7 +3764,7 @@ MonoBehaviour:
       Data: 397|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3970,7 +3980,7 @@ MonoBehaviour:
       Data: 421|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3979,7 +3989,7 @@ MonoBehaviour:
       Data: 422|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -3988,7 +3998,7 @@ MonoBehaviour:
       Data: 423|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -3997,7 +4007,7 @@ MonoBehaviour:
       Data: 424|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4222,7 +4232,7 @@ MonoBehaviour:
       Data: 449|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4231,7 +4241,7 @@ MonoBehaviour:
       Data: 450|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4240,7 +4250,7 @@ MonoBehaviour:
       Data: 451|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4249,7 +4259,7 @@ MonoBehaviour:
       Data: 452|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4456,7 +4466,7 @@ MonoBehaviour:
       Data: 475|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4465,7 +4475,7 @@ MonoBehaviour:
       Data: 476|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4492,7 +4502,7 @@ MonoBehaviour:
       Data: 479|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4501,7 +4511,7 @@ MonoBehaviour:
       Data: 480|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4690,7 +4700,7 @@ MonoBehaviour:
       Data: 501|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4699,7 +4709,7 @@ MonoBehaviour:
       Data: 502|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4744,7 +4754,7 @@ MonoBehaviour:
       Data: 507|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -4933,7 +4943,7 @@ MonoBehaviour:
       Data: 528|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -4949,6 +4959,15 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 530|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 531|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
       Data: 0

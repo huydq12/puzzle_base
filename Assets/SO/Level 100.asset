@@ -21,7 +21,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: Shooters
+    - Name: Gates
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[GateData, Assembly-CSharp]], mscorlib
     - Name: 
@@ -35,13 +35,13 @@ MonoBehaviour:
       Data: UnityEngine.Vector3, UnityEngine.CoreModule
     - Name: 
       Entry: 4
-      Data: 0.5
+      Data: -2
     - Name: 
       Entry: 4
       Data: 0
     - Name: 
       Entry: 4
-      Data: 9.5
+      Data: 9
     - Name: 
       Entry: 8
       Data: 
@@ -51,13 +51,16 @@ MonoBehaviour:
     - Name: Counter
       Entry: 3
       Data: 0
+    - Name: ElementType
+      Entry: 3
+      Data: 0
     - Name: Shooters
       Entry: 7
       Data: 2|System.Collections.Generic.List`1[[ShooterData, Assembly-CSharp]],
         mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 3
     - Name: 
       Entry: 7
       Data: 3|ShooterData, Assembly-CSharp
@@ -66,13 +69,13 @@ MonoBehaviour:
       Data: 0
     - Name: Counter
       Entry: 3
-      Data: 22
+      Data: 25
     - Name: Type
       Entry: 3
-      Data: 6
+      Data: 0
     - Name: TieID
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -81,16 +84,34 @@ MonoBehaviour:
       Data: 4|ShooterData, Assembly-CSharp
     - Name: Color
       Entry: 3
-      Data: 4
+      Data: 5
     - Name: Counter
       Entry: 3
-      Data: 34
+      Data: 12
     - Name: Type
       Entry: 3
       Data: 0
     - Name: TieID
       Entry: 3
-      Data: -1
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 5|ShooterData, Assembly-CSharp
+    - Name: Color
+      Entry: 3
+      Data: 1
+    - Name: Counter
+      Entry: 3
+      Data: 5
+    - Name: Type
+      Entry: 3
+      Data: 0
+    - Name: TieID
+      Entry: 3
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -105,19 +126,19 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 5|GateData, Assembly-CSharp
+      Data: 6|GateData, Assembly-CSharp
     - Name: Position
       Entry: 7
       Data: UnityEngine.Vector3, UnityEngine.CoreModule
     - Name: 
       Entry: 4
-      Data: -0.5
+      Data: 2
     - Name: 
       Entry: 4
       Data: 0
     - Name: 
       Entry: 4
-      Data: 9.5
+      Data: 9
     - Name: 
       Entry: 8
       Data: 
@@ -127,16 +148,37 @@ MonoBehaviour:
     - Name: Counter
       Entry: 3
       Data: 0
+    - Name: ElementType
+      Entry: 3
+      Data: 0
     - Name: Shooters
       Entry: 7
-      Data: 6|System.Collections.Generic.List`1[[ShooterData, Assembly-CSharp]],
+      Data: 7|System.Collections.Generic.List`1[[ShooterData, Assembly-CSharp]],
         mscorlib
     - Name: 
       Entry: 12
-      Data: 3
+      Data: 7
     - Name: 
       Entry: 7
-      Data: 7|ShooterData, Assembly-CSharp
+      Data: 8|ShooterData, Assembly-CSharp
+    - Name: Color
+      Entry: 3
+      Data: 1
+    - Name: Counter
+      Entry: 3
+      Data: 17
+    - Name: Type
+      Entry: 3
+      Data: 0
+    - Name: TieID
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 9|ShooterData, Assembly-CSharp
     - Name: Color
       Entry: 3
       Data: 3
@@ -154,31 +196,85 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 8|ShooterData, Assembly-CSharp
+      Data: 10|ShooterData, Assembly-CSharp
     - Name: Color
       Entry: 3
-      Data: 2
+      Data: 6
     - Name: Counter
       Entry: 3
-      Data: 38
+      Data: 25
     - Name: Type
       Entry: 3
-      Data: 6
+      Data: 0
     - Name: TieID
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
-      Data: 9|ShooterData, Assembly-CSharp
+      Data: 11|ShooterData, Assembly-CSharp
     - Name: Color
       Entry: 3
-      Data: 6
+      Data: 7
     - Name: Counter
       Entry: 3
-      Data: 29
+      Data: 17
+    - Name: Type
+      Entry: 3
+      Data: 0
+    - Name: TieID
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 12|ShooterData, Assembly-CSharp
+    - Name: Color
+      Entry: 3
+      Data: 4
+    - Name: Counter
+      Entry: 3
+      Data: 26
+    - Name: Type
+      Entry: 3
+      Data: 0
+    - Name: TieID
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 13|ShooterData, Assembly-CSharp
+    - Name: Color
+      Entry: 3
+      Data: 0
+    - Name: Counter
+      Entry: 3
+      Data: 13
+    - Name: Type
+      Entry: 3
+      Data: 0
+    - Name: TieID
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 14|ShooterData, Assembly-CSharp
+    - Name: Color
+      Entry: 3
+      Data: 2
+    - Name: Counter
+      Entry: 3
+      Data: 31
     - Name: Type
       Entry: 3
       Data: 0
@@ -197,6 +293,19 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: GatesDouble
+      Entry: 7
+      Data: 15|System.Collections.Generic.List`1[[GateDataDouble, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
     - Name: 
       Entry: 13
       Data: 
@@ -205,73 +314,19 @@ MonoBehaviour:
       Data: 
     - Name: Cells
       Entry: 7
-      Data: 10|GridCellData[,], Assembly-CSharp
+      Data: 16|GridCellData[,], Assembly-CSharp
     - Name: 
       Entry: 12
-      Data: 266
+      Data: 306
     - Name: ranks
       Entry: 1
-      Data: 14|19
-    - Name: 
-      Entry: 7
-      Data: 11|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 12|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 13|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 14|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 15|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 16|GridCellData, Assembly-CSharp
-    - Name: CellType
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
+      Data: 17|18
     - Name: 
       Entry: 7
       Data: 17|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -280,7 +335,7 @@ MonoBehaviour:
       Data: 18|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -289,7 +344,7 @@ MonoBehaviour:
       Data: 19|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -298,7 +353,7 @@ MonoBehaviour:
       Data: 20|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -307,7 +362,7 @@ MonoBehaviour:
       Data: 21|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -316,7 +371,7 @@ MonoBehaviour:
       Data: 22|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -343,7 +398,7 @@ MonoBehaviour:
       Data: 25|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -352,7 +407,7 @@ MonoBehaviour:
       Data: 26|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -433,7 +488,7 @@ MonoBehaviour:
       Data: 35|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -469,7 +524,7 @@ MonoBehaviour:
       Data: 39|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -478,7 +533,7 @@ MonoBehaviour:
       Data: 40|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -514,7 +569,7 @@ MonoBehaviour:
       Data: 44|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -523,7 +578,7 @@ MonoBehaviour:
       Data: 45|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -532,7 +587,7 @@ MonoBehaviour:
       Data: 46|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -595,7 +650,7 @@ MonoBehaviour:
       Data: 53|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -622,7 +677,7 @@ MonoBehaviour:
       Data: 56|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -694,7 +749,7 @@ MonoBehaviour:
       Data: 64|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -703,7 +758,7 @@ MonoBehaviour:
       Data: 65|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -712,7 +767,7 @@ MonoBehaviour:
       Data: 66|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -757,7 +812,7 @@ MonoBehaviour:
       Data: 71|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -775,7 +830,7 @@ MonoBehaviour:
       Data: 73|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -874,7 +929,7 @@ MonoBehaviour:
       Data: 84|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -883,7 +938,7 @@ MonoBehaviour:
       Data: 85|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -919,7 +974,7 @@ MonoBehaviour:
       Data: 89|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -928,7 +983,7 @@ MonoBehaviour:
       Data: 90|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1081,7 +1136,7 @@ MonoBehaviour:
       Data: 107|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1090,7 +1145,7 @@ MonoBehaviour:
       Data: 108|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1216,7 +1271,7 @@ MonoBehaviour:
       Data: 122|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1234,7 +1289,7 @@ MonoBehaviour:
       Data: 124|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1387,7 +1442,7 @@ MonoBehaviour:
       Data: 141|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1414,7 +1469,7 @@ MonoBehaviour:
       Data: 144|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1549,7 +1604,7 @@ MonoBehaviour:
       Data: 159|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1567,7 +1622,7 @@ MonoBehaviour:
       Data: 161|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1576,7 +1631,7 @@ MonoBehaviour:
       Data: 162|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1594,7 +1649,7 @@ MonoBehaviour:
       Data: 164|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1711,7 +1766,7 @@ MonoBehaviour:
       Data: 177|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1729,7 +1784,7 @@ MonoBehaviour:
       Data: 179|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1747,7 +1802,7 @@ MonoBehaviour:
       Data: 181|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1774,7 +1829,7 @@ MonoBehaviour:
       Data: 184|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1873,7 +1928,7 @@ MonoBehaviour:
       Data: 195|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1891,7 +1946,7 @@ MonoBehaviour:
       Data: 197|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1909,7 +1964,7 @@ MonoBehaviour:
       Data: 199|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -1954,7 +2009,7 @@ MonoBehaviour:
       Data: 204|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2062,7 +2117,7 @@ MonoBehaviour:
       Data: 216|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2071,7 +2126,7 @@ MonoBehaviour:
       Data: 217|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2134,7 +2189,7 @@ MonoBehaviour:
       Data: 224|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2197,7 +2252,7 @@ MonoBehaviour:
       Data: 231|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2224,7 +2279,7 @@ MonoBehaviour:
       Data: 234|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2233,7 +2288,7 @@ MonoBehaviour:
       Data: 235|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2314,7 +2369,7 @@ MonoBehaviour:
       Data: 244|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2359,7 +2414,7 @@ MonoBehaviour:
       Data: 249|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2494,7 +2549,7 @@ MonoBehaviour:
       Data: 264|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2521,7 +2576,7 @@ MonoBehaviour:
       Data: 267|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2530,7 +2585,7 @@ MonoBehaviour:
       Data: 268|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2539,7 +2594,7 @@ MonoBehaviour:
       Data: 269|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2548,7 +2603,7 @@ MonoBehaviour:
       Data: 270|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2557,7 +2612,7 @@ MonoBehaviour:
       Data: 271|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -2566,7 +2621,7 @@ MonoBehaviour:
       Data: 272|GridCellData, Assembly-CSharp
     - Name: CellType
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -2607,341 +2662,816 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: 277|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 278|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 279|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 280|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 281|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 282|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 283|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 284|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 285|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 286|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 287|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 288|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 289|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 290|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 291|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 292|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 293|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 294|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 295|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 296|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 297|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 298|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 299|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 300|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 301|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 302|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 303|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 304|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 305|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 306|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 307|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 308|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 309|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 310|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 311|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 312|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 313|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 314|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 315|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 316|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 317|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 318|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 319|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 320|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 321|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 322|GridCellData, Assembly-CSharp
+    - Name: CellType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
       Entry: 8
       Data: 
   Level: 100
-  Rows: 19
-  Columns: 14
+  Rows: 18
+  Columns: 17
   ColorLines:
-  - Color: 4
+  - Color: 0
     Cells:
-    - {x: 11, y: 10}
-    - {x: 12, y: 10}
-    - {x: 12, y: 11}
-    - {x: 12, y: 12}
-    - {x: 12, y: 13}
+    - {x: 6, y: 9}
+    - {x: 6, y: 10}
+    - {x: 6, y: 11}
+    - {x: 6, y: 12}
+    - {x: 6, y: 13}
     ElementTypes: 0000000000000000000000000000000000000000
     Counter: 0
-  - Color: 4
+  - Color: 1
     Cells:
-    - {x: 4, y: 13}
-    - {x: 4, y: 14}
-    - {x: 3, y: 14}
-    - {x: 2, y: 14}
-    ElementTypes: 00000000000000000000000000000000
-    Counter: 0
-  - Color: 4
-    Cells:
-    - {x: 3, y: 7}
-    - {x: 2, y: 7}
-    - {x: 2, y: 6}
-    - {x: 2, y: 5}
-    ElementTypes: 00000000000000000000000000000000
-    Counter: 0
-  - Color: 4
-    Cells:
+    - {x: 7, y: 9}
+    - {x: 7, y: 10}
+    - {x: 7, y: 11}
     - {x: 7, y: 12}
     - {x: 7, y: 13}
-    - {x: 7, y: 14}
-    - {x: 8, y: 14}
-    - {x: 8, y: 15}
-    - {x: 8, y: 16}
-    ElementTypes: 000000000000000000000000000000000000000000000000
+    ElementTypes: 0000000000000000000000000000000000000000
     Counter: 0
-  - Color: 0
+  - Color: 2
     Cells:
-    - {x: 1, y: 13}
-    - {x: 2, y: 13}
-    - {x: 3, y: 13}
-    - {x: 3, y: 12}
-    - {x: 2, y: 12}
-    - {x: 1, y: 12}
-    ElementTypes: 000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 0
-    Cells:
-    - {x: 9, y: 14}
-    - {x: 9, y: 13}
+    - {x: 9, y: 9}
+    - {x: 9, y: 10}
+    - {x: 9, y: 11}
     - {x: 9, y: 12}
-    - {x: 10, y: 12}
-    - {x: 11, y: 12}
+    - {x: 9, y: 13}
     ElementTypes: 0000000000000000000000000000000000000000
     Counter: 0
-  - Color: 0
-    Cells:
-    - {x: 6, y: 5}
-    - {x: 6, y: 4}
-    - {x: 6, y: 3}
-    - {x: 6, y: 2}
-    - {x: 6, y: 1}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 1, y: 6}
-    - {x: 1, y: 7}
-    - {x: 1, y: 8}
-    - {x: 1, y: 9}
-    - {x: 2, y: 9}
-    - {x: 2, y: 8}
-    ElementTypes: 000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 6, y: 17}
-    - {x: 6, y: 16}
-    - {x: 6, y: 15}
-    - {x: 7, y: 15}
-    - {x: 7, y: 16}
-    - {x: 7, y: 17}
-    - {x: 8, y: 17}
-    ElementTypes: 00000000000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 11, y: 6}
-    - {x: 12, y: 6}
-    - {x: 12, y: 7}
-    - {x: 12, y: 8}
-    - {x: 12, y: 9}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 8, y: 4}
-    - {x: 8, y: 3}
-    - {x: 8, y: 2}
-    - {x: 7, y: 2}
-    - {x: 7, y: 1}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 10, y: 14}
-    - {x: 10, y: 13}
-    - {x: 11, y: 13}
-    - {x: 11, y: 14}
-    ElementTypes: 00000000000000000000000000000000
-    Counter: 0
-  - Color: 3
-    Cells:
-    - {x: 6, y: 14}
-    - {x: 5, y: 14}
-    - {x: 5, y: 15}
-    - {x: 5, y: 16}
-    - {x: 5, y: 17}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 3
-    Cells:
-    - {x: 10, y: 15}
-    - {x: 9, y: 15}
-    - {x: 9, y: 16}
-    ElementTypes: 000000000000000000000000
-    Counter: 0
-  - Color: 3
+  - Color: 5
     Cells:
     - {x: 10, y: 9}
     - {x: 10, y: 10}
-    - {x: 9, y: 10}
-    - {x: 9, y: 11}
     - {x: 10, y: 11}
-    - {x: 11, y: 11}
-    ElementTypes: 000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 3
-    Cells:
-    - {x: 8, y: 6}
-    - {x: 7, y: 6}
-    - {x: 6, y: 6}
-    - {x: 5, y: 6}
-    - {x: 5, y: 5}
-    - {x: 4, y: 5}
-    - {x: 3, y: 5}
-    ElementTypes: 00000000000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 3
-    Cells:
-    - {x: 11, y: 5}
-    - {x: 10, y: 5}
-    - {x: 10, y: 4}
-    - {x: 9, y: 4}
-    - {x: 9, y: 3}
+    - {x: 10, y: 12}
+    - {x: 10, y: 13}
     ElementTypes: 0000000000000000000000000000000000000000
     Counter: 0
-  - Color: 4
+  - Color: 1
     Cells:
-    - {x: 7, y: 8}
+    - {x: 6, y: 7}
     - {x: 7, y: 7}
     - {x: 8, y: 7}
     - {x: 9, y: 7}
     - {x: 10, y: 7}
     - {x: 11, y: 7}
-    ElementTypes: 000000000000000000000000000000000000000000000000
+    - {x: 12, y: 7}
+    - {x: 13, y: 7}
+    - {x: 14, y: 7}
+    ElementTypes: 000000000000000000000000000000000000000000000000000000000000000000000000
     Counter: 0
-  - Color: 6
+  - Color: 2
     Cells:
-    - {x: 5, y: 4}
-    - {x: 5, y: 3}
-    - {x: 5, y: 2}
-    ElementTypes: 000000000000000000000000
-    Counter: 0
-  - Color: 6
-    Cells:
-    - {x: 10, y: 6}
     - {x: 9, y: 6}
-    - {x: 9, y: 5}
-    - {x: 8, y: 5}
-    - {x: 7, y: 5}
-    - {x: 7, y: 4}
-    - {x: 7, y: 3}
+    - {x: 8, y: 6}
+    - {x: 7, y: 6}
+    - {x: 6, y: 6}
+    - {x: 5, y: 6}
+    - {x: 4, y: 6}
+    - {x: 3, y: 6}
+    - {x: 2, y: 6}
+    - {x: 2, y: 7}
+    - {x: 3, y: 7}
+    - {x: 4, y: 7}
+    - {x: 5, y: 7}
+    ElementTypes: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 0
+    Cells:
+    - {x: 2, y: 11}
+    - {x: 2, y: 12}
+    - {x: 3, y: 12}
+    - {x: 4, y: 12}
+    - {x: 4, y: 13}
+    - {x: 3, y: 13}
+    - {x: 2, y: 13}
     ElementTypes: 00000000000000000000000000000000000000000000000000000000
     Counter: 0
   - Color: 6
     Cells:
-    - {x: 8, y: 8}
-    - {x: 9, y: 8}
-    - {x: 10, y: 8}
-    - {x: 11, y: 8}
-    - {x: 11, y: 9}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 6
-    Cells:
-    - {x: 4, y: 12}
-    - {x: 4, y: 11}
-    - {x: 3, y: 11}
-    - {x: 2, y: 11}
-    - {x: 1, y: 11}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 6
-    Cells:
-    - {x: 3, y: 15}
+    - {x: 8, y: 15}
+    - {x: 7, y: 15}
+    - {x: 6, y: 15}
+    - {x: 5, y: 15}
     - {x: 4, y: 15}
-    - {x: 4, y: 16}
-    ElementTypes: 000000000000000000000000
-    Counter: 0
-  - Color: 4
-    Cells:
-    - {x: 3, y: 4}
-    - {x: 4, y: 4}
-    - {x: 4, y: 3}
-    ElementTypes: 000000000000000000000000
-    Counter: 0
-  - Color: 3
-    Cells:
-    - {x: 3, y: 8}
-    - {x: 3, y: 9}
-    - {x: 3, y: 10}
-    - {x: 2, y: 10}
-    - {x: 1, y: 10}
-    ElementTypes: 0000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 6
-    Cells:
-    - {x: 8, y: 13}
-    - {x: 8, y: 12}
-    - {x: 8, y: 11}
-    - {x: 7, y: 11}
-    - {x: 7, y: 10}
-    - {x: 8, y: 10}
+    - {x: 4, y: 14}
     ElementTypes: 000000000000000000000000000000000000000000000000
     Counter: 0
   - Color: 2
     Cells:
-    - {x: 9, y: 9}
-    - {x: 8, y: 9}
-    - {x: 7, y: 9}
-    - {x: 6, y: 9}
+    - {x: 12, y: 8}
+    - {x: 13, y: 8}
+    - {x: 13, y: 9}
+    - {x: 12, y: 9}
+    - {x: 12, y: 10}
+    - {x: 13, y: 10}
+    - {x: 13, y: 11}
+    - {x: 12, y: 11}
+    - {x: 12, y: 12}
+    - {x: 13, y: 12}
+    ElementTypes: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 4
+    Cells:
+    - {x: 9, y: 5}
+    - {x: 10, y: 5}
+    - {x: 11, y: 5}
+    - {x: 12, y: 5}
+    - {x: 13, y: 5}
+    - {x: 14, y: 5}
+    - {x: 14, y: 6}
+    - {x: 13, y: 6}
+    - {x: 12, y: 6}
+    - {x: 11, y: 6}
+    - {x: 10, y: 6}
+    ElementTypes: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 0
+    Cells:
+    - {x: 8, y: 5}
+    - {x: 7, y: 5}
+    - {x: 6, y: 5}
+    - {x: 5, y: 5}
+    - {x: 4, y: 5}
+    - {x: 4, y: 4}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 1
+    Cells:
+    - {x: 12, y: 4}
+    - {x: 11, y: 4}
+    - {x: 10, y: 4}
+    - {x: 9, y: 4}
+    - {x: 8, y: 4}
+    - {x: 7, y: 4}
+    - {x: 6, y: 4}
+    - {x: 5, y: 4}
+    ElementTypes: 0000000000000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 7
+    Cells:
+    - {x: 13, y: 14}
+    - {x: 13, y: 13}
+    - {x: 14, y: 13}
+    ElementTypes: 000000000000000000000000
+    Counter: 0
+  - Color: 0
+    Cells:
+    - {x: 15, y: 8}
+    - {x: 14, y: 8}
+    - {x: 14, y: 9}
+    - {x: 14, y: 10}
+    - {x: 14, y: 11}
+    - {x: 14, y: 12}
+    - {x: 15, y: 12}
+    ElementTypes: 00000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 2
+    Cells:
+    - {x: 15, y: 11}
+    - {x: 15, y: 10}
+    - {x: 15, y: 9}
+    - {x: 16, y: 9}
+    ElementTypes: 00000000000000000000000000000000
+    Counter: 0
+  - Color: 7
+    Cells:
+    - {x: 11, y: 8}
+    - {x: 10, y: 8}
+    - {x: 9, y: 8}
+    - {x: 8, y: 8}
+    - {x: 7, y: 8}
     - {x: 6, y: 8}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 6
+    Cells:
+    - {x: 3, y: 5}
+    - {x: 2, y: 5}
+    - {x: 1, y: 5}
+    - {x: 1, y: 6}
+    - {x: 1, y: 7}
+    - {x: 0, y: 7}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 5
+    Cells:
+    - {x: 2, y: 4}
+    - {x: 3, y: 4}
+    - {x: 3, y: 3}
+    - {x: 2, y: 3}
+    ElementTypes: 00000000000000000000000000000000
+    Counter: 0
+  - Color: 5
+    Cells:
+    - {x: 13, y: 2}
+    - {x: 13, y: 3}
+    - {x: 14, y: 3}
+    ElementTypes: 000000000000000000000000
+    Counter: 0
+  - Color: 6
+    Cells:
+    - {x: 5, y: 1}
+    - {x: 6, y: 1}
+    - {x: 7, y: 1}
+    - {x: 8, y: 1}
+    - {x: 8, y: 0}
+    ElementTypes: 0000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 3
+    Cells:
+    - {x: 13, y: 4}
+    - {x: 14, y: 4}
+    - {x: 15, y: 4}
+    - {x: 15, y: 5}
+    - {x: 15, y: 6}
+    - {x: 15, y: 7}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 3
+    Cells:
+    - {x: 8, y: 9}
+    - {x: 8, y: 10}
+    - {x: 8, y: 11}
+    - {x: 8, y: 12}
+    - {x: 8, y: 13}
+    - {x: 8, y: 14}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 3
+    Cells:
     - {x: 5, y: 8}
-    - {x: 5, y: 7}
-    - {x: 6, y: 7}
+    - {x: 4, y: 8}
+    - {x: 3, y: 8}
+    - {x: 2, y: 8}
+    - {x: 1, y: 8}
+    - {x: 0, y: 8}
+    ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 3
+    Cells:
+    - {x: 11, y: 1}
+    - {x: 10, y: 1}
+    - {x: 9, y: 1}
+    - {x: 9, y: 0}
+    ElementTypes: 00000000000000000000000000000000
+    Counter: 0
+  - Color: 7
+    Cells:
+    - {x: 7, y: 14}
+    - {x: 6, y: 14}
+    - {x: 5, y: 14}
+    - {x: 5, y: 13}
+    - {x: 5, y: 12}
+    - {x: 5, y: 11}
+    - {x: 5, y: 10}
+    - {x: 5, y: 9}
     ElementTypes: 0000000000000000000000000000000000000000000000000000000000000000
     Counter: 0
   - Color: 0
     Cells:
-    - {x: 4, y: 10}
-    - {x: 4, y: 9}
-    - {x: 4, y: 8}
-    - {x: 4, y: 7}
-    - {x: 4, y: 6}
-    - {x: 3, y: 6}
-    ElementTypes: 000000000000000000000000000000000000000000000000
-    Counter: 0
-  - Color: 2
-    Cells:
-    - {x: 6, y: 12}
-    - {x: 6, y: 13}
-    - {x: 5, y: 13}
-    ElementTypes: 000000000000000000000000
+    - {x: 9, y: 14}
+    - {x: 10, y: 14}
+    - {x: 11, y: 14}
+    - {x: 11, y: 13}
+    - {x: 11, y: 12}
+    - {x: 11, y: 11}
+    - {x: 11, y: 10}
+    - {x: 11, y: 9}
+    ElementTypes: 0000000000000000000000000000000000000000000000000000000000000000
     Counter: 0
   - Color: 4
     Cells:
-    - {x: 5, y: 9}
-    - {x: 5, y: 10}
-    - {x: 6, y: 10}
-    - {x: 6, y: 11}
-    - {x: 5, y: 11}
-    - {x: 5, y: 12}
+    - {x: 1, y: 11}
+    - {x: 1, y: 10}
+    - {x: 1, y: 9}
+    - {x: 0, y: 9}
+    ElementTypes: 00000000000000000000000000000000
+    Counter: 0
+  - Color: 4
+    Cells:
+    - {x: 12, y: 13}
+    - {x: 12, y: 14}
+    - {x: 12, y: 15}
+    - {x: 11, y: 15}
+    - {x: 10, y: 15}
+    - {x: 9, y: 15}
     ElementTypes: 000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 0
+    Cells:
+    - {x: 8, y: 2}
+    - {x: 9, y: 2}
+    - {x: 10, y: 2}
+    - {x: 11, y: 2}
+    - {x: 12, y: 2}
+    ElementTypes: 0000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 4
+    Cells:
+    - {x: 12, y: 3}
+    - {x: 11, y: 3}
+    - {x: 10, y: 3}
+    - {x: 9, y: 3}
+    - {x: 8, y: 3}
+    ElementTypes: 0000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 3
+    Cells:
+    - {x: 5, y: 2}
+    - {x: 6, y: 2}
+    - {x: 7, y: 2}
+    - {x: 7, y: 3}
+    - {x: 6, y: 3}
+    - {x: 5, y: 3}
+    - {x: 4, y: 3}
+    - {x: 4, y: 2}
+    - {x: 4, y: 1}
+    ElementTypes: 000000000000000000000000000000000000000000000000000000000000000000000000
+    Counter: 0
+  - Color: 6
+    Cells:
+    - {x: 4, y: 9}
+    - {x: 3, y: 9}
+    - {x: 2, y: 9}
+    - {x: 2, y: 10}
+    - {x: 3, y: 10}
+    - {x: 4, y: 10}
+    - {x: 4, y: 11}
+    - {x: 3, y: 11}
+    ElementTypes: 0000000000000000000000000000000000000000000000000000000000000000
     Counter: 0
   Elevators: []
   LineDoors: []
   ConveyorLine:
     Cells:
-    - {x: 5, y: 18}
-    - {x: 6, y: 18}
-    - {x: 7, y: 18}
-    - {x: 8, y: 18}
-    - {x: 9, y: 17}
-    - {x: 10, y: 16}
-    - {x: 11, y: 15}
-    - {x: 12, y: 14}
-    - {x: 13, y: 13}
-    - {x: 13, y: 12}
-    - {x: 13, y: 11}
-    - {x: 13, y: 10}
-    - {x: 13, y: 9}
-    - {x: 13, y: 8}
-    - {x: 13, y: 7}
-    - {x: 13, y: 6}
-    - {x: 12, y: 5}
-    - {x: 11, y: 4}
-    - {x: 10, y: 3}
-    - {x: 9, y: 2}
-    - {x: 8, y: 1}
+    - {x: 16, y: 8}
+    - {x: 16, y: 7}
+    - {x: 16, y: 6}
+    - {x: 15, y: 5}
+    - {x: 15, y: 4}
+    - {x: 14, y: 3}
+    - {x: 13, y: 2}
+    - {x: 12, y: 1}
+    - {x: 11, y: 1}
+    - {x: 10, y: 0}
+    - {x: 9, y: 0}
+    - {x: 8, y: 0}
     - {x: 7, y: 0}
     - {x: 6, y: 0}
     - {x: 5, y: 1}
-    - {x: 4, y: 2}
-    - {x: 3, y: 3}
-    - {x: 2, y: 4}
+    - {x: 4, y: 1}
+    - {x: 3, y: 2}
+    - {x: 2, y: 3}
+    - {x: 1, y: 4}
     - {x: 1, y: 5}
     - {x: 0, y: 6}
     - {x: 0, y: 7}
     - {x: 0, y: 8}
     - {x: 0, y: 9}
-    - {x: 0, y: 10}
-    - {x: 0, y: 11}
-    - {x: 0, y: 12}
-    - {x: 0, y: 13}
-    - {x: 1, y: 14}
-    - {x: 2, y: 15}
-    - {x: 3, y: 16}
-    - {x: 4, y: 17}
-    Types: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-    Counters: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-    IsHoles: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
+    - {x: 1, y: 10}
+    - {x: 1, y: 11}
+    - {x: 2, y: 12}
+    - {x: 2, y: 13}
+    - {x: 3, y: 14}
+    - {x: 4, y: 15}
+    - {x: 5, y: 15}
+    - {x: 6, y: 16}
+    - {x: 7, y: 16}
+    - {x: 8, y: 16}
+    - {x: 9, y: 16}
+    - {x: 11, y: 16}
+    - {x: 12, y: 16}
+    - {x: 13, y: 15}
+    - {x: 13, y: 14}
+    - {x: 14, y: 14}
+    - {x: 15, y: 13}
+    - {x: 15, y: 12}
+    - {x: 16, y: 11}
+    - {x: 16, y: 10}
+    - {x: 16, y: 9}
+    Types: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+    Counters: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+    IsHoles: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   Camera:
     Enabled: 1
     MinOrthoSize: 9.55
     Padding: 0
     UsePosition: 1
-    Position: {x: 0, y: 10.2, z: 0}
+    Position: {x: 0, y: 10.4, z: 0}
     UseOrthographicSize: 1
-    OrthographicSize: 15
+    OrthographicSize: 14.5

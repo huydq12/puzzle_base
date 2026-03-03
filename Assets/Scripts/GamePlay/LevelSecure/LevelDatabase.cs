@@ -102,7 +102,8 @@ public static class LevelDatabase
         cfg.Rows = Mathf.Max(1, dto.rows);
         cfg.Columns = Mathf.Max(1, dto.columns);
 
-        cfg.Shooters = new List<GateData>();
+        cfg.Gates = new List<GateData>();
+        cfg.GatesDouble = null;
         if (dto.shooters != null)
         {
             for (int i = 0; i < dto.shooters.Count; i++)
@@ -134,7 +135,77 @@ public static class LevelDatabase
                     }
                 }
 
-                cfg.Shooters.Add(gate);
+                cfg.Gates.Add(gate);
+            }
+        }
+
+        if (dto.gatesDouble != null && dto.gatesDouble.Count > 0)
+        {
+            cfg.GatesDouble = new List<GateDataDouble>(dto.gatesDouble.Count);
+            for (int i = 0; i < dto.gatesDouble.Count; i++)
+            {
+                GateDataDoubleDto g = dto.gatesDouble[i];
+                if (g == null) continue;
+
+                var gate = new GateDataDouble
+                {
+                    Position = new Vector3(g.position.x, g.position.y, g.position.z),
+                    Direction = g.direction,
+                    Counter = g.counter,
+                    ElementType = g.elementType,
+                    ShootersDouble = new List<ShooterDataDouble>()
+                };
+
+                if (g.shootersDouble != null)
+                {
+                    for (int e = 0; e < g.shootersDouble.Count; e++)
+                    {
+                        ShooterDataDoubleDto entry = g.shootersDouble[e];
+                        if (entry == null) continue;
+
+                        var runtimeEntry = new ShooterDataDouble
+                        {
+                            ShootersLeft = new List<ShooterData>(),
+                            ShootersRight = new List<ShooterData>()
+                        };
+
+                        if (entry.shootersLeft != null)
+                        {
+                            for (int s = 0; s < entry.shootersLeft.Count; s++)
+                            {
+                                ShooterDataDto shooter = entry.shootersLeft[s];
+                                if (shooter == null) continue;
+                                runtimeEntry.ShootersLeft.Add(new ShooterData
+                                {
+                                    Color = (ObjectColor)shooter.color,
+                                    Counter = shooter.counter,
+                                    Type = shooter.type,
+                                    TieID = shooter.tieID
+                                });
+                            }
+                        }
+
+                        if (entry.shootersRight != null)
+                        {
+                            for (int s = 0; s < entry.shootersRight.Count; s++)
+                            {
+                                ShooterDataDto shooter = entry.shootersRight[s];
+                                if (shooter == null) continue;
+                                runtimeEntry.ShootersRight.Add(new ShooterData
+                                {
+                                    Color = (ObjectColor)shooter.color,
+                                    Counter = shooter.counter,
+                                    Type = shooter.type,
+                                    TieID = shooter.tieID
+                                });
+                            }
+                        }
+
+                        gate.ShootersDouble.Add(runtimeEntry);
+                    }
+                }
+
+                cfg.GatesDouble.Add(gate);
             }
         }
 

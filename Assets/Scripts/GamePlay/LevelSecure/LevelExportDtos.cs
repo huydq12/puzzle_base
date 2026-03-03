@@ -14,6 +14,7 @@ public class LevelConfigDto
     public int rows;
     public int columns;
     public List<GateDataDto> shooters = new();
+    public List<GateDataDoubleDto> gatesDouble = new();
 
     // Stored as row-major list (index = x + y * columns).
     public List<int> cellTypes = new();
@@ -36,12 +37,29 @@ public class GateDataDto
 }
 
 [Serializable]
+public class GateDataDoubleDto
+{
+    public Vec3Dto position;
+    public int direction;
+    public int counter;
+    public int elementType;
+    public List<ShooterDataDoubleDto> shootersDouble = new();
+}
+
+[Serializable]
 public class ShooterDataDto
 {
     public int color;
     public int counter;
     public int type;
     public int tieID;
+}
+
+[Serializable]
+public class ShooterDataDoubleDto
+{
+    public List<ShooterDataDto> shootersLeft = new();
+    public List<ShooterDataDto> shootersRight = new();
 }
 
 [Serializable]

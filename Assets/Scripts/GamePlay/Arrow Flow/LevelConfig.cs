@@ -3,6 +3,7 @@ using System;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine.Serialization;
 
 
 #if UNITY_EDITOR
@@ -23,7 +24,10 @@ public class LevelConfig : SerializedScriptableObject
     [Range(0, 100), HorizontalGroup("Size")]
 #endif
     public int Columns;
-    public List<GateData> Shooters;
+    [FormerlySerializedAs("Shooters")]
+    public List<GateData> Gates;
+    [Sirenix.OdinInspector.LabelText("Gate Double")]
+    public List<GateDataDouble> GatesDouble;
 #if UNITY_EDITOR
     [HideInInspector]
 #endif
@@ -98,6 +102,20 @@ public class GateData
     [Sirenix.OdinInspector.LabelText("Gate Element Type")] public int ElementType;
     public List<ShooterData> Shooters;
 }
+
+[HideReferenceObjectPicker]
+public class GateDataDouble
+{
+    public Vector3 Position;
+    [Range(0, 7)] public int Direction;
+    [Sirenix.OdinInspector.LabelText("Shooter Counter")] public int Counter;
+    [Sirenix.OdinInspector.LabelText("Gate Element Type")] public int ElementType;
+    public List<ShooterDataDouble> ShootersDouble;
+}
+
+
+
+
 [HideReferenceObjectPicker]
 public class ShooterData
 {
@@ -106,6 +124,15 @@ public class ShooterData
     [Sirenix.OdinInspector.LabelText("Element Type")] public int Type;
     [Sirenix.OdinInspector.LabelText("Tie ID")] public int TieID;
 }
+
+[HideReferenceObjectPicker]
+public class ShooterDataDouble
+{
+    public List<ShooterData> ShootersLeft;
+    public List<ShooterData> ShootersRight;
+}
+
+
 public class GridCellData
 {
     public GridCellType CellType = GridCellType.Normal;

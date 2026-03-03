@@ -8,7 +8,6 @@ public class ShooterController : Singleton<ShooterController>
     [SerializeField] private Gate _gatePrefab;
     [SerializeField] private GateDouble _gateDoublePrefab;
     [SerializeField] private Shooter _shooterPrefab;
-    [SerializeField] private ShooterDouble _shooterDoublePrefab;
     [SerializeField] private Lock _lockPrefab;
     [ReadOnly] public List<IGate> Gates;
     public Shooter ShooterPrefab => _shooterPrefab;
@@ -31,48 +30,91 @@ public class ShooterController : Singleton<ShooterController>
 	    public void Setup(List<GateData> datas)
 	    {
 	        Gates = new();
-	        if (datas == null || datas.Count == 0) return;
+	        Setup(datas, null);
+	    }
 
-		        for (int i = 0; i < datas.Count; i++)
-		        {
-		            GateData data = datas[i];
+        public void Setup(List<GateData> datas, List<GateDataDouble> datasDouble)
+        {
+            Gates = new();
+
+            if (datas != null)
+            {
+                for (int i = 0; i < datas.Count; i++)
+                {
+                    GateData data = datas[i];
                     if (data == null) continue;
 
-			            bool useDouble = data.ShooterDouble || data.ElementType == 6;
-			            MonoBehaviour instance = null;
+                    bool useDouble = data.ElementType == 6;
+                    MonoBehaviour instance = null;
 
-	            if (useDouble)
-	            {
-	                if (_gateDoublePrefab == null) continue;
-	                instance = Instantiate(_gateDoublePrefab);
-	            }
-	            else
-	            {
-	                if (_gatePrefab == null) continue;
-	                instance = Instantiate(_gatePrefab);
-	            }
+                    if (useDouble)
+                    {
+                        if (_gateDoublePrefab == null) continue;
+                        instance = Instantiate(_gateDoublePrefab);
+                    }
+                    else
+                    {
+                        if (_gatePrefab == null) continue;
+                        instance = Instantiate(_gatePrefab);
+                    }
 
-	            if (instance == null) continue;
+                    if (instance == null) continue;
 
-	            instance.transform.SetParent(Board.Instance.transform, false);
-	            instance.transform.localPosition = data.Position;
-	            instance.transform.rotation = DirectionToRotation(data.Direction);
+                    instance.transform.SetParent(Board.Instance.transform, false);
+                    instance.transform.localPosition = data.Position;
+                    instance.transform.rotation = DirectionToRotation(data.Direction);
 
-	            if (instance is IGate iGate)
-	                Gates.Add(iGate);
+                    if (instance is IGate iGate)
+                        Gates.Add(iGate);
 
-	            if (instance is Gate gate)
-	                gate.Setup(data);
-	            else if (instance is GateDouble gateDouble)
-	                gateDouble.Setup(data);
-	        }
-	    }
+                    if (instance is Gate gate)
+                        gate.Setup(data);
+                    else if (instance is GateDouble gateDouble)
+                        gateDouble.Setup(data);
+                }
+            }
+
+            if (datasDouble != null)
+            {
+                for (int i = 0; i < datasDouble.Count; i++)
+                {
+                    GateDataDouble data = datasDouble[i];
+                    if (data == null) continue;
+                    if (_gateDoublePrefab == null) continue;
+
+                    GateDouble gateDouble = Instantiate(_gateDoublePrefab);
+                    if (gateDouble == null) continue;
+
+                    gateDouble.transform.SetParent(Board.Instance.transform, false);
+                    gateDouble.transform.localPosition = data.Position;
+                    gateDouble.transform.rotation = DirectionToRotationGateDouble(data.Direction);
+                    Debug.Log($"GateDouble direction={data.Direction} rotation={gateDouble.transform.rotation}");
+
+                    Gates.Add(gateDouble);
+                    gateDouble.Setup(data);
+                }
+            }
+        }
 
     public void NotifyGateClosed(IGate gate)
     {
         if (gate == null) return;
         if (GameManagerInGame.Instance == null) return;
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result) return;
+    }
+
+    private Quaternion DirectionToRotationGateDouble(int direction)
+    {
+        float y = 0f;
+        if (direction == 1) y = 135f;
+        else if (direction == 2) y = 180f;
+        else if (direction == 3) y = 225f;
+        else if (direction == 4) y = 270f;
+        else if (direction == 5) y = 315f;
+        else if (direction == 6) y = 360f;
+        else if (direction == 7) y = 45f;
+        else if (direction == 8) y = 90f;
+        return Quaternion.Euler(0f, y, 0f);
     }
 
     public void RemoveGate(IGate gate)

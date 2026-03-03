@@ -181,9 +181,10 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
                 ApplyRootToConfig(config, level, size.x, size.y, root, originOffset, shooterOffset);
                 EditorUtility.SetDirty(config);
-                int outShooterCount = config.Shooters != null ? config.Shooters.Count : 0;
+                int outShooterCount = config.Gates != null ? config.Gates.Count : 0;
+                int outShooterDoubleCount = config.GatesDouble != null ? config.GatesDouble.Count : 0;
                 int outConveyorCount = (config.ConveyorLine != null && config.ConveyorLine.Cells != null) ? config.ConveyorLine.Cells.Count : 0;
-                Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outShooters={outShooterCount}, outConveyorCells={outConveyorCount}");
+                Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyorCells={outConveyorCount}");
                 converted++;
             }
             catch (Exception e)
@@ -469,57 +470,169 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
         if (root.shooters != null)
         {
-            if (config.Shooters == null) config.Shooters = new List<GateData>();
-            config.Shooters.Clear();
+            if (config.Gates == null) config.Gates = new List<GateData>();
+            config.Gates.Clear();
+            if (config.GatesDouble == null) config.GatesDouble = new List<GateDataDouble>();
+            config.GatesDouble.Clear();
+
+            bool[] used = new bool[root.shooters.Count];
 
             for (int i = 0; i < root.shooters.Count; i++)
             {
                 LevelJsonShooter shooter = root.shooters[i];
                 if (shooter == null) continue;
+                if (used[i]) continue;
+
+                float px = shooter.position != null ? shooter.position.x : 0f;
+                float py = shooter.position != null ? shooter.position.y : 0f;
+                float gx = px - shooterOffset.x;
+                float gy = py - shooterOffset.y;
+                int gridX = Mathf.RoundToInt(gx);
+                int gridY = Mathf.RoundToInt(gy);
+
+                bool isDoubleCandidate = level >= 50 && IsJsonShooterGateDoubleCandidate(shooter);
+                if (isDoubleCandidate)
+                {
+                    int partnerIndex = FindGateDoublePartnerIndex(root.shooters, used, i, gridX, gridY, shooterOffset);
+                    if (partnerIndex >= 0)
+                    {
+                        LevelJsonShooter partner = root.shooters[partnerIndex];
+                        used[i] = true;
+                        used[partnerIndex] = true;
+
+                        GateDataDouble gateDouble = new GateDataDouble();
+                        gateDouble.ElementType = 6;
+
+                        Vector3 aPos = ComputeGateWorldPosition(gx, gy, shooter.direction, columns, rows);
+
+                        float bPx = partner.position != null ? partner.position.x : 0f;
+                        float bPy = partner.position != null ? partner.position.y : 0f;
+                        float bGx = bPx - shooterOffset.x;
+                        float bGy = bPy - shooterOffset.y;
+                        Vector3 bPos = ComputeGateWorldPosition(bGx, bGy, partner.direction, columns, rows);
+
+                        gateDouble.Position = (aPos + bPos) * 0.5f;
+                        gateDouble.Position = new Vector3(gateDouble.Position.x, gateDouble.Position.y, gateDouble.Position.z + 2f);
+
+                        bool shooterIsLeft = gridX <= Mathf.RoundToInt(bGx);
+                        LevelJsonShooter leftShooter = shooterIsLeft ? shooter : partner;
+                        LevelJsonShooter rightShooter = shooterIsLeft ? partner : shooter;
+
+                        gateDouble.Direction = leftShooter.direction;
+                        gateDouble.Counter = leftShooter.counter;
+
+                        if (leftShooter.direction != rightShooter.direction || leftShooter.counter != rightShooter.counter)
+                        {
+                            Debug.LogWarning(
+                                $"GateDouble merge with mismatched meta: left(dir={leftShooter.direction},counter={leftShooter.counter}) right(dir={rightShooter.direction},counter={rightShooter.counter}). Using left.",
+                                config
+                            );
+                        }
+
+                        ShooterDataDouble entry = new ShooterDataDouble
+                        {
+                            ShootersLeft = BuildShooterDataList(leftShooter.shooterUnits),
+                            ShootersRight = BuildShooterDataList(rightShooter.shooterUnits)
+                        };
+                        gateDouble.ShootersDouble = new List<ShooterDataDouble> { entry };
+
+                        config.GatesDouble.Add(gateDouble);
+
+                        Debug.Log($"GateDouble[{config.GatesDouble.Count - 1}] from shooters idx={i},{partnerIndex} gridA=({gridX},{gridY})");
+                        continue;
+                    }
+                }
+
+                used[i] = true;
 
                 GateData gate = new GateData();
                 gate.Direction = shooter.direction;
                 gate.Counter = shooter.counter;
                 gate.ElementType = shooter.elementType;
-                float px = shooter.position != null ? shooter.position.x : 0f;
-                float py = shooter.position != null ? shooter.position.y : 0f;
+                gate.Position = ComputeGateWorldPosition(gx, gy, shooter.direction, columns, rows);
 
-                float gx = px - shooterOffset.x;
-                float gy = py - shooterOffset.y;
-                if (shooterPositionMode == ShooterPositionMode.BoardLocalCentered)
-                {
-                    Vector3 basePos = GridToLocalPosition(gx, gy, columns, rows);
-                    Vector2Int dir = DirectionToGridVector(shooter.direction);
-                    Vector3 edgeOffset = new Vector3(dir.x * spacing.x * 0.5f, 0f, dir.y * spacing.y * 0.5f);
-                    gate.Position = basePos + edgeOffset + new Vector3(shooterLocalXOffset, 0f, 0f);
-                }
-                else
-                {
-                    gate.Position = new Vector3(gx, 0f, gy);
-                }
+                Debug.Log($"Gate[{config.Gates.Count}] shooterIdx={i} json=({px},{py}) normalized=({gx},{gy}) -> gate.Position=({gate.Position.x},{gate.Position.y},{gate.Position.z})");
 
-                Debug.Log($"Shooter[{i}] json=({px},{py}) normalized=({gx},{gy}) -> gate.Position=({gate.Position.x},{gate.Position.y},{gate.Position.z})");
-
-                gate.Shooters = new List<ShooterData>();
-                if (shooter.shooterUnits != null)
-                {
-                    for (int u = 0; u < shooter.shooterUnits.Count; u++)
-                    {
-                        LevelJsonShooterUnit unit = shooter.shooterUnits[u];
-                        if (unit == null) continue;
-
-                        ShooterData data = new ShooterData();
-                        data.Color = ResolveJsonColor(unit.color);
-                        data.Counter = unit.counter;
-                        data.Type = ResolveShooterElementType(unit);
-                        data.TieID = unit.tieID;
-                        gate.Shooters.Add(data);
-                    }
-                }
-
-                config.Shooters.Add(gate);
+                gate.Shooters = BuildShooterDataList(shooter.shooterUnits);
+                config.Gates.Add(gate);
             }
         }
+    }
+
+    private Vector3 ComputeGateWorldPosition(float gx, float gy, int direction, int columns, int rows)
+    {
+        if (shooterPositionMode == ShooterPositionMode.BoardLocalCentered)
+        {
+            Vector3 basePos = GridToLocalPosition(gx, gy, columns, rows);
+            Vector2Int dir = DirectionToGridVector(direction);
+            Vector3 edgeOffset = new Vector3(dir.x * spacing.x * 0.5f, 0f, dir.y * spacing.y * 0.5f);
+            return basePos + edgeOffset + new Vector3(shooterLocalXOffset, 0f, 0f);
+        }
+
+        return new Vector3(gx, 0f, gy);
+    }
+
+    private static List<ShooterData> BuildShooterDataList(List<LevelJsonShooterUnit> units)
+    {
+        List<ShooterData> list = new List<ShooterData>();
+        if (units == null) return list;
+
+        for (int u = 0; u < units.Count; u++)
+        {
+            LevelJsonShooterUnit unit = units[u];
+            if (unit == null) continue;
+
+            ShooterData data = new ShooterData();
+            data.Color = ResolveJsonColor(unit.color);
+            data.Counter = unit.counter;
+            data.Type = ResolveShooterElementType(unit);
+            data.TieID = unit.tieID;
+            list.Add(data);
+        }
+
+        return list;
+    }
+
+    private static bool IsJsonShooterGateDoubleCandidate(LevelJsonShooter shooter)
+    {
+        if (shooter == null || shooter.shooterUnits == null || shooter.shooterUnits.Count == 0) return false;
+        for (int i = 0; i < shooter.shooterUnits.Count; i++)
+        {
+            LevelJsonShooterUnit unit = shooter.shooterUnits[i];
+            if (unit == null) continue;
+            if (ResolveShooterElementType(unit) == 6) return true;
+        }
+        return false;
+    }
+
+    private static int FindGateDoublePartnerIndex(List<LevelJsonShooter> shooters, bool[] used, int index, int gridX, int gridY, Vector2Int shooterOffset)
+    {
+        if (shooters == null || used == null) return -1;
+
+        for (int j = index + 1; j < shooters.Count; j++)
+        {
+            if (j < 0 || j >= used.Length) continue;
+            if (used[j]) continue;
+
+            LevelJsonShooter other = shooters[j];
+            if (other == null) continue;
+            if (!IsJsonShooterGateDoubleCandidate(other)) continue;
+
+            float ox = other.position != null ? other.position.x : 0f;
+            float oy = other.position != null ? other.position.y : 0f;
+            float ogx = ox - shooterOffset.x;
+            float ogy = oy - shooterOffset.y;
+            int otherX = Mathf.RoundToInt(ogx);
+            int otherY = Mathf.RoundToInt(ogy);
+
+            // Criteria (level >= 50 only): same Y, X differs by exactly 1 unit.
+            if (otherY != gridY) continue;
+            if (Mathf.Abs(otherX - gridX) != 1) continue;
+
+            return j;
+        }
+
+        return -1;
     }
 
     private Vector3 GridToLocalPosition(float gridX, float gridY, int columns, int rows)

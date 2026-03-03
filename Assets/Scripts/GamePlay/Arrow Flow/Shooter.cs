@@ -16,6 +16,7 @@ public class Shooter : MonoBehaviour
 {
     public const int RainbowType = 999;
     [SerializeField] private Renderer _renderer;
+    [SerializeField] private Renderer _rendererDouble;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
     [SerializeField] private Material _materialType6;
@@ -57,6 +58,14 @@ public class Shooter : MonoBehaviour
     private bool _hasIdleBase;
 
     public bool IsRainbow => Type == RainbowType;
+
+    private void UpdateDoubleRendererState()
+    {
+        if (_rendererDouble == null) return;
+        bool shouldEnable = Type == 6 && _role == ShooterRole.Current && gameObject.activeInHierarchy;
+        if (_rendererDouble.enabled != shouldEnable)
+            _rendererDouble.enabled = shouldEnable;
+    }
 
     public int Total
     {
@@ -104,6 +113,9 @@ public class Shooter : MonoBehaviour
 
         if (_hiddenEffect != null)
             _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        if (_rendererDouble != null)
+            _rendererDouble.enabled = false;
     }
 
     private void PrewarmBulletPool()
@@ -170,6 +182,8 @@ public class Shooter : MonoBehaviour
             ApplyMaterial(forceColorMaterial: true);
         else
             ApplyMaterial();
+
+        UpdateDoubleRendererState();
     }
 
     public void SetSize(float size)
@@ -372,18 +386,21 @@ public class Shooter : MonoBehaviour
     {
         Color = color;
         ApplyMaterial();
+        UpdateDoubleRendererState();
     }
 
     public void SetType(int type)
     {
         Type = type;
         ApplyMaterial();
+        UpdateDoubleRendererState();
     }
 
     public void SetRainbow()
     {
         Type = RainbowType;
         ApplyMaterial();
+        UpdateDoubleRendererState();
     }
 
     private void ApplyMaterial(bool forceColorMaterial = false)
@@ -423,6 +440,11 @@ public class Shooter : MonoBehaviour
 
 
         _renderer.sharedMaterials = new Material[] { material, eyeMaterial };
+
+        if (_rendererDouble != null)
+        {
+            _rendererDouble.sharedMaterial = material;
+        }
     }
 
     private void OnDrawGizmos()

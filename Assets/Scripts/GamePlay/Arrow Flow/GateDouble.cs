@@ -70,11 +70,109 @@ public class GateDouble : MonoBehaviour, IGate
         );
 #endif
         ClearShooters();
-        Shooters = (data != null && data.Shooters != null) ? new List<ShooterData>(data.Shooters) : new List<ShooterData>();
+        Shooters = BuildShooterListForSingleGate(data);
         BuildGroupsFromShooters(Shooters);
         SpawnShooters();
         Total = Shooters != null ? Shooters.Count : 0;
         UpdateShooterRoles();
+    }
+
+    public void Setup(GateDataDouble data)
+    {
+        OpenGate();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log(
+            $"[GateDouble] Setup(double) gate name={name} dir={(data != null ? data.Direction : -1)} counter={(data != null ? data.Counter : 0)} shootersDouble={(data != null && data.ShootersDouble != null ? data.ShootersDouble.Count : 0)}",
+            this
+        );
+#endif
+        ClearShooters();
+        Shooters = BuildShooterListForDoubleGate(data);
+        BuildGroupsFromShooters(Shooters);
+        SpawnShooters();
+        Total = Shooters != null ? Shooters.Count : 0;
+        UpdateShooterRoles();
+    }
+
+    private static ShooterData CloneShooterData(ShooterData src, int overrideTieId)
+    {
+        if (src == null) return null;
+        return new ShooterData
+        {
+            Color = src.Color,
+            Counter = src.Counter,
+            Type = src.Type,
+            TieID = overrideTieId
+        };
+    }
+
+    private static List<ShooterData> BuildShooterListForSingleGate(GateData data)
+    {
+        if (data == null) return new List<ShooterData>();
+
+        return data.Shooters != null ? new List<ShooterData>(data.Shooters) : new List<ShooterData>();
+    }
+
+    private static List<ShooterData> BuildShooterListForDoubleGate(GateDataDouble data)
+    {
+        if (data == null) return new List<ShooterData>();
+        return BuildShooterListForDoubleGateEntries(data.ShootersDouble);
+    }
+
+    private static List<ShooterData> BuildShooterListForDoubleGateEntries(List<ShooterDataDouble> entries)
+    {
+        if (entries == null || entries.Count == 0) return new List<ShooterData>();
+
+        var result = new List<ShooterData>();
+        int autoTieBase = 100000;
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            ShooterDataDouble entry = entries[i];
+            if (entry == null) continue;
+
+            List<ShooterData> left = entry.ShootersLeft;
+            List<ShooterData> right = entry.ShootersRight;
+
+            // If both sides have at least one shooter and both use TieID=-1, auto-tie first pair.
+            int overrideTieLeft0 = -1;
+            int overrideTieRight0 = -1;
+            if (left != null && left.Count > 0 && right != null && right.Count > 0)
+            {
+                ShooterData l0 = left[0];
+                ShooterData r0 = right[0];
+                if (l0 != null && r0 != null && l0.TieID == -1 && r0.TieID == -1)
+                {
+                    int tie = autoTieBase + i;
+                    overrideTieLeft0 = tie;
+                    overrideTieRight0 = tie;
+                }
+            }
+
+            if (left != null)
+            {
+                for (int l = 0; l < left.Count; l++)
+                {
+                    ShooterData src = left[l];
+                    int tie = (l == 0 && overrideTieLeft0 != -1) ? overrideTieLeft0 : (src != null ? src.TieID : -1);
+                    ShooterData clone = CloneShooterData(src, tie);
+                    if (clone != null) result.Add(clone);
+                }
+            }
+
+            if (right != null)
+            {
+                for (int r = 0; r < right.Count; r++)
+                {
+                    ShooterData src = right[r];
+                    int tie = (r == 0 && overrideTieRight0 != -1) ? overrideTieRight0 : (src != null ? src.TieID : -1);
+                    ShooterData clone = CloneShooterData(src, tie);
+                    if (clone != null) result.Add(clone);
+                }
+            }
+        }
+
+        return result;
     }
 
     private void BuildGroupsFromShooters(List<ShooterData> shooters)

@@ -133,11 +133,22 @@ public static class LevelsSecureExportTool
             }
         };
 
-        if (config.Shooters != null)
+        static ShooterDataDto ToShooterDto(ShooterData shooter)
         {
-            for (int i = 0; i < config.Shooters.Count; i++)
+            return new ShooterDataDto
             {
-                var g = config.Shooters[i];
+                color = (int)shooter.Color,
+                counter = shooter.Counter,
+                type = shooter.Type,
+                tieID = shooter.TieID
+            };
+        }
+
+        if (config.Gates != null)
+        {
+            for (int i = 0; i < config.Gates.Count; i++)
+            {
+                var g = config.Gates[i];
                 if (g == null) continue;
 
                 var gDto = new GateDataDto
@@ -155,17 +166,50 @@ public static class LevelsSecureExportTool
                     {
                         var shooter = g.Shooters[s];
                         if (shooter == null) continue;
-                        gDto.shooters.Add(new ShooterDataDto
-                        {
-                            color = (int)shooter.Color,
-                            counter = shooter.Counter,
-                            type = shooter.Type,
-                            tieID = shooter.TieID
-                        });
+                        gDto.shooters.Add(ToShooterDto(shooter));
                     }
                 }
 
                 dto.shooters.Add(gDto);
+            }
+        }
+
+        if (config.GatesDouble != null)
+        {
+            for (int i = 0; i < config.GatesDouble.Count; i++)
+            {
+                var g = config.GatesDouble[i];
+                if (g == null) continue;
+
+                var gDto = new GateDataDoubleDto
+                {
+                    position = new Vec3Dto { x = g.Position.x, y = g.Position.y, z = g.Position.z },
+                    direction = g.Direction,
+                    counter = g.Counter,
+                    elementType = g.ElementType,
+                    shootersDouble = new List<ShooterDataDoubleDto>()
+                };
+
+                if (g.ShootersDouble != null)
+                {
+                    for (int e = 0; e < g.ShootersDouble.Count; e++)
+                    {
+                        var entry = g.ShootersDouble[e];
+                        if (entry == null) continue;
+
+                        var entryDto = new ShooterDataDoubleDto();
+                        if (entry.ShootersLeft != null)
+                            for (int s = 0; s < entry.ShootersLeft.Count; s++)
+                                if (entry.ShootersLeft[s] != null) entryDto.shootersLeft.Add(ToShooterDto(entry.ShootersLeft[s]));
+                        if (entry.ShootersRight != null)
+                            for (int s = 0; s < entry.ShootersRight.Count; s++)
+                                if (entry.ShootersRight[s] != null) entryDto.shootersRight.Add(ToShooterDto(entry.ShootersRight[s]));
+
+                        gDto.shootersDouble.Add(entryDto);
+                    }
+                }
+
+                dto.gatesDouble.Add(gDto);
             }
         }
 
