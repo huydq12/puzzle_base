@@ -512,7 +512,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                         Vector3 bPos = ComputeGateWorldPosition(bGx, bGy, partner.direction, columns, rows);
 
                         gateDouble.Position = (aPos + bPos) * 0.5f;
-                        gateDouble.Position = new Vector3(gateDouble.Position.x, gateDouble.Position.y, gateDouble.Position.z + 2f);
+                        gateDouble.Position = new Vector3(gateDouble.Position.x, gateDouble.Position.y-1, gateDouble.Position.z + 2.5f);
 
                         bool shooterIsLeft = gridX <= Mathf.RoundToInt(bGx);
                         LevelJsonShooter leftShooter = shooterIsLeft ? shooter : partner;

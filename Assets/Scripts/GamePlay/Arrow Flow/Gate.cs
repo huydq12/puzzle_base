@@ -168,6 +168,7 @@ public class Gate : MonoBehaviour
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(Shooters[i].Color);
             shoot.SetType(Shooters[i].Type);
+            shoot.SetTieId(Shooters[i].TieID);
             shoot.Total = Shooters[i].Counter;
             shoot.Gate = this;
             _shooterInstances.Add(shoot);
@@ -250,6 +251,7 @@ public class Gate : MonoBehaviour
             if (inst == null) continue;
             inst.SetColor(data.Color);
             inst.SetType(data.Type);
+            inst.SetTieId(data.TieID);
             inst.Total = data.Counter;
         }
 

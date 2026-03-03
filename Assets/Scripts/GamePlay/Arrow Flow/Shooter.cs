@@ -33,6 +33,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private int _bulletPoolSize;
     [ReadOnly] public ObjectColor Color;
     [ReadOnly] public int Type;
+    [ReadOnly] public int TieID = -1;
     [ReadOnly] public bool CanShoot;
     [ReadOnly] public IGate Gate;
     private RaycastHit _hit;
@@ -58,6 +59,7 @@ public class Shooter : MonoBehaviour
     private bool _hasIdleBase;
 
     public bool IsRainbow => Type == RainbowType;
+    private float _nextDebugRaycastTime;
 
     private void UpdateDoubleRendererState()
     {
@@ -108,6 +110,7 @@ public class Shooter : MonoBehaviour
         _lastActivityTime = Time.time;
         CanShoot = false;
         Gate = null;
+        TieID = -1;
 
         Total = 0;
 
@@ -305,13 +308,12 @@ public class Shooter : MonoBehaviour
                     Shoot(cube);
                     return;
                 }
-
-                // if this collider is a CubeLine but doesn't match, stop at first CubeLine to avoid hitting behind it
                 break;
             }
         }
 
         _lastHit = null;
+
     }
 
     private void Shoot(CubeLine cube)
@@ -394,6 +396,11 @@ public class Shooter : MonoBehaviour
         Type = type;
         ApplyMaterial();
         UpdateDoubleRendererState();
+    }
+
+    public void SetTieId(int tieId)
+    {
+        TieID = tieId;
     }
 
     public void SetRainbow()
