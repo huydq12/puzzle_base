@@ -86,6 +86,15 @@ public static class LevelDatabase
             if (dto.rows <= 0 || dto.columns <= 0) continue;
             int expectedCells = dto.rows * dto.columns;
             if (dto.cellTypes == null || dto.cellTypes.Count != expectedCells) continue;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_cache.ContainsKey(dto.level))
+            {
+                Debug.LogError(
+                    $"[LevelDatabase] Duplicate level id in levels.dat: level={dto.level} (jsonIndex={i}). Last entry wins; please fix duplicated Level IDs in Assets/SO and re-export levels.dat."
+                );
+            }
+#endif
             _cache[dto.level] = BuildLevelConfig(dto);
         }
 
