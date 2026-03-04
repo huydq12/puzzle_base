@@ -31,6 +31,40 @@ public static class LevelsSecureExportTool
             .ThenBy(a => a.assetPath, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        // Guard against duplicate Level IDs (will overwrite in LevelDatabase cache at runtime).
+        var duplicates = assets
+            .Where(a => a.config != null && a.config.Level > 0)
+            .GroupBy(a => a.config.Level)
+            .Where(g => g.Count() > 1)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        if (duplicates.Count > 0)
+        {
+            foreach (var g in duplicates)
+            {
+                string joined = string.Join(", ", g.Select(x => x.assetPath));
+                Debug.LogError($"[LevelsSecureExportTool] Duplicate Level={g.Key}: {joined}");
+            }
+
+            int choice = EditorUtility.DisplayDialogComplex(
+                "Duplicate Level IDs Found",
+                "There are duplicate `LevelConfig.Level` values under Assets/SO. Exporting will cause levels.dat to contain duplicates, and runtime will load the last one (wrong level data).\n\nFix duplicates first (Tools/Levels/Audit Level IDs), or export anyway?",
+                "Export Anyway",
+                "Cancel",
+                "Audit Tool"
+            );
+
+            if (choice == 2)
+            {
+                EditorApplication.ExecuteMenuItem("Tools/Levels/Audit Level IDs (Assets/SO)");
+                return;
+            }
+
+            if (choice != 0)
+                return;
+        }
+
         var root = new LevelsExportRootDto { levels = new List<LevelConfigDto>(assets.Count) };
         for (int i = 0; i < assets.Count; i++)
         {

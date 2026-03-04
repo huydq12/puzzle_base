@@ -71,6 +71,52 @@ public static class LevelIdAuditTool
         }
     }
 
+    [MenuItem("Tools/Levels/Fix Level IDs From Filename (Assets/SO)")]
+    private static void FixFromFileName()
+    {
+        if (!EditorUtility.DisplayDialog(
+                "Fix Level IDs From Filename",
+                "This will set `LevelConfig.Level` to match the asset filename `Level N.asset` for all assets under Assets/SO.\n\nContinue?",
+                "Fix",
+                "Cancel"
+            ))
+        {
+            return;
+        }
+
+        string[] guids = AssetDatabase.FindAssets("t:LevelConfig", new[] { SourceFolder });
+        if (guids == null || guids.Length == 0)
+        {
+            Debug.LogWarning($"[LevelIdAuditTool] No LevelConfig found in {SourceFolder}");
+            return;
+        }
+
+        int changed = 0;
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+            if (!TryParseLevelFromFileName(path, out int fromName)) continue;
+
+            var config = AssetDatabase.LoadAssetAtPath<LevelConfig>(path);
+            if (config == null) continue;
+
+            if (config.Level == fromName) continue;
+            int before = config.Level;
+            config.Level = fromName;
+            EditorUtility.SetDirty(config);
+            changed++;
+            Debug.LogWarning($"[LevelIdAuditTool] Fixed Level ID: {path} {before} -> {fromName}", config);
+        }
+
+        if (changed > 0)
+        {
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        Debug.Log($"[LevelIdAuditTool] Fix done. Changed={changed}.");
+    }
+
     private static bool TryParseLevelFromFileName(string assetPath, out int level)
     {
         level = 0;
@@ -98,4 +144,3 @@ public static class LevelIdAuditTool
     }
 }
 #endif
-
