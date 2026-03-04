@@ -37,6 +37,17 @@ public class UITopInGame : UIElement
     private bool _isWarningNoticeBlinking;
     private readonly List<Tween> _warningNoticeTweens = new List<Tween>();
     private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
+    private bool _isHardLevelPopupActive;
+
+    private static bool IsHardLevel(int level)
+    {
+        // Hard levels pattern: 13, 18, 23, 28, 33, 38, ...
+        // i.e. start from level 13 and then every level ending with 3 or 8.
+        if (level == 10) return true;
+        if (level < 18) return false;
+        int lastDigit = Mathf.Abs(level) % 10;
+        return lastDigit == 3 || lastDigit == 8;
+    }
 
     private void Start()
     {
@@ -66,6 +77,7 @@ public class UITopInGame : UIElement
     private void OnDisable()
     {
         SetConveyorWarning(false);
+        SetHardLevelWarningNotice(false);
 
         if (hardLevelPopupCoroutine != null)
         {
@@ -76,6 +88,44 @@ public class UITopInGame : UIElement
         if (ani_hard_level != null)
         {
             ani_hard_level.gameObject.SetActive(false);
+        }
+    }
+
+    private void SetHardLevelWarningNotice(bool active)
+    {
+        _isHardLevelPopupActive = active;
+
+        // Hard-level warning notice should follow the hard popup visibility, not conveyor warning state.
+        // When active, show the notice (no blinking). When inactive, hide it.
+        for (int i = 0; i < _warningNoticeTweens.Count; i++)
+        {
+            _warningNoticeTweens[i]?.Kill();
+        }
+        _warningNoticeTweens.Clear();
+        _isWarningNoticeBlinking = false;
+
+        if (warningNotice == null || warningNotice.Count == 0) return;
+
+        if (!active)
+        {
+            SetWarningNoticeVisible(false);
+            for (int i = 0; i < warningNotice.Count; i++)
+            {
+                var img = warningNotice[i];
+                if (img == null) continue;
+                var c = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
+                img.color = c;
+            }
+            return;
+        }
+
+        SetWarningNoticeVisible(true);
+        for (int i = 0; i < warningNotice.Count; i++)
+        {
+            var img = warningNotice[i];
+            if (img == null) continue;
+            var c = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
+            img.color = c;
         }
     }
 
@@ -92,6 +142,7 @@ public class UITopInGame : UIElement
 
     public void SetConveyorWarning(bool enabled)
     {
+        if (_isHardLevelPopupActive) return;
         if (enabled && _isWarningNoticeBlinking) return;
         _isWarningNoticeBlinking = enabled;
 
@@ -154,7 +205,7 @@ public class UITopInGame : UIElement
         int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
         txt_level.text = "Level " + level.ToString();
 
-        bool isHard = level % 10 == 0;
+        bool isHard = IsHardLevel(level);
         if (reactLevelNormal != null) reactLevelNormal.gameObject.SetActive(!isHard);
         if (reactLevelHard != null) reactLevelHard.gameObject.SetActive(isHard);
         if (isHard) ShowHardLevelPopup();
@@ -196,6 +247,7 @@ public class UITopInGame : UIElement
     {
         var popupGo = ani_hard_level.gameObject;
         if (popupGo != null) popupGo.SetActive(true);
+        SetHardLevelWarningNotice(true);
 
         ani_hard_level.Play(PopupOpenStateName, 0, 0f);
 
@@ -205,6 +257,7 @@ public class UITopInGame : UIElement
         yield return new WaitForSeconds(GetAnimationClipLengthSeconds(ani_hard_level, PopupCloseStateName, 0.3f));
 
         if (popupGo != null) popupGo.SetActive(false);
+        SetHardLevelWarningNotice(false);
         hardLevelPopupCoroutine = null;
     }
 
