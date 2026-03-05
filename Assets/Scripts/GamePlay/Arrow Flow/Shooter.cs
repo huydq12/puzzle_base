@@ -14,9 +14,13 @@ public enum ShooterRole
 
 public class Shooter : MonoBehaviour
 {
-    public const int RainbowType = 999;
+    // Must match level config ShooterData.Type for rainbow shooters.
+    public const int RainbowType = 9;
     [SerializeField] private Renderer _renderer;
     [SerializeField] private Renderer _rendererDouble;
+    [Header("Rainbow Visual (optional)")]
+    [SerializeField] private GameObject _rainbow;
+    [SerializeField] private Animator _rainbowAnim;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
     [SerializeField] private Material _materialType6;
@@ -60,6 +64,7 @@ public class Shooter : MonoBehaviour
 
     public bool IsRainbow => Type == RainbowType;
     private float _nextDebugRaycastTime;
+    private bool _rainbowVisible;
 
     private void UpdateDoubleRendererState()
     {
@@ -67,6 +72,28 @@ public class Shooter : MonoBehaviour
         bool shouldEnable = Type == 6 && _role == ShooterRole.Current && gameObject.activeInHierarchy;
         if (_rendererDouble.enabled != shouldEnable)
             _rendererDouble.enabled = shouldEnable;
+    }
+
+    private void UpdateRainbowState(bool force = false)
+    {
+        // If no custom rainbow model is wired, keep old behavior (material swap).
+        if (_rainbow == null) return;
+
+        bool shouldShowRainbow = IsRainbow && gameObject.activeInHierarchy;
+        if (!force && _rainbowVisible == shouldShowRainbow) return;
+        _rainbowVisible = shouldShowRainbow;
+
+        _rainbow.SetActive(shouldShowRainbow);
+
+        if (_renderer != null) _renderer.enabled = !shouldShowRainbow;
+        if (_rendererDouble != null) _rendererDouble.enabled = !shouldShowRainbow && (Type == 6 && _role == ShooterRole.Current);
+
+        if (shouldShowRainbow && _rainbowAnim != null)
+        {
+            // Restart base state for consistent look when switching to rainbow.
+            _rainbowAnim.Rebind();
+            _rainbowAnim.Update(0f);
+        }
     }
 
     public int Total
@@ -119,6 +146,10 @@ public class Shooter : MonoBehaviour
 
         if (_rendererDouble != null)
             _rendererDouble.enabled = false;
+
+        _rainbowVisible = false;
+        if (_rainbow != null) _rainbow.SetActive(false);
+        if (_renderer != null) _renderer.enabled = true;
     }
 
     private void PrewarmBulletPool()
@@ -187,6 +218,7 @@ public class Shooter : MonoBehaviour
             ApplyMaterial();
 
         UpdateDoubleRendererState();
+        UpdateRainbowState(force: true);
     }
 
     public void SetSize(float size)
@@ -389,6 +421,7 @@ public class Shooter : MonoBehaviour
         Color = color;
         ApplyMaterial();
         UpdateDoubleRendererState();
+        UpdateRainbowState();
     }
 
     public void SetType(int type)
@@ -396,6 +429,7 @@ public class Shooter : MonoBehaviour
         Type = type;
         ApplyMaterial();
         UpdateDoubleRendererState();
+        UpdateRainbowState(force: true);
     }
 
     public void SetTieId(int tieId)
@@ -408,6 +442,7 @@ public class Shooter : MonoBehaviour
         Type = RainbowType;
         ApplyMaterial();
         UpdateDoubleRendererState();
+        UpdateRainbowState(force: true);
     }
 
     private void ApplyMaterial(bool forceColorMaterial = false)
@@ -418,6 +453,14 @@ public class Shooter : MonoBehaviour
         Material eyeMaterial = null;
         if (IsRainbow)
         {
+            // Prefer swapping to a dedicated rainbow model if provided.
+            // Fallback to material-based rainbow for older prefabs.
+            if (_rainbow != null)
+            {
+                UpdateRainbowState(force: true);
+                return;
+            }
+
             material = _materialType6;
             eyeMaterial = _materialType6;
         }

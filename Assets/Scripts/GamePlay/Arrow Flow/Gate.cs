@@ -7,6 +7,8 @@ using UnityEngine;
 public class Gate : MonoBehaviour
     , IGate
 {
+    private const int FallbackRainbowShooterCounter = 20;
+
     [SerializeField] private Transform _maskDoor;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Transform _tunnel;
@@ -120,6 +122,22 @@ public class Gate : MonoBehaviour
             Total = Shooters.Count;
         }
 
+        // If a gate is configured with no shooters, keep the gate and spawn a default rainbow shooter.
+        // This prevents "empty" gates in level configs from being removed at runtime.
+        if (Shooters == null)
+            Shooters = new List<ShooterData>();
+        if (Shooters.Count == 0)
+        {
+            Shooters.Add(new ShooterData
+            {
+                Color = ObjectColor.Red,
+                Counter = FallbackRainbowShooterCounter,
+                Type = Shooter.RainbowType,
+                TieID = -1
+            });
+            Total = Shooters.Count;
+        }
+
         _shooterInstances.Clear();
         _locksByIndex.Clear();
         _currentShooterIndex = 0;
@@ -191,12 +209,7 @@ public class Gate : MonoBehaviour
         int iceCounter = data != null ? data.Counter : 0;
         InitializeIceShooter(iceCounter);
 
-        if (Shooters == null || Shooters.Count == 0)
-        {
-            ShooterController.Instance?.RemoveGate(this);
-            gameObject.SetActive(false);
-            return;
-        }
+        // Note: we no longer remove/deactivate empty gates because we ensure a fallback shooter above.
     }
 
     public bool ShuffleRemainingShooters()
