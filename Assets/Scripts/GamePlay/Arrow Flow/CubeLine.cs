@@ -81,10 +81,11 @@ public class CubeLine : SerializedMonoBehaviour
     {
         set
         {
-            foreach (var pair in _renderers)
-            {
-                Common.SetLayerRecursively(pair.Value.gameObject, value ? LayerMask.NameToLayer("Top") : LayerMask.NameToLayer("Cube"));
-            }
+            int targetLayer = LayerMask.NameToLayer(value ? "Top" : "Cube");
+            if (targetLayer < 0) return;
+
+            // Apply to the full cube hierarchy so colliders follow the visual layer change.
+            Common.SetLayerRecursively(gameObject, targetLayer);
         }
     }
     public bool OnHit(bool byRainbow = false)

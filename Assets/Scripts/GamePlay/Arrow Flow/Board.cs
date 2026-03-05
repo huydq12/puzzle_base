@@ -43,7 +43,7 @@ public class Board : Singleton<Board>
     [Header("Lose Rainbow Shooter (optional)")]
     [SerializeField] private bool spawnLoseRainbowShooter = true;
     [SerializeField] private int loseRainbowShooterShots = 20;
-    [SerializeField] private float loseRainbowShooterMaxSeconds = 6f;
+    [SerializeField] private float loseRainbowShooterMaxSeconds = 0f;
     [SerializeField] private float loseRainbowShooterRotateSecondsPerTurn = 0.6f;
     [SerializeField] private Vector3 loseRainbowShooterLocalOffset = new Vector3(0f, 0f, 0f);
 
@@ -2117,6 +2117,20 @@ public class Board : Singleton<Board>
         if (loseRainbowShooterShots <= 0) return;
         if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null) return;
 
+        // This feature is intended to "continue" play after a lose moment.
+        if (GameManagerInGame.Instance != null)
+            GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+
+        if (ConveyorController.Instance != null)
+        {
+            ConveyorController.Instance.StopConveyor();
+            ConveyorController.Instance.BringToTop = true;
+            ConveyorController.Instance.SetAllCubesBringToTop(true);
+            _overlay.color = _overlay.color.With(a: 0f);
+            _overlay.enabled = true;
+            _overlay.DOFade(0.85f, 0.25f);
+        }
+
         if (_loseRainbowShooterRoutine != null)
         {
             StopCoroutine(_loseRainbowShooterRoutine);
@@ -2147,13 +2161,24 @@ public class Board : Singleton<Board>
         Vector3 worldPos = transform.position;
         if (centerCell != null) worldPos = centerCell.transform.position;
 
+        GameObject holder = new GameObject("LoseRainbowShooterHolder");
+        holder.transform.SetParent(transform, true);
+        holder.transform.position = worldPos + loseRainbowShooterLocalOffset;
+        holder.transform.localScale = Vector3.one;
+        holder.transform.localRotation = Quaternion.identity;
+        int topLayer = LayerMask.NameToLayer("Top");
+        if (topLayer >= 0)
+            SetLayerRecursively(holder.transform, topLayer);
+
         Shooter shooter = Instantiate(ShooterController.Instance.ShooterPrefab);
         _loseRainbowShooter = shooter;
 
         shooter.ResetForReuse();
-        shooter.transform.SetParent(transform, true);
-        shooter.transform.position = worldPos + loseRainbowShooterLocalOffset;
-        shooter.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        shooter.transform.SetParent(holder.transform, false);
+        shooter.transform.localPosition = Vector3.zero;
+        shooter.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+        if (topLayer >= 0)
+            SetLayerRecursively(shooter.transform, topLayer);
         shooter.SetSize(0.75f);
         shooter.SetColor(ObjectColor.Red);
         shooter.SetRainbow();
@@ -2161,18 +2186,27 @@ public class Board : Singleton<Board>
         shooter.CanShoot = true;
         shooter.SetRole(ShooterRole.Current);
 
-        Tween rotateTween = shooter.transform
-            .DORotate(new Vector3(0f, 360f, 0f), Mathf.Max(0.05f, loseRainbowShooterRotateSecondsPerTurn), RotateMode.FastBeyond360)
+        float rotateDur = Mathf.Max(0.05f, loseRainbowShooterRotateSecondsPerTurn);
+        // Spin 0 -> 360 around local Y, then restart from 0 (visual loop).
+        holder.transform.localEulerAngles = Vector3.zero;
+        Tween rotateTween = holder.transform
+            .DOLocalRotate(new Vector3(0f, 360f, 0f), rotateDur, RotateMode.FastBeyond360)
             .SetEase(Ease.Linear)
             .SetLoops(-1, LoopType.Restart);
 
-        float endTime = Time.time + Mathf.Max(0.1f, loseRainbowShooterMaxSeconds);
+        float endTime = loseRainbowShooterMaxSeconds > 0f ? Time.time + loseRainbowShooterMaxSeconds : float.PositiveInfinity;
         while (shooter != null && shooter.Total > 0 && Time.time < endTime)
             yield return null;
 
         if (rotateTween != null && rotateTween.IsActive()) rotateTween.Kill(false);
 
-        if (shooter != null) Destroy(shooter.gameObject);
+        if (shooter != null)
+        {
+            shooter.CanShoot = false;
+            yield return new WaitForSeconds(0.2f);
+            if (shooter != null) Destroy(shooter.gameObject);
+        }
+        if (holder != null) Destroy(holder);
         if (_loseRainbowShooter == shooter) _loseRainbowShooter = null;
         _loseRainbowShooterRoutine = null;
     }

@@ -31,6 +31,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private Material _materialType6;
     [SerializeField] private Vector3 _offsetRay;
     [SerializeField] private float _rayDistance;
+    [SerializeField] private float _rainbowRayDistance = 20f;
     [SerializeField] private LayerMask _cubeLayer;
     [SerializeField] private ParticleSystem _hiddenEffect;
     [SerializeField] private Bullet _bulletPrefab;
@@ -50,6 +51,8 @@ public class Shooter : MonoBehaviour
     private CubeLine _lastHit;
 
     private bool _collectRequested;
+    private float _baseRayDistance;
+    private bool _baseRayDistanceCached;
 
     //Fire cooldown (seconds) � controls max fire rate while preserving existing logic
     private float _fireCooldown = 0.025f; // was 0.15f
@@ -85,6 +88,24 @@ public class Shooter : MonoBehaviour
         bool shouldEnable = Type == 6 && _role == ShooterRole.Current && gameObject.activeInHierarchy;
         if (_rendererDouble.enabled != shouldEnable)
             _rendererDouble.enabled = shouldEnable;
+    }
+
+    public void SetCubeLayerMask(LayerMask layerMask)
+    {
+        _cubeLayer = layerMask;
+    }
+
+    private void CacheBaseRayDistance()
+    {
+        if (_baseRayDistanceCached) return;
+        _baseRayDistance = _rayDistance > 0f ? _rayDistance : 4f;
+        _baseRayDistanceCached = true;
+    }
+
+    private void UpdateRayDistance()
+    {
+        CacheBaseRayDistance();
+        _rayDistance = IsRainbow ? Mathf.Max(0.1f, _rainbowRayDistance) : _baseRayDistance;
     }
 
     private void UpdateRainbowState(bool force = false)
@@ -223,6 +244,8 @@ public class Shooter : MonoBehaviour
 
     private void Awake()
     {
+        CacheBaseRayDistance();
+        UpdateRayDistance();
     }
 
     private void OnDisable()
@@ -449,6 +472,11 @@ public class Shooter : MonoBehaviour
         Vector3 dir = -transform.right;
 
         int mask = _cubeLayer != 0 ? _cubeLayer : Physics.DefaultRaycastLayers;
+        if (Board.Instance != null && Board.Instance.CurrentBooster == BoosterType.Conveyor)
+        {
+            int topLayer = LayerMask.NameToLayer("Top");
+            if (topLayer >= 0) mask |= 1 << topLayer;
+        }
 
         RaycastHit[] hits = Physics.RaycastAll(origin, dir, _rayDistance, mask);
         if (hits == null || hits.Length == 0)
@@ -465,9 +493,13 @@ public class Shooter : MonoBehaviour
 
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
-                // choose first cube that matches color (or any color if rainbow) and is not placed on a cell
+                // Ignore cubes already placed on grid cells (these are not shoot targets and should not block).
+                if (cube.Cell != null)
+                    continue;
+
+                // Choose first cube that matches color (or any color if rainbow) and is not placed on a cell.
                 bool colorMatches = IsRainbow || cube.Color == Color;
-                if (cube != _lastHit && colorMatches && cube.Cell == null)
+                if (cube != _lastHit && colorMatches)
                 {
                     // record the exact hit so the visual bullet travels to the raycast hit point
                     _hit = hit;
@@ -475,6 +507,8 @@ public class Shooter : MonoBehaviour
                     Shoot(cube);
                     return;
                 }
+
+                // First non-cell cube blocks further hits.
                 break;
             }
         }
@@ -562,6 +596,7 @@ public class Shooter : MonoBehaviour
     public void SetType(int type)
     {
         Type = type;
+        UpdateRayDistance();
         ApplyMaterial();
         UpdateDoubleRendererState();
         UpdateRainbowState(force: true);
@@ -575,6 +610,7 @@ public class Shooter : MonoBehaviour
     public void SetRainbow()
     {
         Type = RainbowType;
+        UpdateRayDistance();
         ApplyMaterial();
         UpdateDoubleRendererState();
         UpdateRainbowState(force: true);
