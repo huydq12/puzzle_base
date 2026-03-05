@@ -68,6 +68,11 @@ public class Shooter : MonoBehaviour
     public bool IsRainbow => Type == RainbowType;
     private float _nextDebugRaycastTime;
     private bool _rainbowVisible;
+    private bool _hasLastCanShootAnimValue;
+    private bool _lastCanShootAnimValue;
+
+    private const string RainbowAnimStateOpen = "SuperMan_Open_Anim";
+    private const string RainbowAnimStateClose = "SuperMan_Close_Anim";
 
     private void UpdateDoubleRendererState()
     {
@@ -109,6 +114,21 @@ public class Shooter : MonoBehaviour
             _rainbowAnim.Rebind();
             _rainbowAnim.Update(0f);
         }
+
+        UpdateRainbowCanShootAnim(force: true);
+    }
+
+    private void UpdateRainbowCanShootAnim(bool force)
+    {
+        if (_rainbowAnim == null) return;
+        if (!IsRainbow) return;
+
+        bool desired = CanShoot;
+        if (!force && _hasLastCanShootAnimValue && _lastCanShootAnimValue == desired) return;
+        _hasLastCanShootAnimValue = true;
+        _lastCanShootAnimValue = desired;
+
+        _rainbowAnim.Play(desired ? RainbowAnimStateOpen : RainbowAnimStateClose, 0, 0f);
     }
 
     public int Total
@@ -163,6 +183,7 @@ public class Shooter : MonoBehaviour
             _rendererDouble.enabled = false;
 
         _rainbowVisible = false;
+        _hasLastCanShootAnimValue = false;
         if (_rainbow != null) _rainbow.SetActive(false);
         if (_renderer != null) _renderer.enabled = true;
 
@@ -266,6 +287,8 @@ public class Shooter : MonoBehaviour
 
     private void Update()
     {
+        UpdateRainbowCanShootAnim(force: false);
+
         if (_role == ShooterRole.Current && gameObject.activeInHierarchy && Time.time - _lastActivityTime >= IdleFallbackDelaySeconds)
         {
             StartIdleTweenIfNeeded();
