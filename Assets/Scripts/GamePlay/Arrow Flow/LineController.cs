@@ -21,6 +21,30 @@ public class LineController : Singleton<LineController>
         {
             return;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            // Debug: force-enable the injected fallback rainbow shooter (if present) to shoot immediately.
+            if (ShooterController.Instance != null && ShooterController.Instance.Gates != null)
+            {
+                for (int i = 0; i < ShooterController.Instance.Gates.Count; i++)
+                {
+                    IGate gate = ShooterController.Instance.Gates[i];
+                    if (!(gate is Gate singleGate)) continue;
+
+                    Shooter shooter = singleGate.CurrentShooter;
+                    if (shooter == null) continue;
+                    if (shooter.Type != Shooter.RainbowType) continue;
+                    if (shooter.TieID != Shooter.FallbackRainbowShooterTieId) continue;
+                    if (shooter.Total <= 0) continue;
+
+                    shooter.CanShoot = true;
+                }
+            }
+        }
+#endif
+
         HandleDefaultTouch();
     }
 

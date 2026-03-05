@@ -16,6 +16,8 @@ public class Shooter : MonoBehaviour
 {
     // Must match level config ShooterData.Type for rainbow shooters.
     public const int RainbowType = 9;
+    // Marks the injected fallback rainbow shooter so it can start disabled until manually enabled (debug).
+    public const int FallbackRainbowShooterTieId = -999;
     [SerializeField] private Renderer _renderer;
     [SerializeField] private Renderer _rendererDouble;
     [Header("Rainbow Visual (optional)")]
@@ -61,6 +63,7 @@ public class Shooter : MonoBehaviour
     private Vector3 _idleBaseEuler;
     private Vector3 _idleBaseScale;
     private bool _hasIdleBase;
+    private Coroutine _enableShootRoutine;
 
     public bool IsRainbow => Type == RainbowType;
     private float _nextDebugRaycastTime;
@@ -76,16 +79,28 @@ public class Shooter : MonoBehaviour
 
     private void UpdateRainbowState(bool force = false)
     {
+        // When in rainbow mode we hide the base render object (a separate rainbow visual can be used).
+        if (_renderer != null)
+        {
+            // Avoid disabling the whole Shooter object if the renderer is on the same GameObject.
+            if (_renderer.gameObject == gameObject)
+                _renderer.enabled = !IsRainbow;
+            else
+                _renderer.gameObject.SetActive(!IsRainbow);
+        }
+
         // If no custom rainbow model is wired, keep old behavior (material swap).
-        if (_rainbow == null) return;
+        if (_rainbow == null)
+        {
+            _rainbowVisible = false;
+            return;
+        }
 
         bool shouldShowRainbow = IsRainbow && gameObject.activeInHierarchy;
         if (!force && _rainbowVisible == shouldShowRainbow) return;
         _rainbowVisible = shouldShowRainbow;
 
         _rainbow.SetActive(shouldShowRainbow);
-
-        if (_renderer != null) _renderer.enabled = !shouldShowRainbow;
         if (_rendererDouble != null) _rendererDouble.enabled = !shouldShowRainbow && (Type == 6 && _role == ShooterRole.Current);
 
         if (shouldShowRainbow && _rainbowAnim != null)
@@ -150,6 +165,12 @@ public class Shooter : MonoBehaviour
         _rainbowVisible = false;
         if (_rainbow != null) _rainbow.SetActive(false);
         if (_renderer != null) _renderer.enabled = true;
+
+        if (_enableShootRoutine != null)
+        {
+            StopCoroutine(_enableShootRoutine);
+            _enableShootRoutine = null;
+        }
     }
 
     private void PrewarmBulletPool()
@@ -195,10 +216,21 @@ public class Shooter : MonoBehaviour
         switch (role)
         {
             case ShooterRole.Current:
-                StartCoroutine(Common.DelayAction(0.2f, () =>
+                if (_enableShootRoutine != null) StopCoroutine(_enableShootRoutine);
+                if (TieID == FallbackRainbowShooterTieId)
                 {
-                    CanShoot = true;
-                }));
+                    // Fallback shooter starts disabled until explicitly enabled.
+                    CanShoot = false;
+                    _enableShootRoutine = null;
+                }
+                else
+                {
+                    _enableShootRoutine = StartCoroutine(Common.DelayAction(0.2f, () =>
+                    {
+                        CanShoot = true;
+                        _enableShootRoutine = null;
+                    }));
+                }
                 ShowTotal = true;
                 _collectRequested = false;
                 SetSize(0.75f);
@@ -206,6 +238,11 @@ public class Shooter : MonoBehaviour
 
             case ShooterRole.Next:
             case ShooterRole.Queue:
+                if (_enableShootRoutine != null)
+                {
+                    StopCoroutine(_enableShootRoutine);
+                    _enableShootRoutine = null;
+                }
                 CanShoot = false;
                 ShowTotal = false;
                 SetSize(0.65f);

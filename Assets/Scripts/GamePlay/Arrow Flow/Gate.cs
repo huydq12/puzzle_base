@@ -133,7 +133,7 @@ public class Gate : MonoBehaviour
                 Color = ObjectColor.Red,
                 Counter = FallbackRainbowShooterCounter,
                 Type = Shooter.RainbowType,
-                TieID = -1
+                TieID = Shooter.FallbackRainbowShooterTieId
             });
             Total = Shooters.Count;
         }
