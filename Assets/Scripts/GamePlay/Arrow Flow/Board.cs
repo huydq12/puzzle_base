@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using DG.Tweening;
 using Dreamteck.Splines;
@@ -8,6 +9,7 @@ using Sirenix.Utilities;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using StackTrace = System.Diagnostics.StackTrace;
+
 public enum BoosterType
 {
     None,
@@ -37,6 +39,16 @@ public class Board : Singleton<Board>
     [SerializeField] private Camera effectCam;
 
     [HideInInspector] public GridCell[,] Cells;
+
+    [Header("Lose Rainbow Shooter (optional)")]
+    [SerializeField] private bool spawnLoseRainbowShooter = true;
+    [SerializeField] private int loseRainbowShooterShots = 20;
+    [SerializeField] private float loseRainbowShooterMaxSeconds = 6f;
+    [SerializeField] private float loseRainbowShooterRotateSecondsPerTurn = 0.6f;
+    [SerializeField] private Vector3 loseRainbowShooterLocalOffset = new Vector3(0f, 0f, 0f);
+
+    private Shooter _loseRainbowShooter;
+    private Coroutine _loseRainbowShooterRoutine;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
     [ReadOnly] public bool IsUsingBooster;
@@ -2097,5 +2109,71 @@ public class Board : Singleton<Board>
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
         GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+    }
+
+    public void SpawnLoseRainbowShooter()
+    {
+        if (!spawnLoseRainbowShooter) return;
+        if (loseRainbowShooterShots <= 0) return;
+        if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null) return;
+
+        if (_loseRainbowShooterRoutine != null)
+        {
+            StopCoroutine(_loseRainbowShooterRoutine);
+            _loseRainbowShooterRoutine = null;
+        }
+        if (_loseRainbowShooter != null)
+        {
+            Destroy(_loseRainbowShooter.gameObject);
+            _loseRainbowShooter = null;
+        }
+
+        _loseRainbowShooterRoutine = StartCoroutine(SpawnLoseRainbowShooterRoutine());
+    }
+
+    private IEnumerator SpawnLoseRainbowShooterRoutine()
+    {
+        if (Cells == null)
+        {
+            _loseRainbowShooterRoutine = null;
+            yield break;
+        }
+
+        int w = Cells.GetLength(0);
+        int h = Cells.GetLength(1);
+        Vector2Int center = new Vector2Int(Mathf.Clamp(w / 2, 0, w - 1), Mathf.Clamp(h / 2, 0, h - 1));
+        GridCell centerCell = GetCellAt(center);
+
+        Vector3 worldPos = transform.position;
+        if (centerCell != null) worldPos = centerCell.transform.position;
+
+        Shooter shooter = Instantiate(ShooterController.Instance.ShooterPrefab);
+        _loseRainbowShooter = shooter;
+
+        shooter.ResetForReuse();
+        shooter.transform.SetParent(transform, true);
+        shooter.transform.position = worldPos + loseRainbowShooterLocalOffset;
+        shooter.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        shooter.SetSize(0.75f);
+        shooter.SetColor(ObjectColor.Red);
+        shooter.SetRainbow();
+        shooter.Total = loseRainbowShooterShots;
+        shooter.CanShoot = true;
+        shooter.SetRole(ShooterRole.Current);
+
+        Tween rotateTween = shooter.transform
+            .DORotate(new Vector3(0f, 360f, 0f), Mathf.Max(0.05f, loseRainbowShooterRotateSecondsPerTurn), RotateMode.FastBeyond360)
+            .SetEase(Ease.Linear)
+            .SetLoops(-1, LoopType.Restart);
+
+        float endTime = Time.time + Mathf.Max(0.1f, loseRainbowShooterMaxSeconds);
+        while (shooter != null && shooter.Total > 0 && Time.time < endTime)
+            yield return null;
+
+        if (rotateTween != null && rotateTween.IsActive()) rotateTween.Kill(false);
+
+        if (shooter != null) Destroy(shooter.gameObject);
+        if (_loseRainbowShooter == shooter) _loseRainbowShooter = null;
+        _loseRainbowShooterRoutine = null;
     }
 }

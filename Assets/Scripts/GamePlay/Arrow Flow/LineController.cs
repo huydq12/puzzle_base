@@ -43,12 +43,12 @@ public class LineController : Singleton<LineController>
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-        // // Clicking the injected fallback rainbow shooter activates it (enables shooting).
-        // if (Board.Instance != null && Board.Instance.CurrentBooster == BoosterType.None)
-        // {
-        //     if (TryActivateFallbackShooterOnGate(ray))
-        //         return;
-        // }
+        // Clicking the injected fallback rainbow shooter activates it (enables shooting).
+        if (Board.Instance != null && Board.Instance.CurrentBooster == BoosterType.None)
+        {
+            if (TryActivateFallbackShooterOnGate(ray))
+                return;
+        }
 
         if (Board.Instance.CurrentBooster == BoosterType.Shuffle)
         {
@@ -216,6 +216,8 @@ public class LineController : Singleton<LineController>
 
     private bool TryActivateFallbackShooterOnGate(Ray ray)
     {
+        if (Common.IsPointerOverUI()) return false;
+
         int mask = _gateLayer.value != 0 ? _gateLayer.value : ~0;
         if (mask != ~0)
         {
@@ -235,9 +237,16 @@ public class LineController : Singleton<LineController>
             Transform tr = hits[i].transform;
             if (tr == null) continue;
 
-            Shooter shooter = tr.GetComponentInParent<Shooter>();
-            if (shooter == null) continue;
-            if (shooter.Gate is Gate gate && gate.TryActivateFallbackShooter(shooter))
+            Shooter shooter = tr.GetComponentInParent<Shooter>(includeInactive: true);
+            if (shooter != null && shooter.Gate is Gate shooterGate)
+            {
+                if (shooterGate.TryActivateFallbackShooter(shooter))
+                    return true;
+            }
+
+            Gate hitGate = tr.GetComponentInParent<Gate>(includeInactive: true);
+            if (hitGate == null) continue;
+            if (hitGate.TryActivateFallbackShooter(hitGate.CurrentShooter))
                 return true;
         }
 

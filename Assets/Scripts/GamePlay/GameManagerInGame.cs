@@ -135,6 +135,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _queuedNextLevel = failedLevel;
         TrackLevelFinished(false, failedLevel);
         SetState(GameStateInGame.Result);
+
+        // if (Board.Instance != null)
+        //     Board.Instance.SpawnLoseRainbowShooter();
     }
 
     private void TrackLevelStarted(int level)

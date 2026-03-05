@@ -9,8 +9,6 @@ public class Gate : MonoBehaviour
 {
     private const int FallbackRainbowShooterCounter = 20;
 
-    private static int _fallbackClickRaycastFrame = -1;
-
     [SerializeField] private Transform _maskDoor;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Transform _tunnel;
@@ -44,62 +42,6 @@ public class Gate : MonoBehaviour
     public bool IsShooterFrozen => _iceShooter != null && _iceShooter.Counter > 0;
 
     public Transform RootTransform => transform;
-
-    private void Update()
-    {
-        if (Time.frameCount == _fallbackClickRaycastFrame) return;
-        if (!Input.GetMouseButtonDown(0)) return;
-        if (Common.IsPointerOverUI()) return;
-        if (GameManagerInGame.Instance == null || GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing) return;
-        if (Board.Instance == null || Board.Instance.CurrentBooster != BoosterType.None) return;
-
-        _fallbackClickRaycastFrame = Time.frameCount;
-        TryActivateFallbackShooterFromClick();
-    }
-
-    private bool TryActivateFallbackShooterFromClick()
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return false;
-
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        int mask = 0;
-        int gateLayer = LayerMask.NameToLayer("Gate");
-        if (gateLayer >= 0) mask |= 1 << gateLayer;
-        int topLayer = LayerMask.NameToLayer("Top");
-        if (topLayer >= 0) mask |= 1 << topLayer;
-        if (mask == 0) mask = ~0;
-
-        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
-        if (hits == null || hits.Length == 0)
-        {
-            return false;
-        }
-
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-        for (int i = 0; i < hits.Length; i++)
-        {
-            Transform tr = hits[i].transform;
-            if (tr == null) continue;
-
-            Shooter shooter = tr.GetComponentInParent<Shooter>(includeInactive: true);
-            if (shooter != null && shooter.Gate is Gate shooterGate)
-            {
-                return shooterGate.TryActivateFallbackShooter(shooter);
-            }
-
-            // If the raycast hits gate visuals/colliders (not the shooter), still allow activating the current fallback shooter
-            // on the gate that was actually clicked.
-            Gate hitGate = tr.GetComponentInParent<Gate>(includeInactive: true);
-            if (hitGate == null) continue;
-
-            Shooter current = hitGate.CurrentShooter;
-            return hitGate.TryActivateFallbackShooter(current);
-        }
-
-        return false;
-    }
 
     public int RemainingShooterCount
     {
