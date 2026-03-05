@@ -21,30 +21,6 @@ public class LineController : Singleton<LineController>
         {
             return;
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            // Debug: force-enable the injected fallback rainbow shooter (if present) to shoot immediately.
-            if (ShooterController.Instance != null && ShooterController.Instance.Gates != null)
-            {
-                for (int i = 0; i < ShooterController.Instance.Gates.Count; i++)
-                {
-                    IGate gate = ShooterController.Instance.Gates[i];
-                    if (!(gate is Gate singleGate)) continue;
-
-                    Shooter shooter = singleGate.CurrentShooter;
-                    if (shooter == null) continue;
-                    if (shooter.Type != Shooter.RainbowType) continue;
-                    if (shooter.TieID != Shooter.FallbackRainbowShooterTieId) continue;
-                    if (shooter.Total <= 0) continue;
-
-                    shooter.CanShoot = true;
-                }
-            }
-        }
-#endif
-
         HandleDefaultTouch();
     }
 
@@ -66,6 +42,13 @@ public class LineController : Singleton<LineController>
     private void OnTouchBegan()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        // // Clicking the injected fallback rainbow shooter activates it (enables shooting).
+        // if (Board.Instance != null && Board.Instance.CurrentBooster == BoosterType.None)
+        // {
+        //     if (TryActivateFallbackShooterOnGate(ray))
+        //         return;
+        // }
 
         if (Board.Instance.CurrentBooster == BoosterType.Shuffle)
         {
@@ -229,6 +212,36 @@ public class LineController : Singleton<LineController>
 
             }
         }
+    }
+
+    private bool TryActivateFallbackShooterOnGate(Ray ray)
+    {
+        int mask = _gateLayer.value != 0 ? _gateLayer.value : ~0;
+        if (mask != ~0)
+        {
+            int top = LayerMask.NameToLayer("Top");
+            if (top >= 0) mask |= 1 << top;
+            int gateLayer = LayerMask.NameToLayer("Gate");
+            if (gateLayer >= 0) mask |= 1 << gateLayer;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
+        if (hits == null || hits.Length == 0) return false;
+
+        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform tr = hits[i].transform;
+            if (tr == null) continue;
+
+            Shooter shooter = tr.GetComponentInParent<Shooter>();
+            if (shooter == null) continue;
+            if (shooter.Gate is Gate gate && gate.TryActivateFallbackShooter(shooter))
+                return true;
+        }
+
+        return false;
     }
     private void OnTouchMoved()
     {
