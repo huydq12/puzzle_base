@@ -94,6 +94,12 @@ public class CubeLine : SerializedMonoBehaviour
 
         if (ElementType == 3 && !_elementType3Revealed)
         {
+            if (byRainbow)
+            {
+                // Rainbow shots should still "pay" for the current visible layer color.
+                ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
+            }
+
             _elementType3Revealed = true;
             if (!TryGetElementType3ShiftedColorFromOriginal(offset: 3, out ObjectColor shifted))
                 shifted = _originalColor;

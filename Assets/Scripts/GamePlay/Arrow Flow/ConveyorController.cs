@@ -58,6 +58,16 @@ public class ConveyorController : Singleton<ConveyorController>
             }
         };
     }
+
+    public void ResetLoseStateForContinue()
+    {
+        _loseTriggered = false;
+        if (_loseShowTween != null)
+        {
+            _loseShowTween.Kill();
+            _loseShowTween = null;
+        }
+    }
     private void LoseGame()
     {
         if (_loseTriggered)

@@ -2113,7 +2113,11 @@ public class Board : Singleton<Board>
     public void SpawnLoseRainbowShooter()
     {
         if (!spawnLoseRainbowShooter) return;
+        if (ConveyorController.Instance == null) return;
         if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null) return;
+
+        int shots = Mathf.Max(1, ConveyorController.Instance.GetTotalPathSlotTaken() / 2);
+        if (shots <= 0) return;
 
         // This feature is intended to "continue" play after a lose moment.
         if (GameManagerInGame.Instance != null)
@@ -2185,7 +2189,7 @@ public class Board : Singleton<Board>
         shooter.SetSize(0.75f);
         shooter.SetColor(ObjectColor.Red);
         shooter.SetRainbow();
-        shooter.Total = (int)(ConveyorController.Instance.GetTotalPathSlotTaken()/2);
+        shooter.Total = (int)(ConveyorController.Instance.GetTotalPathSlotTaken() / 2);
         shooter.CanShoot = true;
         shooter.SetRole(ShooterRole.Current);
 
@@ -2218,6 +2222,7 @@ public class Board : Singleton<Board>
 
         if (ConveyorController.Instance != null)
         {
+            ConveyorController.Instance.ResetLoseStateForContinue();
             ConveyorController.Instance.BringToTop = false;
             ConveyorController.Instance.SetAllCubesBringToTop(false);
             ConveyorController.Instance.StartConveyor();
