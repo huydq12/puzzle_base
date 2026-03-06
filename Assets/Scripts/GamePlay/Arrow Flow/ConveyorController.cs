@@ -697,4 +697,9 @@ public class ConveyorController : Singleton<ConveyorController>
         _lstPaths.Clear();
         UpdatePercent();
     }
+
+    public int GetTotalPathSlotTaken()
+    {
+        return _totalPathSlotTaken;
+    }
 }

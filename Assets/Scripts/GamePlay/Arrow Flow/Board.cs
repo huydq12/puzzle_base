@@ -42,7 +42,6 @@ public class Board : Singleton<Board>
 
     [Header("Lose Rainbow Shooter (optional)")]
     [SerializeField] private bool spawnLoseRainbowShooter = true;
-    [SerializeField] private int loseRainbowShooterShots = 20;
     [SerializeField] private float loseRainbowShooterMaxSeconds = 0f;
     [SerializeField] private float loseRainbowShooterRotateSecondsPerTurn = 0.6f;
     [SerializeField] private Vector3 loseRainbowShooterLocalOffset = new Vector3(0f, 0f, 0f);
@@ -2114,7 +2113,6 @@ public class Board : Singleton<Board>
     public void SpawnLoseRainbowShooter()
     {
         if (!spawnLoseRainbowShooter) return;
-        if (loseRainbowShooterShots <= 0) return;
         if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null) return;
 
         // This feature is intended to "continue" play after a lose moment.
@@ -2187,7 +2185,7 @@ public class Board : Singleton<Board>
         shooter.SetSize(0.75f);
         shooter.SetColor(ObjectColor.Red);
         shooter.SetRainbow();
-        shooter.Total = loseRainbowShooterShots;
+        shooter.Total = (int)(ConveyorController.Instance.GetTotalPathSlotTaken()/2);
         shooter.CanShoot = true;
         shooter.SetRole(ShooterRole.Current);
 
