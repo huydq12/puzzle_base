@@ -2130,6 +2130,11 @@ public class Board : Singleton<Board>
             _overlay.enabled = true;
             _overlay.DOFade(0.85f, 0.25f);
         }
+        else
+        {
+            // Ensure the feature still works if conveyor is absent in this level.
+            _overlay.enabled = false;
+        }
 
         if (_loseRainbowShooterRoutine != null)
         {
@@ -2203,11 +2208,21 @@ public class Board : Singleton<Board>
         if (shooter != null)
         {
             shooter.CanShoot = false;
-            yield return new WaitForSeconds(0.2f);
             if (shooter != null) Destroy(shooter.gameObject);
         }
+        yield return new WaitForSeconds(0.2f);
         if (holder != null) Destroy(holder);
         if (_loseRainbowShooter == shooter) _loseRainbowShooter = null;
         _loseRainbowShooterRoutine = null;
+
+        if (Board.Instance != null)
+            Board.Instance.ResetBooster();
+
+        if (ConveyorController.Instance != null)
+        {
+            ConveyorController.Instance.BringToTop = false;
+            ConveyorController.Instance.SetAllCubesBringToTop(false);
+            ConveyorController.Instance.StartConveyor();
+        }
     }
 }

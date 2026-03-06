@@ -472,11 +472,6 @@ public class Shooter : MonoBehaviour
         Vector3 dir = -transform.right;
 
         int mask = _cubeLayer != 0 ? _cubeLayer : Physics.DefaultRaycastLayers;
-        if (Board.Instance != null && Board.Instance.CurrentBooster == BoosterType.Conveyor)
-        {
-            int topLayer = LayerMask.NameToLayer("Top");
-            if (topLayer >= 0) mask |= 1 << topLayer;
-        }
 
         RaycastHit[] hits = Physics.RaycastAll(origin, dir, _rayDistance, mask);
         if (hits == null || hits.Length == 0)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
+using TMPro;
 
 public class UIPauseLose : UIElement
 {
@@ -10,9 +11,18 @@ public class UIPauseLose : UIElement
 
     [SerializeField] private RectTransform step1;
     [SerializeField] private RectTransform step2;
+
+    [SerializeField] private TextMeshProUGUI txt_coin;
+    
     [SerializeField] private Button btnClose;
 
     [SerializeField] private Button btnUseRainbow;
+
+    [SerializeField] private Button btnUseRainbowBuyCoin;
+
+    [Header("Use Rainbow (Buy with coin)")]
+    [SerializeField] private int useRainbowCoinPrice = 200;
+    [SerializeField] private string notEnoughGoldToast = "Not enough gold";
 
     [Header("Animation")]
     [SerializeField] private float step1MoveFromOffsetY = 800f;
@@ -32,6 +42,7 @@ public class UIPauseLose : UIElement
     public override void Show()
     {
         CacheStep1Pos();
+        RefreshCoin();
 
         KillTweensInHierarchy(false);
         _step1Tween?.Kill();
@@ -95,6 +106,9 @@ public class UIPauseLose : UIElement
 
         if (btnUseRainbow != null)
             btnUseRainbow.onClick.AddListener(UseRainbow);
+
+        if (btnUseRainbowBuyCoin != null)
+            btnUseRainbowBuyCoin.onClick.AddListener(UseRainbowBuyCoin);
     }
 
     private void UseRainbow()
@@ -115,6 +129,40 @@ public class UIPauseLose : UIElement
 
         // Hide this UI without chaining to the standard lose popup.
         base.Hide();
+    }
+
+    private void UseRainbowBuyCoin()
+    {
+        if (useRainbowCoinPrice > 0)
+        {
+            bool spent = InventoryManager.Instance != null && InventoryManager.Instance.SpendCoin(useRainbowCoinPrice);
+            if (!spent)
+            {
+                var toast = GameUI.Instance != null ? GameUI.Instance.Get<UINotification>() : null;
+                if (toast != null)
+                    toast.ShowToast(notEnoughGoldToast);
+                RefreshCoin();
+                return;
+            }
+        }
+
+        RefreshCoin();
+        UseRainbow();
+    }
+
+    private void RefreshCoin()
+    {
+        if (txt_coin == null) return;
+
+        int coin = 0;
+        if (InventoryManager.Instance != null)
+            coin = InventoryManager.Instance.GetCoin();
+        else if (GameManagerInGame.Instance != null && GameManagerInGame.Instance.userData != null)
+            coin = GameManagerInGame.Instance.userData.playerCash;
+        else if (GameManager.Instance != null && GameManager.Instance.userData != null)
+            coin = GameManager.Instance.userData.playerCash;
+
+        txt_coin.text = coin.ToString();
     }
 
     private void CacheStep1Pos()
