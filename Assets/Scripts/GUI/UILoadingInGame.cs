@@ -65,7 +65,7 @@ public class UILoadingInGame : Singleton<UILoadingInGame>
 
         if (textLoading != null)
         {
-            _baseText = "Voodoo";
+            _baseText = "Loading Data ...";
             textLoading.text = _baseText;
 
             _textTween?.Kill();
