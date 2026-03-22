@@ -28,11 +28,15 @@ public class UIWin : UIPopup
 
     private readonly List<GameObject> activeFx = new List<GameObject>();
 
+    [SerializeField] private GameObject groupReward;
+
     private Tween coinCountTween;
     private Tween slideFillTween;
 
     private int pendingCoinTarget;
-    private bool pendingCoinApplied;
+    private bool pendingCoinApplied = true;
+    private int pendingRewardLevel;
+    private bool shouldGrantReward;
 
     public override void Show()
     {
@@ -44,11 +48,25 @@ public class UIWin : UIPopup
 
         UpdateNextTutorialFill();
 
-        int fromAmount = GameManagerInGame.Instance.userData.playerCash;
-        int toAmount = fromAmount + rewardCoin;
+        var gameManager = GameManagerInGame.Instance;
+        var userData = gameManager != null ? gameManager.userData : null;
+        int completedLevel = GetCompletedLevel();
+        bool hasClaimedReward = HasClaimedReward(userData, completedLevel);
+
+        shouldGrantReward = !hasClaimedReward;
+        pendingRewardLevel = shouldGrantReward ? completedLevel : -1;
+
+        int fromAmount = userData != null ? userData.playerCash : 0;
+        int rewardAmount = shouldGrantReward ? rewardCoin : 0;
+        int toAmount = fromAmount + rewardAmount;
 
         pendingCoinTarget = toAmount;
         pendingCoinApplied = false;
+
+        if (groupReward != null)
+        {
+            groupReward.SetActive(shouldGrantReward);
+        }
 
         if (txt_coin != null)
         {
@@ -57,11 +75,14 @@ public class UIWin : UIPopup
 
         if (txt_coin_reward != null)
         {
-            txt_coin_reward.text = "+" + rewardCoin.ToString();
+            txt_coin_reward.text = "+" + rewardAmount.ToString();
         }
 
         StopAllCoroutines();
-        StartCoroutine(ShowCoinFxMoveToTarget(fromAmount, toAmount));
+        if (shouldGrantReward)
+        {
+            StartCoroutine(ShowCoinFxMoveToTarget(fromAmount, toAmount));
+        }
     }
 
     public override void Hide()
@@ -102,8 +123,15 @@ public class UIWin : UIPopup
         if (pendingCoinApplied) return;
         if (GameManagerInGame.Instance == null || GameManagerInGame.Instance.userData == null) return;
 
-        GameManagerInGame.Instance.userData.playerCash = pendingCoinTarget;
-        GameManagerInGame.Instance.userData.Save();
+        var userData = GameManagerInGame.Instance.userData;
+        userData.playerCash = pendingCoinTarget;
+
+        if (shouldGrantReward && pendingRewardLevel > 0 && !HasClaimedReward(userData, pendingRewardLevel))
+        {
+            userData.claimedWinRewardLevels.Add(pendingRewardLevel);
+        }
+
+        userData.Save();
         pendingCoinApplied = true;
 
         if (txt_coin != null)
@@ -112,12 +140,26 @@ public class UIWin : UIPopup
         }
     }
 
+    private static bool HasClaimedReward(UserData userData, int level)
+    {
+        return userData != null
+            && userData.claimedWinRewardLevels != null
+            && level > 0
+            && userData.claimedWinRewardLevels.Contains(level);
+    }
+
+    private static int GetCompletedLevel()
+    {
+        if (GameManagerInGame.Instance == null) return 1;
+        int currentLevelAfterWin = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
+        return Mathf.Max(1, currentLevelAfterWin - 1);
+    }
+
     private void UpdateNextTutorialFill()
     {
         if (GameManagerInGame.Instance == null) return;
 
-        int currentLevelAfterWin = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
-        int completedLevel = Mathf.Max(1, currentLevelAfterWin - 1);
+        int completedLevel = GetCompletedLevel();
 
         int prevMilestone;
         int nextMilestone;
