@@ -806,7 +806,11 @@ public class Board : Singleton<Board>
         if (HasAnyCubeOnBoard()) return;
 
         ConveyorController conveyor = ConveyorController.Instance;
-        if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor()) return;
+        if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor())
+        {
+            conveyor.ActivateSpeedUpForClearBoard();
+            return;
+        }
 
         if (conveyor != null)
             conveyor.WinGame();

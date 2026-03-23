@@ -94,6 +94,11 @@ public class ConveyorController : Singleton<ConveyorController>
         }
     }
 
+    public void ActivateSpeedUpForClearBoard()
+    {
+        _walkAroundSpeed = 20;
+    }
+
 	    void SpawnArrowAlongSpline()
 	    {
 	        if (_arrow == null) return;
