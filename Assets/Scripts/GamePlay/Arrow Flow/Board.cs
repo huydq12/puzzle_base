@@ -795,6 +795,34 @@ public class Board : Singleton<Board>
         return false;
     }
 
+    private bool HasPendingHiddenLayerContent()
+    {
+        if (_elevators != null)
+        {
+            for (int i = 0; i < _elevators.Count; i++)
+            {
+                var entry = _elevators[i];
+                if (entry.data == null || entry.data.Lines == null || entry.data.Lines.Count == 0) continue;
+                if (!entry.activated) return true;
+                if (entry.elevator != null) return true;
+            }
+        }
+
+        if (_lineDoors != null)
+        {
+            for (int i = 0; i < _lineDoors.Count; i++)
+            {
+                var entry = _lineDoors[i];
+                if (entry.data == null || entry.data.Lines == null || entry.data.Lines.Count == 0) continue;
+                if (!entry.opened) return true;
+                if (!entry.spawned) return true;
+                if (entry.door != null) return true;
+            }
+        }
+
+        return false;
+    }
+
     private void UpdateWinConditionByCubeState()
     {
         if (Time.time < _nextWinCheckTime) return;
@@ -804,6 +832,7 @@ public class Board : Singleton<Board>
         if (GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing) return;
 
         if (HasAnyCubeOnBoard()) return;
+        if (HasPendingHiddenLayerContent()) return;
 
         ConveyorController conveyor = ConveyorController.Instance;
         if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor())
