@@ -58,7 +58,7 @@ public class Board : Singleton<Board>
     private ElementType3InnerAllocator _elementType3InnerAllocator;
 
     private readonly List<Line> _iceLines = new();
-    private readonly List<(Elevator elevator, ElevatorData data, bool activated)> _elevators = new();
+    private readonly List<ElevatorEntry> _elevators = new();
     private readonly List<LineDoorEntry> _lineDoors = new();
     private readonly Dictionary<Vector2Int, int> _conveyorTunnelBlockCounts = new();
 
@@ -88,6 +88,15 @@ public class Board : Singleton<Board>
         public LineDoorData data;
         public int remaining;
         public bool opened;
+        public bool spawned;
+    }
+
+    private class ElevatorEntry
+    {
+        public Elevator elevator;
+        public ElevatorData data;
+        public bool activated;
+        public bool readyToSpawn;
         public bool spawned;
     }
 
@@ -687,7 +696,14 @@ public class Board : Singleton<Board>
             float scaleZ = data.Size.y / 4f;
             elevator.transform.localScale = new Vector3(scaleX, 1f, scaleZ);
 
-            _elevators.Add((elevator, data, false));
+            _elevators.Add(new ElevatorEntry
+            {
+                elevator = elevator,
+                data = data,
+                activated = false,
+                readyToSpawn = false,
+                spawned = false
+            });
         }
     }
 
@@ -803,8 +819,7 @@ public class Board : Singleton<Board>
             {
                 var entry = _elevators[i];
                 if (entry.data == null || entry.data.Lines == null || entry.data.Lines.Count == 0) continue;
-                if (!entry.activated) return true;
-                if (entry.elevator != null) return true;
+                if (!entry.spawned) return true;
             }
         }
 
@@ -856,10 +871,16 @@ public class Board : Singleton<Board>
         for (int i = 0; i < _elevators.Count; i++)
         {
             var entry = _elevators[i];
-            if (entry.activated) continue;
-            if (!IsRectEmpty(entry.data.Position, entry.data.Size)) continue;
+            if (entry == null || entry.data == null) continue;
+            if (!entry.activated)
+            {
+                if (!IsRectEmpty(entry.data.Position, entry.data.Size)) continue;
+                ActivateElevator(i);
+                continue;
+            }
 
-            ActivateElevator(i);
+            if (!entry.readyToSpawn || entry.spawned) continue;
+            TrySpawnElevatorLines(i);
         }
     }
 
@@ -916,6 +937,21 @@ public class Board : Singleton<Board>
 	        return false;
 	    }
 
+	    private bool IsCellBlockedByElevator(Vector2Int cellPos)
+	    {
+	        if (_elevators == null || _elevators.Count == 0) return false;
+	        for (int i = 0; i < _elevators.Count; i++)
+	        {
+	            var entry = _elevators[i];
+	            if (entry == null || entry.data == null) continue;
+	            bool hasHiddenLines = entry.data.Lines != null && entry.data.Lines.Count > 0;
+	            if (entry.spawned) continue;
+	            if (!hasHiddenLines && entry.readyToSpawn) continue;
+	            if (IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size)) return true;
+	        }
+	        return false;
+	    }
+
 	    private static bool IsPointInsideRect(Vector2Int p, Vector2Int pos, Vector2Int size)
 	    {
 	        if (size.x <= 0 || size.y <= 0) return false;
@@ -927,29 +963,42 @@ public class Board : Singleton<Board>
     }
     private void ActivateElevator(int index)
     {
+        if (index < 0 || index >= _elevators.Count) return;
         var entry = _elevators[index];
-        if (entry.activated) return;
+        if (entry == null || entry.activated) return;
 
         // Mark first to prevent re-entry.
-        _elevators[index] = (entry.elevator, entry.data, true);
-
-        void SpawnAllElevatorLines()
-        {
-            if (entry.data != null && entry.data.Lines != null)
-            {
-                for (int i = 0; i < entry.data.Lines.Count; i++)
-                {
-                    float delay = Mathf.Max(0f, _elevatorLineStagger) * i;
-                    SpawnLine(entry.data.Lines[i], animateSpawn: true, spawnDelay: delay);
-                }
-            }
-            RefreshAllHeadHighlights();
-        }
+        entry.activated = true;
+        entry.readyToSpawn = false;
+        entry.spawned = false;
 
         if (entry.elevator != null)
-            entry.elevator.ActivateAndDisappear(SpawnAllElevatorLines);
+            entry.elevator.ActivateAndDisappear(() => HandleElevatorOpened(index));
         else
-            SpawnAllElevatorLines();
+            HandleElevatorOpened(index);
+    }
+
+    private void HandleElevatorOpened(int index)
+    {
+        if (index < 0 || index >= _elevators.Count) return;
+        var entry = _elevators[index];
+        if (entry == null) return;
+
+        entry.readyToSpawn = true;
+        TrySpawnElevatorLines(index);
+    }
+
+    private void TrySpawnElevatorLines(int index)
+    {
+        if (index < 0 || index >= _elevators.Count) return;
+        var entry = _elevators[index];
+        if (entry == null || entry.data == null) return;
+        if (entry.spawned || !entry.readyToSpawn) return;
+
+        if (!SpawnElevatorLines(entry.data)) return;
+
+        entry.spawned = true;
+        entry.readyToSpawn = false;
     }
 
 	    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
@@ -975,6 +1024,7 @@ public class Board : Singleton<Board>
 	        for (int i = 0; i < _lineDoors.Count; i++)
 	        {
 	            var entry = _lineDoors[i];
+	            int lineDoorIndex = i;
 	            if (entry.opened) continue;
 	            if (entry.data == null) continue;
 	            if (entry.data.Color != color) continue;
@@ -983,11 +1033,12 @@ public class Board : Singleton<Board>
 
 	            if (door != null)
 	            {
-	                bool opened = door.Consume(amount, source, () => TrySpawnLineDoorLines(i));
+	                bool opened = door.Consume(amount, source, () => TrySpawnLineDoorLines(lineDoorIndex));
 	                entry.remaining = door.Remaining;
 	                if (opened)
 	                {
 	                    entry.opened = true;
+	                    RefreshAllHeadHighlights();
 	                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 	                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
@@ -999,6 +1050,7 @@ public class Board : Singleton<Board>
 	                if (entry.remaining <= 0)
 	                {
 	                    entry.opened = true;
+	                    RefreshAllHeadHighlights();
 	                    TrySpawnLineDoorLines(i);
 	                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1014,6 +1066,7 @@ public class Board : Singleton<Board>
         var entry = _lineDoors[index];
         if (entry.opened) return;
         entry.opened = true;
+        RefreshAllHeadHighlights();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[Board.LineDoor] Open door idx={index} color={entry.data?.Color} counter={entry.remaining}", entry.door);
@@ -1051,8 +1104,8 @@ public class Board : Singleton<Board>
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[Board.LineDoor] Spawn lines idx={index} color={entry.data.Color}", this);
 #endif
-        SpawnLineDoorLines(entry.data);
-        entry.spawned = true;
+        if (SpawnLineDoorLines(entry.data))
+            entry.spawned = true;
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1088,20 +1141,66 @@ public class Board : Singleton<Board>
     }
 #endif
 
-    private void SpawnLineDoorLines(LineDoorData data)
+    private bool CanSpawnLineGroup(List<ColorLine> lines)
     {
-        if (data == null || data.Lines == null) return;
+        if (lines == null || lines.Count == 0) return true;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (!CanSpawnLine(lines[i])) return false;
+        }
+
+        return true;
+    }
+
+    private bool SpawnElevatorLines(ElevatorData data)
+    {
+        if (data == null) return false;
+        if (data.Lines == null || data.Lines.Count == 0) return true;
+        if (!CanSpawnLineGroup(data.Lines)) return false;
+
         for (int i = 0; i < data.Lines.Count; i++)
         {
             float delay = Mathf.Max(0f, _elevatorLineStagger) * i;
             SpawnLine(data.Lines[i], animateSpawn: true, spawnDelay: delay);
         }
         RefreshAllHeadHighlights();
+        return true;
     }
 
-	    private void SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
+    private bool SpawnLineDoorLines(LineDoorData data)
+    {
+        if (data == null) return false;
+        if (data.Lines == null || data.Lines.Count == 0) return true;
+        if (!CanSpawnLineGroup(data.Lines)) return false;
+
+        for (int i = 0; i < data.Lines.Count; i++)
+        {
+            float delay = Mathf.Max(0f, _elevatorLineStagger) * i;
+            SpawnLine(data.Lines[i], animateSpawn: true, spawnDelay: delay);
+        }
+        RefreshAllHeadHighlights();
+        return true;
+    }
+
+    private bool CanSpawnLine(ColorLine line)
+    {
+        if (line == null || line.Cells == null || line.Cells.Count == 0) return false;
+
+        for (int i = 0; i < line.Cells.Count; i++)
+        {
+            GridCell cell = GetCellAt(line.Cells[i]);
+            if (cell == null) return false;
+            if (cell.CubeOnCell != null) return false;
+        }
+
+        return true;
+    }
+
+	    private bool SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
 	    {
-	        if (line == null || line.Cells == null || line.Cells.Count == 0) return;
+	        if (line == null || line.Cells == null || line.Cells.Count == 0) return false;
+        if (!CanSpawnLine(line)) return false;
 
 	        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
 	        int lineElementType3Count = 0;
@@ -1140,8 +1239,8 @@ public class Board : Singleton<Board>
             Vector2Int? next = i < last ? line.Cells[i + 1] : (Vector2Int?)null;
 
 	            GridCell cell = GetCellAt(curr);
-	            if (cell == null) continue;
-	            if (cell.CubeOnCell != null) continue;
+	            if (cell == null) return false;
+	            if (cell.CubeOnCell != null) return false;
 
 	            CubeLine cube = Instantiate(_cubePrefab);
 	            cube.transform.SetParent(lineGo.transform, false);
@@ -1207,6 +1306,7 @@ public class Board : Singleton<Board>
 
         lineGo.RefreshCounterText();
         lineGo.InitializeBombIfNeeded();
+        return true;
     }
     private void SetupConveyor()
     {
@@ -1990,7 +2090,7 @@ public class Board : Singleton<Board>
 	        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
 	        {
 	            GridCell c = GetCellAt(p);
-	            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p)))
+	            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p) || IsCellBlockedByElevator(p)))
 	                return c;
 
 	            p += dir;
