@@ -852,6 +852,9 @@ public class Board : Singleton<Board>
         ConveyorController conveyor = ConveyorController.Instance;
         if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor())
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[Board.ClearCheck] Board empty and hidden content resolved while conveyor still has pending/on-path cubes. Triggering speed up.", this);
+#endif
             conveyor.ActivateSpeedUpForClearBoard();
             return;
         }
@@ -937,7 +940,7 @@ public class Board : Singleton<Board>
 	        return false;
 	    }
 
-	    private bool IsCellBlockedByElevator(Vector2Int cellPos)
+	    private bool IsCellBlockedByElevator(Vector2Int originPos, Vector2Int cellPos)
 	    {
 	        if (_elevators == null || _elevators.Count == 0) return false;
 	        for (int i = 0; i < _elevators.Count; i++)
@@ -947,7 +950,10 @@ public class Board : Singleton<Board>
 	            bool hasHiddenLines = entry.data.Lines != null && entry.data.Lines.Count > 0;
 	            if (entry.spawned) continue;
 	            if (!hasHiddenLines && entry.readyToSpawn) continue;
-	            if (IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size)) return true;
+	            bool originInside = IsPointInsideRect(originPos, entry.data.Position, entry.data.Size);
+	            bool targetInside = IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size);
+	            if (originInside && targetInside) continue;
+	            if (targetInside) return true;
 	        }
 	        return false;
 	    }
@@ -985,6 +991,9 @@ public class Board : Singleton<Board>
         if (entry == null) return;
 
         entry.readyToSpawn = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Board.Elevator] Opened idx={index} readyToSpawn={entry.readyToSpawn} spawned={entry.spawned} lines={(entry.data != null && entry.data.Lines != null ? entry.data.Lines.Count : 0)} pos={entry.data?.Position} size={entry.data?.Size}", this);
+#endif
         TrySpawnElevatorLines(index);
     }
 
@@ -995,10 +1004,19 @@ public class Board : Singleton<Board>
         if (entry == null || entry.data == null) return;
         if (entry.spawned || !entry.readyToSpawn) return;
 
-        if (!SpawnElevatorLines(entry.data)) return;
+        if (!SpawnElevatorLines(entry.data))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Board.Elevator] Spawn blocked idx={index} readyToSpawn={entry.readyToSpawn} spawned={entry.spawned} pos={entry.data.Position} size={entry.data.Size}", this);
+#endif
+            return;
+        }
 
         entry.spawned = true;
         entry.readyToSpawn = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Board.Elevator] Spawned lines idx={index} readyToSpawn={entry.readyToSpawn} spawned={entry.spawned}", this);
+#endif
     }
 
 	    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
@@ -2087,11 +2105,11 @@ public class Board : Singleton<Board>
         int w = Cells.GetLength(0);
         int h = Cells.GetLength(1);
 
-	        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
-	        {
-	            GridCell c = GetCellAt(p);
-	            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p) || IsCellBlockedByElevator(p)))
-	                return c;
+		        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
+		        {
+		            GridCell c = GetCellAt(p);
+		            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p) || IsCellBlockedByElevator(curr, p)))
+		                return c;
 
 	            p += dir;
 	        }

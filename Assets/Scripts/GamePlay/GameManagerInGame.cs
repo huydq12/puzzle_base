@@ -21,6 +21,7 @@ public enum GameStateInGame
 
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
+    public static GameManagerInGame intance => Instance;
     public int MaxLevel = 1;
     public int CurrentLevel = 1;
     [ReadOnly] public GameStateInGame CurrentGameStateInGame = GameStateInGame.Init;
@@ -50,6 +51,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
+
+    [SerializeField] private int CONST_LEVEL_SHOW_LOADING = 121;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -217,7 +220,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
 
         bool isFirstStart = _isFirstSceneStart;
-        _pendingAutoHideLoading = _isFirstSceneStart || (_nextStartIsAfterWin && level > 21);
+        _pendingAutoHideLoading = _isFirstSceneStart || (_nextStartIsAfterWin && level > CONST_LEVEL_SHOW_LOADING);
         _pendingAutoHideSeconds = isFirstStart ? Mathf.Max(CONST_TIME_HIDE_LOADING, CONST_TIME_HIDE_LOADING_FIRST) : CONST_TIME_HIDE_LOADING;
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;

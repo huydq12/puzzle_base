@@ -45,7 +45,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.OnEndLevel += () =>
         {
             _totalLineMoved = 0;
-            _walkAroundSpeed = 12;
+            SetWalkAroundSpeed(12, "OnEndLevel");
         };
 
         GameManagerInGame.Instance.OnStartLevel += () =>
@@ -88,15 +88,24 @@ public class ConveyorController : Singleton<ConveyorController>
     public void OnLineMoved()
     {
         _totalLineMoved++;
-        if (_totalLineMoved >= Board.Instance.InitLine)
-        {
-            _walkAroundSpeed = 20;
-        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Conveyor.Speed] OnLineMoved totalLineMoved={_totalLineMoved} initLine={(Board.Instance != null ? Board.Instance.InitLine : -1)} currentSpeed={_walkAroundSpeed} queue={_waitingToEnterQueue.Count} onConveyor={_totalPathSlotTaken}", this);
+#endif
     }
 
     public void ActivateSpeedUpForClearBoard()
     {
-        _walkAroundSpeed = 20;
+        SetWalkAroundSpeed(20, "ActivateSpeedUpForClearBoard");
+    }
+
+    private void SetWalkAroundSpeed(int speed, string reason)
+    {
+        int oldSpeed = _walkAroundSpeed;
+        _walkAroundSpeed = speed;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Conveyor.Speed] {oldSpeed} -> {_walkAroundSpeed} reason={reason} totalLineMoved={_totalLineMoved} initLine={(Board.Instance != null ? Board.Instance.InitLine : -1)} queue={_waitingToEnterQueue.Count} onConveyor={_totalPathSlotTaken}", this);
+#endif
     }
 
 	    void SpawnArrowAlongSpline()
