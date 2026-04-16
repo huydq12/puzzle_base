@@ -38,6 +38,8 @@ public class Shooter : MonoBehaviour
     [SerializeField] private Transform _bulletSpawnPoint;
     [SerializeField] private Animation _animation;
     [SerializeField] private Outline _outline;
+    [SerializeField] private Renderer _holeRenderer;
+    [SerializeField] private Transform _holeBottom;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
     [SerializeField] private int _bulletPoolSize;
@@ -59,6 +61,7 @@ public class Shooter : MonoBehaviour
     private float _nextFireTime = 0f;
 
     private int _totalValue;
+    private int _inFlightCount;
 
     private const float IdleFallbackDelaySeconds = 3f;
     private float _lastActivityTime;
@@ -260,6 +263,7 @@ public class Shooter : MonoBehaviour
         _hit = default;
         _lastHit = null;
         _collectRequested = false;
+        _inFlightCount = 0;
         _nextFireTime = 0f;
         _lastActivityTime = Time.time;
         CanShoot = false;
@@ -320,18 +324,9 @@ public class Shooter : MonoBehaviour
     {
         _role = role;
         StopIdleTween();
-        _animation.Play(role == ShooterRole.Current ? "Show" : "Hide", PlayMode.StopAll);
+        // Hole mode: no Show/Hide anim, no outline.
         _lastActivityTime = Time.time;
-        _outline.enabled = role == ShooterRole.Current;
-        if (role == ShooterRole.Current)
-        {
-            StartCoroutine(Common.DelayActionToNextFrame(() =>
-            {
-                _outline.OutlineColor = Board.Instance.ColorConfig.GetOutlineShooter(Color);
-                _outline.RenderOutline();
-            }
-            ));
-        }
+        if (_outline != null) _outline.enabled = false;
         switch (role)
         {
             case ShooterRole.Current:
@@ -387,10 +382,7 @@ public class Shooter : MonoBehaviour
     {
         UpdateRainbowCanShootAnim(force: false);
 
-        if (!IsRainbow && _role == ShooterRole.Current && gameObject.activeInHierarchy && Time.time - _lastActivityTime >= IdleFallbackDelaySeconds)
-        {
-            StartIdleTweenIfNeeded();
-        }
+        // Hole mode: no idle animation
 
         // Prevent firing while cooldown active or other conditions block shooting
         if (!CanShoot || _collectRequested || Total <= 0 || (Gate != null && Gate.IsClosed) || (Gate != null && Gate.IsShooterFrozen) || Time.time < _nextFireTime) return;
@@ -496,10 +488,9 @@ public class Shooter : MonoBehaviour
                 bool colorMatches = IsRainbow || cube.Color == Color;
                 if (cube != _lastHit && colorMatches)
                 {
-                    // record the exact hit so the visual bullet travels to the raycast hit point
                     _hit = hit;
                     _lastHit = cube;
-                    Shoot(cube);
+                    AbsorbCube(cube);
                     return;
                 }
 
@@ -512,50 +503,57 @@ public class Shooter : MonoBehaviour
 
     }
 
-    private void Shoot(CubeLine cube)
+    private void AbsorbCube(CubeLine cube)
     {
         AudioManager.Instance.PlaySFX(SFXType.Shoot);
-        // Rate control: set next allowed fire time immediately to enforce cooldown
         _nextFireTime = Time.time + _fireCooldown;
         _lastActivityTime = Time.time;
-        StopIdleTween();
 
-        transform.DOKill();
-        transform.localScale = _originalScale;
-
-        transform.DOPunchScale(_originalScale * 0.2f, 0.15f, vibrato: 1, elasticity: 0f)
-        .OnComplete(() =>
+        // Cube jumps up above the hole entrance, then falls down into _holeBottom.
+        Vector3 peakPosition = transform.position + Vector3.up * 2.5f;
+        ObjectColor hitColor = cube.Color;
+        bool destroyed = cube.OnHitByHole(IsRainbow, peakPosition, _holeBottom, () =>
         {
-            transform.localScale = _originalScale;
+            // Called when the cube reaches the bottom of the hole.
+            _inFlightCount = Mathf.Max(0, _inFlightCount - 1);
+            Board.Instance?.NotifyLineDoorHit(hitColor, this);
+
+            Total = Mathf.Max(0, Total - 1);
+            if (Total <= 0)
+            {
+                CanShoot = false;
+            }
+            TryRequestCollect();
         });
 
-        // game logic removal happens immediately; bullet is visual
-        ObjectColor hitColor = cube.Color;
-        bool destroyed = cube.OnHit(IsRainbow);
         if (destroyed)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Shooter] LineDoor hit color={hitColor} shooter={name}", this);
-#endif
-            Board.Instance?.NotifyLineDoorHit(hitColor, this);
+            _inFlightCount++;
+            // Stop firing once all remaining ammo is in flight.
+            if (_inFlightCount >= Total)
+            {
+                CanShoot = false;
+            }
         }
-
-        // Immediately decrement shooter ammo and handle collect � keeps logic atomic with hit
-        Total = Mathf.Max(0, Total - 1);
-
-        if (Total <= 0)
+        else
         {
-            CanShoot = false;
+            // Cube did not jump (ice locked / layer revealed). Consume ammo immediately.
+            Total = Mathf.Max(0, Total - 1);
+            if (Total <= 0)
+            {
+                CanShoot = false;
+            }
+            TryRequestCollect();
         }
+    }
 
-        if (Total <= 0 && !_collectRequested)
-        {
-            _collectRequested = true;
-            Gate?.CollectCurrentShooter();
-        }
-
-        // Visual bullet
-        FireBullet();
+    private void TryRequestCollect()
+    {
+        if (_collectRequested) return;
+        if (Total > 0) return;
+        if (_inFlightCount > 0) return;
+        _collectRequested = true;
+        Gate?.CollectCurrentShooter();
     }
 
     private void FireBullet()
@@ -613,54 +611,16 @@ public class Shooter : MonoBehaviour
 
     private void ApplyMaterial(bool forceColorMaterial = false)
     {
-        if (_renderer == null) return;
+        // Hole mode: hide normal/double renderers and only render the color into _holeRenderer.
+        if (_renderer != null) _renderer.enabled = false;
+        if (_rendererDouble != null) _rendererDouble.enabled = false;
 
-        Material material = null;
-        Material eyeMaterial = null;
-        if (IsRainbow)
-        {
-            // Prefer swapping to a dedicated rainbow model if provided.
-            // Fallback to material-based rainbow for older prefabs.
-            if (_rainbow != null)
-            {
-                UpdateRainbowState(force: true);
-                return;
-            }
+        if (_holeRenderer == null) return;
+        if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
 
-            material = _materialType6;
-            eyeMaterial = _materialType6;
-        }
-        else if (!forceColorMaterial && Type == 1)
-        {
-            material = _materialType1;
-            eyeMaterial = _materialType1;
-        }
-
-        if (material == null && eyeMaterial == null)
-        {
-            material = Board.Instance.ColorConfig.GetShooterColor(Color);
-            eyeMaterial = Board.Instance.ColorConfig.GetShooterEyeColor(Color);
-
-            if (Type == 1)
-            {
-                Type = 0;
-                if (_hiddenEffect != null)
-                {
-                    _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    _hiddenEffect.Play();
-                }
-            }
-        }
-
-        if (material == null || eyeMaterial == null) return;
-
-
-        _renderer.sharedMaterials = new Material[] { material, eyeMaterial };
-
-        if (_rendererDouble != null)
-        {
-            _rendererDouble.sharedMaterial = material;
-        }
+        Material material = Board.Instance.ColorConfig.GetShooterColor(Color);
+        if (material != null)
+            _holeRenderer.sharedMaterial = material;
     }
 
     private void OnDrawGizmos()

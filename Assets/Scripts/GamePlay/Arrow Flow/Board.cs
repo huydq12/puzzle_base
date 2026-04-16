@@ -848,6 +848,7 @@ public class Board : Singleton<Board>
 
         if (HasAnyCubeOnBoard()) return;
         if (HasPendingHiddenLayerContent()) return;
+        if (CubeLine.JumpingToHoleCount > 0) return;
 
         ConveyorController conveyor = ConveyorController.Instance;
         if (conveyor != null && conveyor.HasAnyCubePendingOrOnConveyor())

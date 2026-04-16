@@ -19,6 +19,7 @@ public enum CubeType
 }
 public class CubeLine : SerializedMonoBehaviour
 {
+    public static int JumpingToHoleCount = 0;
     [ReadOnly] public Line Line;
     [ReadOnly] public CubeType Type;
     [ReadOnly] public ObjectColor Color;
@@ -87,6 +88,64 @@ public class CubeLine : SerializedMonoBehaviour
             }
         }
     }
+    private bool _isJumpingToHole;
+
+    private void OnDestroy()
+    {
+        if (_isJumpingToHole)
+        {
+            JumpingToHoleCount--;
+            _isJumpingToHole = false;
+        }
+    }
+
+    public bool OnHitByHole(bool byRainbow, Vector3 peakPosition, Transform holeBottom, System.Action onArrived = null)
+    {
+        if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
+            return false;
+
+        if (ElementType == 3 && !_elementType3Revealed)
+        {
+            if (byRainbow)
+                ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
+
+            _elementType3Revealed = true;
+            if (!TryGetElementType3ShiftedColorFromOriginal(offset: 3, out ObjectColor shifted))
+                shifted = _originalColor;
+            _baseColor = shifted;
+            RefreshColorAndMaterials(Type);
+            SpawnHitEffect();
+            return false;
+        }
+
+        Cantouch = false;
+        if (byRainbow)
+            ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
+
+        ConveyorController.Instance.RemoveCubeFromPath(this);
+        JumpToHole(peakPosition, holeBottom, onArrived);
+        return true;
+    }
+
+    private void JumpToHole(Vector3 peakPosition, Transform holeBottom, System.Action onArrived)
+    {
+        _isJumpingToHole = true;
+        JumpingToHoleCount++;
+        transform.DOKill();
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(transform.DOMove(peakPosition, 0.25f).SetEase(Ease.OutQuad));
+        seq.Append(transform.DOMove(holeBottom.position, 0.3f).SetEase(Ease.InQuad));
+        seq.Insert(0.25f, transform.DOScale(0f, 0.3f).SetEase(Ease.InBack));
+        seq.OnComplete(() =>
+        {
+            _isJumpingToHole = false;
+            JumpingToHoleCount--;
+            onArrived?.Invoke();
+            Destroy(gameObject);
+        });
+    }
+
     public bool OnHit(bool byRainbow = false)
     {
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
