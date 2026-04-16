@@ -17,6 +17,7 @@ using UnityEngine;
 public class Outline : MonoBehaviour
 {
   private static HashSet<Mesh> registeredMeshes = new HashSet<Mesh>();
+  private static HashSet<Mesh> unreadableMeshes = new HashSet<Mesh>();
 
   public enum Mode
   {
@@ -249,7 +250,6 @@ public class Outline : MonoBehaviour
       bakeValues.Add(new ListVector3() { data = smoothNormals });
     }
   }
-
   void LoadSmoothNormals()
   {
     foreach (var renderer in Renderers)
@@ -259,15 +259,6 @@ public class Outline : MonoBehaviour
       if (renderer is SkinnedMeshRenderer skinned)
       {
         mesh = skinned.sharedMesh;
-
-        // Bỏ qua nếu đã xử lý
-        if (!registeredMeshes.Add(mesh))
-          continue;
-
-        // Clear UV3 (UV4 là TEXCOORD3)
-        mesh.uv4 = new Vector2[mesh.vertexCount];
-
-        CombineSubmeshes(mesh, skinned.sharedMaterials);
       }
       else if (renderer is MeshRenderer)
       {
@@ -276,21 +267,47 @@ public class Outline : MonoBehaviour
           continue;
 
         mesh = filter.sharedMesh;
+      }
 
-        if (!registeredMeshes.Add(mesh))
-          continue;
+      if (!CanProcessMesh(mesh, renderer))
+        continue;
 
-        // Lấy từ bake hoặc tính lại
+      if (!registeredMeshes.Add(mesh))
+        continue;
+
+      if (renderer is SkinnedMeshRenderer skinnedRenderer)
+      {
+        mesh.uv4 = new Vector2[mesh.vertexCount];
+        CombineSubmeshes(mesh, skinnedRenderer.sharedMaterials);
+      }
+      else
+      {
         int index = bakeKeys.IndexOf(mesh);
         var smoothNormals = (index >= 0) ? bakeValues[index].data : SmoothNormals(mesh);
 
         mesh.SetUVs(3, smoothNormals); // TEXCOORD3 = uv3
-
         CombineSubmeshes(mesh, renderer.sharedMaterials);
       }
     }
   }
 
+  bool CanProcessMesh(Mesh mesh, Renderer renderer)
+  {
+    if (mesh == null)
+      return false;
+
+    if (mesh.isReadable)
+      return true;
+
+    if (unreadableMeshes.Add(mesh))
+    {
+      Debug.LogWarning(
+        $"Outline skipped unreadable mesh '{mesh.name}' on '{renderer.name}'. Enable Read/Write for this mesh asset to use outlines.",
+        renderer);
+    }
+
+    return false;
+  }
 
   List<Vector3> SmoothNormals(Mesh mesh)
   {

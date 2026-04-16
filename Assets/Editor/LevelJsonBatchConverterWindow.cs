@@ -19,6 +19,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
     [SerializeField] private Vector2 spacing = Vector2.one;
 
     [SerializeField] private float shooterLocalXOffset = 0f;
+    [SerializeField] private int selectedLevel = 1;
 
     private enum ShooterPositionMode
     {
@@ -76,6 +77,13 @@ public class LevelJsonBatchConverterWindow : EditorWindow
 
         using (new EditorGUI.DisabledScope(jsonFolder == null || soFolder == null))
         {
+            selectedLevel = EditorGUILayout.IntField("Level Number", Mathf.Max(0, selectedLevel));
+
+            if (GUILayout.Button("Convert One"))
+            {
+                ConvertOne(selectedLevel);
+            }
+
             if (GUILayout.Button("Convert All"))
             {
                 ConvertAll();
@@ -127,14 +135,6 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         for (int i = 0; i < levelJsonGuids.Count; i++)
         {
             string path = AssetDatabase.GUIDToAssetPath(levelJsonGuids[i]);
-            TextAsset json = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-            if (json == null)
-            {
-                Debug.LogError($"Failed to load TextAsset at path: {path}");
-                failed++;
-                continue;
-            }
-
             int level;
             if (!TryParseLevelIndexFromJsonPath(path, out level))
             {
@@ -143,53 +143,12 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 continue;
             }
 
-            try
+            if (ConvertLevel(path, soFolderPath, level))
             {
-                LevelJsonRoot root = JsonUtility.FromJson<LevelJsonRoot>(json.text);
-                if (root == null)
-                {
-                    Debug.LogError($"JsonUtility returned null for: {path}");
-                    failed++;
-                    continue;
-                }
-
-                int arrowsCount = root.arrows != null ? root.arrows.Count : 0;
-                int shootersCount = root.shooters != null ? root.shooters.Count : 0;
-                int conveyorsCount = root.conveyors != null ? root.conveyors.Count : 0;
-                Debug.Log($"Parsed: {path} | arrows={arrowsCount}, shooters={shootersCount}, conveyors={conveyorsCount}");
-
-                Bounds2Int bounds = inferGridSizeFromData ? ComputeBounds(root) : new Bounds2Int(Vector2Int.zero, new Vector2Int(defaultColumns, defaultRows));
-                Vector2Int originOffset = (inferGridSizeFromData && normalizeCoordinatesToZero) ? bounds.Min : Vector2Int.zero;
-                Vector2Int shooterOffset = normalizeShootersWithGrid ? originOffset : Vector2Int.zero;
-
-                Vector2Int size = inferGridSizeFromData
-                    ? new Vector2Int(bounds.Size.x, bounds.Size.y)
-                    : new Vector2Int(defaultColumns, defaultRows);
-
-                Debug.Log($"Grid: {path} | size={size.x}x{size.y}, originOffset=({originOffset.x},{originOffset.y}), shooterOffset=({shooterOffset.x},{shooterOffset.y}), shooterMode={shooterPositionMode}");
-
-                size.x = Mathf.Max(1, size.x);
-                size.y = Mathf.Max(1, size.y);
-
-                LevelConfig config = LoadOrCreateLevelConfig(soFolderPath, level);
-                if (config == null)
-                {
-                    Debug.LogError($"Failed to load/create LevelConfig for level: {level}");
-                    failed++;
-                    continue;
-                }
-
-                ApplyRootToConfig(config, level, size.x, size.y, root, originOffset, shooterOffset);
-                EditorUtility.SetDirty(config);
-                int outShooterCount = config.Gates != null ? config.Gates.Count : 0;
-                int outShooterDoubleCount = config.GatesDouble != null ? config.GatesDouble.Count : 0;
-                int outConveyorCount = (config.ConveyorLine != null && config.ConveyorLine.Cells != null) ? config.ConveyorLine.Cells.Count : 0;
-                Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyorCells={outConveyorCount}");
                 converted++;
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogError($"Convert failed: {path} - {e.Message}");
                 failed++;
             }
         }
@@ -197,6 +156,93 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log($"Convert done. Converted: {converted}, Failed: {failed}");
+    }
+
+    private void ConvertOne(int level)
+    {
+        string jsonFolderPath = AssetDatabase.GetAssetPath(jsonFolder);
+        string soFolderPath = AssetDatabase.GetAssetPath(soFolder);
+
+        if (string.IsNullOrEmpty(jsonFolderPath) || string.IsNullOrEmpty(soFolderPath))
+        {
+            Debug.LogError("Invalid folder selection");
+            return;
+        }
+
+        string jsonPath = jsonFolderPath.TrimEnd('/') + $"/Level_{level}.json";
+        if (!File.Exists(jsonPath))
+        {
+            Debug.LogError($"Level json not found: {jsonPath}");
+            return;
+        }
+
+        if (!ConvertLevel(jsonPath, soFolderPath, level))
+        {
+            Debug.LogError($"Convert failed for level: {level}");
+            return;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"Convert done for level {level}");
+    }
+
+    private bool ConvertLevel(string jsonPath, string soFolderPath, int level)
+    {
+        TextAsset json = AssetDatabase.LoadAssetAtPath<TextAsset>(jsonPath);
+        if (json == null)
+        {
+            Debug.LogError($"Failed to load TextAsset at path: {jsonPath}");
+            return false;
+        }
+
+        try
+        {
+            LevelJsonRoot root = JsonUtility.FromJson<LevelJsonRoot>(json.text);
+            if (root == null)
+            {
+                Debug.LogError($"JsonUtility returned null for: {jsonPath}");
+                return false;
+            }
+
+            int arrowsCount = root.arrows != null ? root.arrows.Count : 0;
+            int shootersCount = root.shooters != null ? root.shooters.Count : 0;
+            int conveyorsCount = root.conveyors != null ? root.conveyors.Count : 0;
+            Debug.Log($"Parsed: {jsonPath} | arrows={arrowsCount}, shooters={shootersCount}, conveyors={conveyorsCount}");
+
+            Bounds2Int bounds = inferGridSizeFromData ? ComputeBounds(root) : new Bounds2Int(Vector2Int.zero, new Vector2Int(defaultColumns, defaultRows));
+            Vector2Int originOffset = (inferGridSizeFromData && normalizeCoordinatesToZero) ? bounds.Min : Vector2Int.zero;
+            Vector2Int shooterOffset = normalizeShootersWithGrid ? originOffset : Vector2Int.zero;
+
+            Vector2Int size = inferGridSizeFromData
+                ? new Vector2Int(bounds.Size.x, bounds.Size.y)
+                : new Vector2Int(defaultColumns, defaultRows);
+
+            Debug.Log($"Grid: {jsonPath} | size={size.x}x{size.y}, originOffset=({originOffset.x},{originOffset.y}), shooterOffset=({shooterOffset.x},{shooterOffset.y}), shooterMode={shooterPositionMode}");
+
+            size.x = Mathf.Max(1, size.x);
+            size.y = Mathf.Max(1, size.y);
+
+            LevelConfig config = LoadOrCreateLevelConfig(soFolderPath, level);
+            if (config == null)
+            {
+                Debug.LogError($"Failed to load/create LevelConfig for level: {level}");
+                return false;
+            }
+
+            ApplyRootToConfig(config, level, size.x, size.y, root, originOffset, shooterOffset);
+            EditorUtility.SetDirty(config);
+            int outShooterCount = config.Gates != null ? config.Gates.Count : 0;
+            int outShooterDoubleCount = config.GatesDouble != null ? config.GatesDouble.Count : 0;
+            int outConveyorCount = (config.ConveyorLine != null && config.ConveyorLine.Cells != null) ? config.ConveyorLine.Cells.Count : 0;
+            Debug.Log($"Converted: {jsonPath} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyorCells={outConveyorCount}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Convert failed: {jsonPath} - {e.Message}");
+            return false;
+        }
     }
 
     private void ApplyRootToConfig(LevelConfig config, int level, int columns, int rows, LevelJsonRoot root, Vector2Int originOffset, Vector2Int shooterOffset)
