@@ -26,6 +26,9 @@ public class Line : MonoBehaviour
     [SerializeField] private int _bombElementType = 8;
     [SerializeField] private int _keyElementType = 11;
 
+    [SerializeField] private GameObject _connect;
+
+    [SerializeField] private Renderer _connectColor;
 
     private float _cellDistance;
     private bool _isMoving;
@@ -60,6 +63,7 @@ public class Line : MonoBehaviour
     private Key _keyInstance;
     private bool _keyConsumed;
     private bool _hasKeyElement;
+    private readonly List<GameObject> _connectInstances = new();
     public void Clear()
     {
         _isMoving = false;
@@ -96,11 +100,13 @@ public class Line : MonoBehaviour
 
         StopBomb();
         StopKey();
+        ClearConnectors();
     }
 
     private void Update()
     {
         UpdateKeyVisuals();
+        UpdateConnectors();
         if (!_bombActive) return;
         if (GameManagerInGame.Instance != null &&
             GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
@@ -141,6 +147,7 @@ public class Line : MonoBehaviour
         if (_counterText == null)
             _counterText = GetComponentInChildren<TextMeshPro>(true);
         UpdateCounterText();
+        UpdateConnectorColor();
     }
 
     public void InitializeCounter(int counter)
@@ -148,6 +155,7 @@ public class Line : MonoBehaviour
         Counter = Mathf.Max(0, counter);
         RemainingCounter = Counter;
         UpdateCounterText();
+        UpdateConnectorColor();
     }
 
     public void SetIsIceLine(bool isIceLine)
@@ -274,6 +282,32 @@ public class Line : MonoBehaviour
         UpdateCounterText();
         UpdateCounterTextPosition();
         UpdateBombVisuals();
+        UpdateConnectorColor();
+        UpdateConnectors();
+    }
+
+    private void UpdateConnectorColor()
+    {
+        if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
+
+        Material connectMat = Board.Instance.ColorConfig.GetCubeHeadColor(Color);
+        if (connectMat == null) return;
+
+        if (_connectColor != null)
+            _connectColor.sharedMaterial = connectMat;
+
+        for (int i = 0; i < _connectInstances.Count; i++)
+        {
+            GameObject connectInstance = _connectInstances[i];
+            if (connectInstance == null) continue;
+
+            Renderer[] renderers = connectInstance.GetComponentsInChildren<Renderer>(true);
+            for (int j = 0; j < renderers.Length; j++)
+            {
+                if (renderers[j] == null) continue;
+                renderers[j].sharedMaterial = connectMat;
+            }
+        }
     }
 
     private void UpdateCounterText()
@@ -582,6 +616,71 @@ public class Line : MonoBehaviour
         _counterText.transform.position = anchor.transform.position + _counterTextOffset;
     }
 
+    private void UpdateConnectors()
+    {
+        if (_connect == null)
+        {
+            ClearConnectors();
+            return;
+        }
+
+        int requiredCount = Cubes != null ? Mathf.Max(0, Cubes.Count - 1) : 0;
+
+        while (_connectInstances.Count < requiredCount)
+        {
+            GameObject connectInstance = Instantiate(_connect, transform);
+            _connectInstances.Add(connectInstance);
+        }
+
+        UpdateConnectorColor();
+
+        for (int i = 0; i < _connectInstances.Count; i++)
+        {
+            GameObject connectInstance = _connectInstances[i];
+            if (connectInstance == null) continue;
+
+            bool shouldShow = i < requiredCount &&
+                              Cubes != null &&
+                              Cubes[i] != null &&
+                              Cubes[i + 1] != null;
+
+            if (connectInstance.activeSelf != shouldShow)
+                connectInstance.SetActive(shouldShow);
+
+            if (!shouldShow) continue;
+
+            Transform from = Cubes[i].transform;
+            Transform to = Cubes[i + 1].transform;
+            Vector3 direction = to.position - from.position;
+
+            Vector3 midpoint = (from.position + to.position) * 0.5f;
+            midpoint.y = 0.5f;
+            connectInstance.transform.position = midpoint;
+
+            if (direction.sqrMagnitude > 0.0001f)
+                connectInstance.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up) * Quaternion.Euler(0f, 90f, 0f);
+        }
+
+        for (int i = requiredCount; i < _connectInstances.Count; i++)
+        {
+            GameObject connectInstance = _connectInstances[i];
+            if (connectInstance != null && connectInstance.activeSelf)
+                connectInstance.SetActive(false);
+        }
+    }
+
+    private void ClearConnectors()
+    {
+        for (int i = 0; i < _connectInstances.Count; i++)
+        {
+            GameObject connectInstance = _connectInstances[i];
+            if (connectInstance != null)
+                Destroy(connectInstance);
+        }
+
+        _connectInstances.Clear();
+    }
+
     private void ResetMoveState()
     {
         _history.Clear();
@@ -806,12 +905,13 @@ public class Line : MonoBehaviour
 	            }
 	        }
 
-	        if (Cubes.Count == 0)
-	        {
-	            if (destroyedKey)
-	                ReleaseKeyIfNeeded("cube_destroyed", force: true);
+        if (Cubes.Count == 0)
+        {
+            if (destroyedKey)
+                ReleaseKeyIfNeeded("cube_destroyed", force: true);
             else
                 ReleaseKeyIfNeeded("line_empty");
+            ClearConnectors();
             Destroy(gameObject);
         }
         else
@@ -1008,6 +1108,7 @@ public class Line : MonoBehaviour
         {
             ReleaseKeyIfNeeded("line_empty");
             ConveyorController.Instance.OnLineMoved();
+            ClearConnectors();
             Destroy(gameObject);
         }
     }
