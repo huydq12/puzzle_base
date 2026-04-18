@@ -654,7 +654,7 @@ public class Line : MonoBehaviour
             Vector3 direction = to.position - from.position;
 
             Vector3 midpoint = (from.position + to.position) * 0.5f;
-            midpoint.y = 0.5f;
+            midpoint.y = 0.7f;
             connectInstance.transform.position = midpoint;
 
             if (direction.sqrMagnitude > 0.0001f)

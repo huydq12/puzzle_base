@@ -31,6 +31,9 @@ public class ConveyorController : Singleton<ConveyorController>
     private Tween _loseShowTween;
     private bool _isBlinking;
     private Tween _blinkTween;
+    private Material _rendererMaterial;
+    private Color _rendererBaseColor;
+    private bool _hasRendererBaseColor;
     private WaitForSeconds _cycleWait;
     private float _cycleWaitSeconds = -1f;
     public bool BringToTop
@@ -683,15 +686,36 @@ public class ConveyorController : Singleton<ConveyorController>
         slot.CubeSlot.transform.DOMove(targetPos, time).SetEase(Ease.Linear);
         slot.CubeSlot.transform.LookAt(targetPos + dir);
     }
+
+    private bool EnsureRendererBaseColor()
+    {
+        if (_renderer == null) return false;
+        if (_rendererMaterial == null)
+            _rendererMaterial = _renderer.material;
+        if (_rendererMaterial == null) return false;
+
+        if (!_hasRendererBaseColor)
+        {
+            _rendererBaseColor = _rendererMaterial.color;
+            _hasRendererBaseColor = true;
+        }
+
+        return true;
+    }
+
     private void StartBlink()
     {
         _isBlinking = true;
 
         _blinkTween?.Kill();
+        _blinkTween = null;
 
-        _renderer.material.color = Color.white;
+        if (!EnsureRendererBaseColor())
+            return;
 
-        _blinkTween = _renderer.material
+        _rendererMaterial.color = _rendererBaseColor;
+
+        _blinkTween = _rendererMaterial
             .DOColor(_warningColor, 0.3f)
             .SetLoops(-1, LoopType.Yoyo)
             .SetEase(Ease.InOutSine);
@@ -704,7 +728,10 @@ public class ConveyorController : Singleton<ConveyorController>
         _blinkTween?.Kill();
         _blinkTween = null;
 
-        _renderer.material.color = Color.white;
+        if (!EnsureRendererBaseColor())
+            return;
+
+        _rendererMaterial.color = _rendererBaseColor;
     }
 
     private void Clear()

@@ -150,6 +150,7 @@ public class Gate : MonoBehaviour
             _door.gameObject.SetActive(false);
             _total.enabled = false;
             _belt.localPosition = new Vector3(0f, -0.175f, -2.25f);
+            _belt.localScale = new Vector3(0.5f, 0.67f , 0.67f);
         }
         else
         {
@@ -354,7 +355,7 @@ public class Gate : MonoBehaviour
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
-        _belt.transform.localScale = new Vector3(0.55f, 0.67f , 0.67f);
+        _belt.transform.localScale = new Vector3(0.62f, 0.67f , 0.67f);
         _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
     }
 

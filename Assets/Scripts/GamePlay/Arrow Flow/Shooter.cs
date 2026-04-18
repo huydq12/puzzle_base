@@ -85,6 +85,10 @@ public class Shooter : MonoBehaviour
     private const string RainbowAnimStateFly = "SuperMan_Fly_Anim";
     private Coroutine _rainbowFlyRoutine;
 
+    [SerializeField] private ParticleSystem _hitEffect;
+    [SerializeField] private ParticleSystem _activeEffect;
+    private readonly Dictionary<ParticleSystem, ParticleSystem.MinMaxGradient> _effectBaseStartColors = new();
+
     private void UpdateDoubleRendererState()
     {
         if (_rendererDouble == null) return;
@@ -251,6 +255,12 @@ public class Shooter : MonoBehaviour
         UpdateRayDistance();
     }
 
+    private void OnEnable()
+    {
+        ApplyShooterEffectColor();
+        TriggerActiveEffect();
+    }
+
     private void OnDisable()
     {
         ResetForReuse();
@@ -274,6 +284,8 @@ public class Shooter : MonoBehaviour
 
         if (_hiddenEffect != null)
             _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (_activeEffect != null)
+            _activeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
         if (_rendererDouble != null)
             _rendererDouble.enabled = false;
@@ -294,6 +306,8 @@ public class Shooter : MonoBehaviour
             StopCoroutine(_enableShootRoutine);
             _enableShootRoutine = null;
         }
+
+        _effectBaseStartColors.Clear();
     }
 
     private void PrewarmBulletPool()
@@ -348,6 +362,7 @@ public class Shooter : MonoBehaviour
                 ShowTotal = true;
                 _collectRequested = false;
                 SetSize(0.75f);
+                TriggerActiveEffect();
                 break;
 
             case ShooterRole.Next:
@@ -515,6 +530,7 @@ public class Shooter : MonoBehaviour
         bool destroyed = cube.OnHitByHole(IsRainbow, peakPosition, _holeBottom, () =>
         {
             // Called when the cube reaches the bottom of the hole.
+            SpawnHoleHitEffect();
             _inFlightCount = Mathf.Max(0, _inFlightCount - 1);
             Board.Instance?.NotifyLineDoorHit(hitColor, this);
 
@@ -545,6 +561,127 @@ public class Shooter : MonoBehaviour
             }
             TryRequestCollect();
         }
+    }
+
+    private void SpawnHoleHitEffect()
+    {
+        if (_hitEffect == null) return;
+
+        // if (_holeBottom != null)
+        //     _hitEffect.transform.position = _holeBottom.position;
+        // else
+        //     _hitEffect.transform.position = transform.position;
+
+        // _hitEffect.transform.rotation = Quaternion.identity;
+        _hitEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        _hitEffect.Play(true);
+    }
+
+    private void TriggerActiveEffect()
+    {
+        if (_activeEffect == null) return;
+        _activeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        _activeEffect.Play(true);
+    }
+
+    private void ApplyShooterEffectColor()
+    {
+        UnityEngine.Color shooterFxColor = ResolveShooterFxColor();
+        ApplyColorToEffect(_hitEffect, shooterFxColor);
+        ApplyColorToEffect(_activeEffect, shooterFxColor);
+    }
+
+    private UnityEngine.Color ResolveShooterFxColor()
+    {
+        if (Board.Instance == null || Board.Instance.ColorConfig == null)
+            return UnityEngine.Color.white;
+
+        UnityEngine.Color c = Board.Instance.ColorConfig.GetLineDoorColor(Color);
+        if (c.a <= 0f)
+            c = Board.Instance.ColorConfig.GetOutlineShooter(Color);
+        if (c.a <= 0f)
+            c = UnityEngine.Color.white;
+        return c;
+    }
+
+    private void ApplyColorToEffect(ParticleSystem rootEffect, UnityEngine.Color tintColor)
+    {
+        if (rootEffect == null) return;
+
+        ParticleSystem[] systems = rootEffect.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < systems.Length; i++)
+        {
+            ParticleSystem ps = systems[i];
+            if (ps == null) continue;
+
+            if (!_effectBaseStartColors.TryGetValue(ps, out var baseStartColor))
+            {
+                baseStartColor = ps.main.startColor;
+                _effectBaseStartColors[ps] = baseStartColor;
+            }
+
+            var main = ps.main;
+            main.startColor = TintStartGradient(baseStartColor, tintColor);
+        }
+    }
+
+    private static ParticleSystem.MinMaxGradient TintStartGradient(ParticleSystem.MinMaxGradient baseGradient, UnityEngine.Color tintColor)
+    {
+        switch (baseGradient.mode)
+        {
+            case ParticleSystemGradientMode.Color:
+                return new ParticleSystem.MinMaxGradient(TintColor(baseGradient.color, tintColor));
+
+            case ParticleSystemGradientMode.TwoColors:
+                return new ParticleSystem.MinMaxGradient(
+                    TintColor(baseGradient.colorMin, tintColor),
+                    TintColor(baseGradient.colorMax, tintColor)
+                );
+
+            case ParticleSystemGradientMode.Gradient:
+                return new ParticleSystem.MinMaxGradient(TintGradient(baseGradient.gradient, tintColor));
+
+            case ParticleSystemGradientMode.TwoGradients:
+                return new ParticleSystem.MinMaxGradient(
+                    TintGradient(baseGradient.gradientMin, tintColor),
+                    TintGradient(baseGradient.gradientMax, tintColor)
+                );
+
+            case ParticleSystemGradientMode.RandomColor:
+                return new ParticleSystem.MinMaxGradient(TintGradient(baseGradient.gradient, tintColor));
+
+            default:
+                return new ParticleSystem.MinMaxGradient(TintColor(baseGradient.color, tintColor));
+        }
+    }
+
+    private static Gradient TintGradient(Gradient source, UnityEngine.Color tintColor)
+    {
+        if (source == null) return null;
+
+        GradientColorKey[] colorKeys = source.colorKeys;
+        GradientAlphaKey[] alphaKeys = source.alphaKeys;
+
+        for (int i = 0; i < colorKeys.Length; i++)
+        {
+            UnityEngine.Color c = colorKeys[i].color;
+            c.r *= tintColor.r;
+            c.g *= tintColor.g;
+            c.b *= tintColor.b;
+            colorKeys[i].color = c;
+        }
+
+        Gradient g = new Gradient();
+        g.SetKeys(colorKeys, alphaKeys);
+        return g;
+    }
+
+    private static UnityEngine.Color TintColor(UnityEngine.Color source, UnityEngine.Color tint)
+    {
+        source.r = tint.r;
+        source.g = tint.g;
+        source.b = tint.b;
+        return source;
     }
 
     private void TryRequestCollect()
@@ -582,6 +719,7 @@ public class Shooter : MonoBehaviour
     {
         Color = color;
         ApplyMaterial();
+        ApplyShooterEffectColor();
         UpdateDoubleRendererState();
         UpdateRainbowState();
     }
@@ -591,6 +729,7 @@ public class Shooter : MonoBehaviour
         Type = type;
         UpdateRayDistance();
         ApplyMaterial();
+        ApplyShooterEffectColor();
         UpdateDoubleRendererState();
         UpdateRainbowState(force: true);
     }
@@ -605,6 +744,7 @@ public class Shooter : MonoBehaviour
         Type = RainbowType;
         UpdateRayDistance();
         ApplyMaterial();
+        ApplyShooterEffectColor();
         UpdateDoubleRendererState();
         UpdateRainbowState(force: true);
     }
