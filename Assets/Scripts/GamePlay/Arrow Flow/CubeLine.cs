@@ -118,6 +118,7 @@ public class CubeLine : SerializedMonoBehaviour
 
             // First hole hit: peel the currently visible layer into the hole.
             SpawnElementType3InnerLayerJumpToHole(peakPosition, holeBottom);
+            HideDoubleLayerVisuals();
 
             _elementType3Revealed = true;
             // After peeling one layer, the remaining cube should switch to inner color.
@@ -149,6 +150,7 @@ public class CubeLine : SerializedMonoBehaviour
 
         ghost.transform.SetParent(null, true);
         ghost.transform.localScale = source.lossyScale;
+        StripGhostToSingleVisual(source, ghost.transform);
         Common.SetLayerRecursively(ghost, LayerMask.NameToLayer("Top"));
 
         var colliders = ghost.GetComponentsInChildren<Collider>(true);
@@ -217,6 +219,52 @@ public class CubeLine : SerializedMonoBehaviour
         }
 
         return null;
+    }
+
+    private static void StripGhostToSingleVisual(Transform source, Transform ghostRoot)
+    {
+        if (source == null || ghostRoot == null) return;
+
+        Renderer sourceRenderer = source.GetComponent<Renderer>();
+        if (sourceRenderer != null)
+        {
+            int sourceRendererIndex = -1;
+            var sourceRootRenderers = source.GetComponents<Renderer>();
+            for (int i = 0; i < sourceRootRenderers.Length; i++)
+            {
+                if (sourceRootRenderers[i] == sourceRenderer)
+                {
+                    sourceRendererIndex = i;
+                    break;
+                }
+            }
+
+            var ghostRootRenderers = ghostRoot.GetComponents<Renderer>();
+            for (int i = 0; i < ghostRootRenderers.Length; i++)
+            {
+                if (ghostRootRenderers[i] == null) continue;
+                bool keepThisRenderer = sourceRendererIndex >= 0
+                    ? i == sourceRendererIndex
+                    : i == 0;
+                ghostRootRenderers[i].enabled = keepThisRenderer;
+            }
+        }
+
+        var childRenderers = ghostRoot.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < childRenderers.Length; i++)
+        {
+            if (childRenderers[i] == null) continue;
+            if (childRenderers[i].transform != ghostRoot)
+                childRenderers[i].enabled = false;
+        }
+    }
+
+    private void HideDoubleLayerVisuals()
+    {
+        if (_doubleCube != null)
+            _doubleCube.gameObject.SetActive(false);
+        if (_doubleHeadCube != null)
+            _doubleHeadCube.gameObject.SetActive(false);
     }
 
     private void JumpToHole(Vector3 peakPosition, Transform holeBottom, System.Action onArrived)

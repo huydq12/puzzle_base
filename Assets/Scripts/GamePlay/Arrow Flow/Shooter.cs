@@ -29,6 +29,7 @@ public class Shooter : MonoBehaviour
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
     [SerializeField] private Material _materialType6;
+    [SerializeField] private Material _materialHoleDefault;
     [SerializeField] private Vector3 _offsetRay;
     [SerializeField] private float _rayDistance;
     [SerializeField] private float _rainbowRayDistance = 20f;
@@ -39,6 +40,9 @@ public class Shooter : MonoBehaviour
     [SerializeField] private Animation _animation;
     [SerializeField] private Outline _outline;
     [SerializeField] private Renderer _holeRenderer;
+
+    [SerializeField] private Renderer _hidenRenderer;
+
     [SerializeField] private Transform _holeBottom;
     private float _bulletSpeed = 50f; // set a sensible default (tune in Inspector)
     [SerializeField] private bool _drawGizmos;
@@ -768,13 +772,14 @@ public class Shooter : MonoBehaviour
         else if (!forceColorMaterial && Type == 1 && _materialType1 != null)
         {
             material = _materialType1;
+            _hidenRenderer.sharedMaterial = _materialType1;
         }
 
         if (material == null)
         {
             if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
             material = Board.Instance.ColorConfig.GetShooterColor(Color);
-
+            
             // Legacy behavior: when a type-1 shooter becomes current (forced color material),
             // convert it to normal and play reveal VFX once.
             if (wasType1)
@@ -791,6 +796,7 @@ public class Shooter : MonoBehaviour
     private void TriggerHiddenEffect()
     {
         if (_hiddenEffect == null) return;
+        _hidenRenderer.sharedMaterial = _materialHoleDefault;
         _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _hiddenEffect.Play(true);
     }
