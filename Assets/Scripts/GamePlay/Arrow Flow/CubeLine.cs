@@ -37,6 +37,7 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private UnityEngine.Color _headHighlightColor = new UnityEngine.Color(1f, 1f, 1f, 1f);
     [SerializeField] private Material _materialElementType2;
     [SerializeField] private Collider _collider;
+    [SerializeField] private float _holeLandingYOffset = 0.22f;
     private Quaternion _initRotation;
     private bool _elementType3Revealed;
     private ObjectColor _baseColor;
@@ -139,10 +140,37 @@ public class CubeLine : SerializedMonoBehaviour
         JumpingToHoleCount++;
         transform.DOKill();
 
+        Vector3 startPos = transform.position;
+        Vector3 endPos = holeBottom != null
+            ? holeBottom.position + Vector3.up * _holeLandingYOffset
+            : peakPosition;
+        Vector3 startScale = transform.localScale;
+
+        float horizontalDistance = Vector2.Distance(
+            new Vector2(startPos.x, startPos.z),
+            new Vector2(endPos.x, endPos.z)
+        );
+        float travelDuration = Mathf.Lerp(0.32f, 0.48f, Mathf.InverseLerp(0.5f, 6f, horizontalDistance));
+        float dynamicApex = Mathf.Max(startPos.y, endPos.y) + Mathf.Clamp(horizontalDistance * 0.35f, 0.6f, 1.8f);
+        float apexY = Mathf.Max(dynamicApex, peakPosition.y);
+        float baselineMidY = (startPos.y + endPos.y) * 0.5f;
+        float arcHeight = Mathf.Max(0.1f, apexY - baselineMidY);
+
         Sequence seq = DOTween.Sequence();
-        seq.Append(transform.DOMove(peakPosition, 0.25f).SetEase(Ease.OutQuad));
-        seq.Append(transform.DOMove(holeBottom.position, 0.3f).SetEase(Ease.InQuad));
-        seq.Insert(0.25f, transform.DOScale(0f, 0.3f).SetEase(Ease.InBack));
+        Vector3 anticipationScale = Vector3.Scale(startScale, new Vector3(1.06f, 0.9f, 1.06f));
+        seq.Append(transform.DOScale(anticipationScale, 0.05f).SetEase(Ease.OutQuad));
+        seq.Append(transform.DOScale(startScale, 0.06f).SetEase(Ease.OutQuad));
+        seq.Append(
+            DOVirtual.Float(0f, 1f, travelDuration, t =>
+            {
+                Vector3 pos = Vector3.Lerp(startPos, endPos, t);
+                pos.y = Mathf.Lerp(startPos.y, endPos.y, t) + arcHeight * 4f * t * (1f - t);
+                transform.position = pos;
+            }).SetEase(Ease.InQuad)
+        );
+        seq.Append(transform.DOScale(startScale * 0.28f, 0.08f).SetEase(Ease.InQuad));
+        seq.Append(transform.DOScale(0f, 0.07f).SetEase(Ease.OutQuad));
+
         seq.OnComplete(() =>
         {
             _isJumpingToHole = false;

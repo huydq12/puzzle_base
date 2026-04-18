@@ -9,7 +9,7 @@ public class Gate : MonoBehaviour
 {
     private const int FallbackRainbowShooterCounter = 20;
 
-    [SerializeField] private Transform _maskDoor;
+    // [SerializeField] private Transform _maskDoor;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Transform _tunnel;
     [SerializeField] private Transform _belt;
@@ -339,10 +339,10 @@ public class Gate : MonoBehaviour
         {
             _total.enabled = false;
             _door.gameObject.SetActive(true);
-            _maskDoor.gameObject.SetActive(true);
+            // _maskDoor.gameObject.SetActive(true);
             Sequence sq = DOTween.Sequence();
             sq.Append(_belt.DOScaleX(0.18f, 0.25f));
-            sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
+            // sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
             sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
         }
     }
@@ -354,9 +354,9 @@ public class Gate : MonoBehaviour
             _closeEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _total.enabled = true;
         _door.gameObject.SetActive(false);
-        _maskDoor.gameObject.SetActive(false);
+        // _maskDoor.gameObject.SetActive(false);
         _belt.transform.localScale = new Vector3(0.62f, 0.67f , 0.67f);
-        _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
+        // _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
     }
 
     private Transform GetShooterHolderByIndex(int index)
