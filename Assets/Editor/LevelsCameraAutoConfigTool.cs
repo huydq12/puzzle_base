@@ -28,7 +28,7 @@ public static class LevelsCameraAutoConfigTool
         //   5x5 => y=13, ortho=8
         //   6x6 => y=13, ortho=8.5
         const int baseDim = 5;
-        const float baseY = 13f;
+        const float baseY = 21f;
         const float baseOrtho = 8f;
         const float orthoStepPerCell = 0.5f;
         const float yIncreasePerCell = 0.2f;

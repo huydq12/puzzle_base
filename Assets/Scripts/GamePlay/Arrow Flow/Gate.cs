@@ -149,14 +149,15 @@ public class Gate : MonoBehaviour
             _tunnel.gameObject.SetActive(false);
             _door.gameObject.SetActive(false);
             _total.enabled = false;
-            _belt.localPosition = new Vector3(0f, -0.175f, -2.25f);
-            _belt.localScale = new Vector3(0.5f, 0.67f , 0.67f);
+            _belt.localPosition = new Vector3(0f, -0.175f, -0.5f);
+            _belt.localScale = new Vector3(0.5f, 0.67f , 0.67f)*3;
         }
         else
         {
             _tunnel.gameObject.SetActive(true);
             _total.enabled = true;
-            _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
+            _belt.localPosition = new Vector3(0f, -0.175f, -0.55f);
+            _belt.localScale = new Vector3(1.65f, 1.83f , 3f);
         }
 
 	        for (int i = 0; i < Shooters.Count; i++)
@@ -341,7 +342,9 @@ public class Gate : MonoBehaviour
             _door.gameObject.SetActive(true);
             // _maskDoor.gameObject.SetActive(true);
             Sequence sq = DOTween.Sequence();
-            sq.Append(_belt.DOScaleX(0.18f, 0.25f));
+            // sq.Append(_belt.DOScaleZ(0.18f, 0.25f));
+            sq.Append(_belt.DOLocalMoveZ(-2f, 0.5f));
+            sq.Append(_belt.DOScaleZ(0.1f, 0.05f));
             // sq.Append(_maskDoor.DOLocalMoveY(-1.25f, 0.2f));
             sq.AppendCallback(() => ShooterController.Instance?.NotifyGateClosed(this));
         }

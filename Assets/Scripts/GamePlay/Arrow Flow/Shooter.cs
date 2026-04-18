@@ -751,16 +751,48 @@ public class Shooter : MonoBehaviour
 
     private void ApplyMaterial(bool forceColorMaterial = false)
     {
-        // Hole mode: hide normal/double renderers and only render the color into _holeRenderer.
+        // Hole mode: hide normal/double renderers and render via _holeRenderer only.
         if (_renderer != null) _renderer.enabled = false;
         if (_rendererDouble != null) _rendererDouble.enabled = false;
 
         if (_holeRenderer == null) return;
-        if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
 
-        Material material = Board.Instance.ColorConfig.GetShooterColor(Color);
+        bool wasType1 = Type == 1;
+        Material material = null;
+
+        // Keep legacy type materials for hole-render mode as well.
+        if (IsRainbow && _materialType6 != null)
+        {
+            material = _materialType6;
+        }
+        else if (!forceColorMaterial && Type == 1 && _materialType1 != null)
+        {
+            material = _materialType1;
+        }
+
+        if (material == null)
+        {
+            if (Board.Instance == null || Board.Instance.ColorConfig == null) return;
+            material = Board.Instance.ColorConfig.GetShooterColor(Color);
+
+            // Legacy behavior: when a type-1 shooter becomes current (forced color material),
+            // convert it to normal and play reveal VFX once.
+            if (wasType1)
+            {
+                Type = 0;
+                TriggerHiddenEffect();
+            }
+        }
+
         if (material != null)
             _holeRenderer.sharedMaterial = material;
+    }
+
+    private void TriggerHiddenEffect()
+    {
+        if (_hiddenEffect == null) return;
+        _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        _hiddenEffect.Play(true);
     }
 
     private void OnDrawGizmos()
