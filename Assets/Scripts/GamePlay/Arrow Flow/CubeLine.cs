@@ -116,12 +116,17 @@ public class CubeLine : SerializedMonoBehaviour
             if (byRainbow)
                 ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
 
+            // First hole hit: peel the currently visible layer into the hole.
+            SpawnElementType3InnerLayerJumpToHole(peakPosition, holeBottom);
+
             _elementType3Revealed = true;
+            // After peeling one layer, the remaining cube should switch to inner color.
             if (!TryGetElementType3ShiftedColorFromOriginal(offset: 3, out ObjectColor shifted))
                 shifted = _originalColor;
             _baseColor = shifted;
             RefreshColorAndMaterials(Type);
             SpawnHitEffect();
+            // Type 3 should peel one layer per hit. First hit only reveals inner layer.
             return false;
         }
 
@@ -132,6 +137,86 @@ public class CubeLine : SerializedMonoBehaviour
         ConveyorController.Instance.RemoveCubeFromPath(this);
         JumpToHole(peakPosition, holeBottom, onArrived);
         return true;
+    }
+
+    private void SpawnElementType3InnerLayerJumpToHole(Vector3 peakPosition, Transform holeBottom)
+    {
+        Transform source = GetElementType3InnerLayerVisualSource();
+        if (source == null) return;
+
+        GameObject ghost = Instantiate(source.gameObject, source.position, source.rotation);
+        if (ghost == null) return;
+
+        ghost.transform.SetParent(null, true);
+        ghost.transform.localScale = source.lossyScale;
+        Common.SetLayerRecursively(ghost, LayerMask.NameToLayer("Top"));
+
+        var colliders = ghost.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+            colliders[i].enabled = false;
+
+        ghost.transform.DOKill();
+
+        Vector3 startPos = ghost.transform.position;
+        Vector3 endPos = holeBottom != null
+            ? holeBottom.position + Vector3.up * _holeLandingYOffset
+            : peakPosition;
+        Vector3 startScale = ghost.transform.localScale;
+
+        float horizontalDistance = Vector2.Distance(
+            new Vector2(startPos.x, startPos.z),
+            new Vector2(endPos.x, endPos.z)
+        );
+        float travelDuration = Mathf.Lerp(0.28f, 0.42f, Mathf.InverseLerp(0.5f, 6f, horizontalDistance));
+        float dynamicApex = Mathf.Max(startPos.y, endPos.y) + Mathf.Clamp(horizontalDistance * 0.32f, 0.45f, 1.5f);
+        float apexY = Mathf.Max(dynamicApex, peakPosition.y);
+        float baselineMidY = (startPos.y + endPos.y) * 0.5f;
+        float arcHeight = Mathf.Max(0.08f, apexY - baselineMidY);
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(
+            DOVirtual.Float(0f, 1f, travelDuration, t =>
+            {
+                if (ghost == null) return;
+                Vector3 pos = Vector3.Lerp(startPos, endPos, t);
+                pos.y = Mathf.Lerp(startPos.y, endPos.y, t) + arcHeight * 4f * t * (1f - t);
+                ghost.transform.position = pos;
+            }).SetEase(Ease.InQuad)
+        );
+        seq.Join(
+            ghost.transform.DOScale(startScale * 0.25f, travelDuration * 0.55f)
+                .SetDelay(travelDuration * 0.45f)
+                .SetEase(Ease.InQuad)
+        );
+        seq.Append(ghost.transform.DOScale(0f, 0.06f).SetEase(Ease.OutQuad));
+        seq.OnComplete(() =>
+        {
+            if (ghost != null)
+                Destroy(ghost);
+        });
+    }
+
+    private Transform GetElementType3InnerLayerVisualSource()
+    {
+        // Use currently visible main layer first so the first-hole jump keeps the hit color.
+        if (_renderers != null && _renderers.TryGetValue(Type, out Renderer renderer) && renderer != null && renderer.enabled)
+            return renderer.transform;
+
+        if (_head != null && _head.enabled)
+            return _head.transform;
+
+        if (Type == CubeType.Head)
+        {
+            if (_doubleHeadCube != null && _doubleHeadCube.gameObject.activeInHierarchy)
+                return _doubleHeadCube.transform;
+        }
+        else
+        {
+            if (_doubleCube != null && _doubleCube.gameObject.activeInHierarchy)
+                return _doubleCube.transform;
+        }
+
+        return null;
     }
 
     private void JumpToHole(Vector3 peakPosition, Transform holeBottom, System.Action onArrived)
