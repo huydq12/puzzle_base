@@ -79,6 +79,7 @@ public class Shooter : MonoBehaviour
     public bool IsRainbow => Type == RainbowType;
     private float _nextDebugRaycastTime;
     private bool _rainbowVisible;
+    private bool _suppressRainbowLockIcon;
 
     [SerializeField] private ParticleSystem _hitEffect;
     [SerializeField] private ParticleSystem _activeEffect;
@@ -143,6 +144,13 @@ public class Shooter : MonoBehaviour
     {
         if (_rainbowLock == null) return;
 
+        if (_suppressRainbowLockIcon)
+        {
+            if (_rainbowLock.activeSelf)
+                _rainbowLock.SetActive(false);
+            return;
+        }
+
         // Only applies to the rainbow visual.
         if (!IsRainbow || _rainbow == null || !_rainbow.activeInHierarchy)
         {
@@ -153,8 +161,9 @@ public class Shooter : MonoBehaviour
             return;
         }
 
-        // Active at start (closed), off when open.
-        bool desired = !CanShoot;
+        // Show lock only while waiting-to-open with ammo available.
+        // Do not show it during in-flight final shots (e.g. Total == 1 about to finish).
+        bool desired = !CanShoot && Total > 0 && _inFlightCount <= 0 && !_collectRequested;
         bool changed = _rainbowLock.activeSelf != desired;
         if (!force && !changed) return;
 
@@ -224,6 +233,7 @@ public class Shooter : MonoBehaviour
             _rendererDouble.enabled = false;
 
         _rainbowVisible = false;
+        _suppressRainbowLockIcon = false;
         if (_rainbow != null) _rainbow.SetActive(false);
         if (_rainbowLock != null) _rainbowLock.SetActive(false);
         if (_renderer != null) _renderer.enabled = true;
@@ -235,6 +245,12 @@ public class Shooter : MonoBehaviour
         }
 
         _effectBaseStartColors.Clear();
+    }
+
+    public void SetSuppressRainbowLockIcon(bool suppress)
+    {
+        _suppressRainbowLockIcon = suppress;
+        UpdateRainbowLockState(force: true);
     }
 
     private void PrewarmBulletPool()

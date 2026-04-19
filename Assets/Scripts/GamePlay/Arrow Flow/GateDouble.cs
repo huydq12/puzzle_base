@@ -18,6 +18,13 @@ public class GateDouble : MonoBehaviour, IGate
     [SerializeField] private Transform _queueShooterHolder_2;
 
     [SerializeField] private CrossConnectionMesh _crossConnectionMesh;
+    [Header("Cross Connection Layout")]
+    [SerializeField] private bool _useShooterAverageY = true;
+    [SerializeField] private float _connectionY = 0f;
+    [SerializeField] private float _connectionLengthPadding = 2.15f;
+    [SerializeField] private float _connectionMinScaleZ = 0.25f;
+    [SerializeField] private Vector2 _connectionLocalBias = Vector2.zero;
+    [SerializeField] private float _connectionStackYOffset = 0.08f;
    
     [SerializeField] private ParticleSystem _collectEffect;
     [SerializeField] private ParticleSystem _closeEffect;
@@ -28,6 +35,13 @@ public class GateDouble : MonoBehaviour, IGate
     private readonly List<Shooter> _lane2 = new List<Shooter>();
     private readonly HashSet<int> _doneShooterIds = new HashSet<int>();
     private readonly Dictionary<int, CrossConnectionMesh> _connectionsByTieId = new Dictionary<int, CrossConnectionMesh>();
+
+    private struct ActiveTieConnection
+    {
+        public int TieId;
+        public Shooter Left;
+        public Shooter Right;
+    }
 
     private int _totalValue;
     [ReadOnly] public bool IsClosed { get; private set; }
@@ -411,6 +425,7 @@ public class GateDouble : MonoBehaviour, IGate
         CollectFirstShooterByTie(_lane2, lane2ByTie);
 
         var activeTieIds = new HashSet<int>();
+        var activeConnections = new List<ActiveTieConnection>();
         foreach (var kv in lane1ByTie)
         {
             int tie = kv.Key;
@@ -420,8 +435,21 @@ public class GateDouble : MonoBehaviour, IGate
             if (left == null || right == null) continue;
 
             activeTieIds.Add(tie);
-            CrossConnectionMesh conn = GetOrCreateConnection(tie);
-            UpdateConnectionTransformAndMaterials(conn, left, right);
+            activeConnections.Add(new ActiveTieConnection
+            {
+                TieId = tie,
+                Left = left,
+                Right = right
+            });
+        }
+
+        activeConnections.Sort((x, y) => x.TieId.CompareTo(y.TieId));
+        int activeCount = activeConnections.Count;
+        for (int i = 0; i < activeCount; i++)
+        {
+            ActiveTieConnection item = activeConnections[i];
+            CrossConnectionMesh conn = GetOrCreateConnection(item.TieId);
+            UpdateConnectionTransformAndMaterials(conn, item.Left, item.Right, i, activeCount);
         }
 
         if (_connectionsByTieId.Count > 0)
@@ -471,18 +499,26 @@ public class GateDouble : MonoBehaviour, IGate
         return created;
     }
 
-    private void UpdateConnectionTransformAndMaterials(CrossConnectionMesh conn, Shooter a, Shooter b)
+    private void UpdateConnectionTransformAndMaterials(CrossConnectionMesh conn, Shooter a, Shooter b, int orderIndex, int totalActiveConnections)
     {
         if (conn == null || a == null || b == null) return;
 
         Vector3 paLocal = transform.InverseTransformPoint(a.transform.position);
         Vector3 pbLocal = transform.InverseTransformPoint(b.transform.position);
+        // Backward-compat: older scenes may still serialize absolute-Y value (e.g. 1.5).
+        float yOffset = _connectionY;
+        if (_useShooterAverageY && yOffset > 0.8f)
+            yOffset = 0f;
+
+        float baseY = _useShooterAverageY
+            ? ((paLocal.y + pbLocal.y) * 0.5f + yOffset)
+            : _connectionY;
 
         // Connection is internal to GateDouble, so compute in GateDouble local space.
         Vector3 midLocal = (paLocal + pbLocal) * 0.5f;
         conn.transform.localPosition = new Vector3(
             midLocal.x,
-            2.5f,
+            baseY,
             midLocal.z
         );
 
@@ -492,7 +528,7 @@ public class GateDouble : MonoBehaviour, IGate
             conn.transform.localRotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
 
         float distance = Vector3.Distance(paLocal, pbLocal);
-        float scaleZ = Mathf.Max(0f, distance - 2.15f);
+        float scaleZ = Mathf.Max(_connectionMinScaleZ, distance - _connectionLengthPadding);
         Vector3 ls = conn.transform.localScale;
         ls.z = scaleZ;
         conn.transform.localScale = ls;
@@ -503,10 +539,14 @@ public class GateDouble : MonoBehaviour, IGate
             transform
         );
 
+        float centeredOrder = 0f;
+        if (totalActiveConnections > 1)
+            centeredOrder = orderIndex - (totalActiveConnections - 1) * 0.5f;
+
         conn.transform.localPosition = new Vector3(
-            conn.transform.localPosition.x + 1f ,
-            1.5f,
-            conn.transform.localPosition.z + 0.05f
+            conn.transform.localPosition.x + _connectionLocalBias.x,
+            baseY + centeredOrder * _connectionStackYOffset,
+            conn.transform.localPosition.z + _connectionLocalBias.y
         );
 
         Material m0 = null;

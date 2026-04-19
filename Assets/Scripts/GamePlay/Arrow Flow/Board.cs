@@ -2341,6 +2341,7 @@ public class Board : Singleton<Board>
         shooter.SetSize(0.75f);
         shooter.SetColor(ObjectColor.Red);
         shooter.SetRainbow();
+        shooter.SetSuppressRainbowLockIcon(true);
         shooter.Total = (int)(ConveyorController.Instance.GetTotalPathSlotTaken() / 2);
         shooter.CanShoot = true;
         shooter.SetRole(ShooterRole.Current);

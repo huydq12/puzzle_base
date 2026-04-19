@@ -5,6 +5,7 @@ public sealed class CrossConnectionMesh : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer _renderer;
 
     private Material[] _defaultSharedMaterials;
+    private readonly System.Collections.Generic.Dictionary<int, Vector3> _meshCenterCache = new();
 
     private void Awake()
     {
@@ -72,8 +73,8 @@ public sealed class CrossConnectionMesh : MonoBehaviour
             return;
         }
 
-        // Use mesh-local bounds center to avoid frame-dependent world AABB drift.
-        Vector3 visualCenterWorld = transform.TransformPoint(mesh.bounds.center);
+        Vector3 visualCenterLocal = GetStableVisualCenterLocal(mesh);
+        Vector3 visualCenterWorld = transform.TransformPoint(visualCenterLocal);
         Vector3 delta = worldPoint - visualCenterWorld;
         transform.position += new Vector3(delta.x, 0f, delta.z);
     }
@@ -94,12 +95,56 @@ public sealed class CrossConnectionMesh : MonoBehaviour
             return;
         }
 
-        Vector3 visualCenterWorld = transform.TransformPoint(r.sharedMesh.bounds.center);
-        Vector3 visualCenterLocal = relativeTo.InverseTransformPoint(visualCenterWorld);
-        Vector3 deltaLocal = localPoint - visualCenterLocal;
+        Vector3 visualCenterMeshLocal = GetStableVisualCenterLocal(r.sharedMesh);
+        Vector3 visualCenterWorld = transform.TransformPoint(visualCenterMeshLocal);
+        Vector3 visualCenterRelativeLocal = relativeTo.InverseTransformPoint(visualCenterWorld);
+        Vector3 deltaLocal = localPoint - visualCenterRelativeLocal;
 
         Vector3 posLocal = transform.localPosition;
         transform.localPosition = new Vector3(posLocal.x + deltaLocal.x, posLocal.y, posLocal.z + deltaLocal.z);
+    }
+
+    private Vector3 GetStableVisualCenterLocal(Mesh mesh)
+    {
+        if (mesh == null) return Vector3.zero;
+
+        int meshId = mesh.GetInstanceID();
+        if (_meshCenterCache.TryGetValue(meshId, out Vector3 cachedCenter))
+            return cachedCenter;
+
+        Vector3 center = mesh.bounds.center;
+
+        // Some imported skinned meshes have inflated/shifted mesh.bounds due blend-shape ranges.
+        // Sub-mesh bounds are usually closer to the rendered geometry center.
+        if (mesh.subMeshCount > 0)
+        {
+            Bounds combined = default;
+            bool hasAny = false;
+
+            for (int i = 0; i < mesh.subMeshCount; i++)
+            {
+                var sub = mesh.GetSubMesh(i);
+                Bounds b = sub.bounds;
+                if (b.size.sqrMagnitude <= 0.000001f) continue;
+
+                if (!hasAny)
+                {
+                    combined = b;
+                    hasAny = true;
+                }
+                else
+                {
+                    combined.Encapsulate(b.min);
+                    combined.Encapsulate(b.max);
+                }
+            }
+
+            if (hasAny)
+                center = combined.center;
+        }
+
+        _meshCenterCache[meshId] = center;
+        return center;
     }
 
     public static void Apply(GameObject target, Material material0, Material material1, bool useSharedMaterials = true)
