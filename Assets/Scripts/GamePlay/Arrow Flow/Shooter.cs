@@ -24,8 +24,6 @@ public class Shooter : MonoBehaviour
     [Header("Rainbow Visual (optional)")]
     [SerializeField] private GameObject _rainbow;
     [SerializeField] private GameObject _rainbowLock;
-    [SerializeField] private Animation _rainbowLockAnim;
-    [SerializeField] private Animator _rainbowAnim;
     [SerializeField] private TextMeshPro _total;
     [SerializeField] private Material _materialType1;
     [SerializeField] private Material _materialType6;
@@ -81,13 +79,6 @@ public class Shooter : MonoBehaviour
     public bool IsRainbow => Type == RainbowType;
     private float _nextDebugRaycastTime;
     private bool _rainbowVisible;
-    private bool _hasLastCanShootAnimValue;
-    private bool _lastCanShootAnimValue;
-
-    private const string RainbowAnimStateOpen = "SuperMan_Open_Anim";
-    private const string RainbowAnimStateClose = "SuperMan_Close_Anim";
-    private const string RainbowAnimStateFly = "SuperMan_Fly_Anim";
-    private Coroutine _rainbowFlyRoutine;
 
     [SerializeField] private ParticleSystem _hitEffect;
     [SerializeField] private ParticleSystem _activeEffect;
@@ -145,15 +136,6 @@ public class Shooter : MonoBehaviour
 
         _rainbow.SetActive(shouldShowRainbow);
         if (_rendererDouble != null) _rendererDouble.enabled = !shouldShowRainbow && (Type == 6 && _role == ShooterRole.Current);
-
-        if (shouldShowRainbow && _rainbowAnim != null)
-        {
-            // Restart base state for consistent look when switching to rainbow.
-            _rainbowAnim.Rebind();
-            _rainbowAnim.Update(0f);
-        }
-
-        UpdateRainbowCanShootAnim(force: true);
         UpdateRainbowLockState(force: true);
     }
 
@@ -166,7 +148,6 @@ public class Shooter : MonoBehaviour
         {
             if (_rainbowLock.activeSelf)
             {
-                if (_rainbowLockAnim != null) _rainbowLockAnim.Stop();
                 _rainbowLock.SetActive(false);
             }
             return;
@@ -178,58 +159,6 @@ public class Shooter : MonoBehaviour
         if (!force && !changed) return;
 
         _rainbowLock.SetActive(desired);
-        if (desired)
-        {
-            if (_rainbowLockAnim != null) _rainbowLockAnim.Play(PlayMode.StopAll);
-        }
-        else
-        {
-            if (_rainbowLockAnim != null) _rainbowLockAnim.Stop();
-        }
-    }
-
-    private void UpdateRainbowCanShootAnim(bool force)
-    {
-        if (_rainbowAnim == null) return;
-        if (!IsRainbow) return;
-
-        bool desired = CanShoot;
-        if (!force && _hasLastCanShootAnimValue && _lastCanShootAnimValue == desired) return;
-        _hasLastCanShootAnimValue = true;
-        _lastCanShootAnimValue = desired;
-
-        if (_rainbowFlyRoutine != null)
-        {
-            StopCoroutine(_rainbowFlyRoutine);
-            _rainbowFlyRoutine = null;
-        }
-
-        if (desired)
-        {
-            _rainbowAnim.Play(RainbowAnimStateOpen, 0, 0f);
-            _rainbowFlyRoutine = StartCoroutine(PlayRainbowFlyAfterOpen());
-        }
-        else
-        {
-            _rainbowAnim.Play(RainbowAnimStateClose, 0, 0f);
-        }
-
-        UpdateRainbowLockState(force: force);
-    }
-
-    private IEnumerator PlayRainbowFlyAfterOpen()
-    {
-        // Wait until Open finishes, then switch to Fly as idle loop.
-        yield return Common.WaitForAnimatorState(_rainbowAnim, RainbowAnimStateOpen);
-
-        if (!IsRainbow || !CanShoot || _rainbowAnim == null)
-        {
-            _rainbowFlyRoutine = null;
-            yield break;
-        }
-
-        _rainbowAnim.Play(RainbowAnimStateFly, 0, 0f);
-        _rainbowFlyRoutine = null;
     }
 
     public int Total
@@ -295,12 +224,6 @@ public class Shooter : MonoBehaviour
             _rendererDouble.enabled = false;
 
         _rainbowVisible = false;
-        _hasLastCanShootAnimValue = false;
-        if (_rainbowFlyRoutine != null)
-        {
-            StopCoroutine(_rainbowFlyRoutine);
-            _rainbowFlyRoutine = null;
-        }
         if (_rainbow != null) _rainbow.SetActive(false);
         if (_rainbowLock != null) _rainbowLock.SetActive(false);
         if (_renderer != null) _renderer.enabled = true;
@@ -399,7 +322,7 @@ public class Shooter : MonoBehaviour
 
     private void Update()
     {
-        UpdateRainbowCanShootAnim(force: false);
+        UpdateRainbowLockState(force: false);
 
         // Hole mode: no idle animation
 

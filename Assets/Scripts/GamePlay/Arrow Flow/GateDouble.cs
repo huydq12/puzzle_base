@@ -492,7 +492,7 @@ public class GateDouble : MonoBehaviour, IGate
             conn.transform.localRotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
 
         float distance = Vector3.Distance(paLocal, pbLocal);
-        float scaleZ = Mathf.Max(0f, distance - 1f);
+        float scaleZ = Mathf.Max(0f, distance - 2.15f);
         Vector3 ls = conn.transform.localScale;
         ls.z = scaleZ;
         conn.transform.localScale = ls;
@@ -505,8 +505,8 @@ public class GateDouble : MonoBehaviour, IGate
 
         conn.transform.localPosition = new Vector3(
             conn.transform.localPosition.x + 1f ,
-            1.8f,
-            conn.transform.localPosition.z + 0.2f
+            1.5f,
+            conn.transform.localPosition.z + 0.05f
         );
 
         Material m0 = null;
