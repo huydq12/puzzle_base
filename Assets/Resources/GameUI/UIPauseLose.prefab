@@ -66,6 +66,7 @@ MonoBehaviour:
   btnUseRainbow: {fileID: 3231236329842711955}
   btnUseRainbowBuyCoin: {fileID: 5747621185240281320}
   useRainbowCoinPrice: 200
+  useRainbowCoinPriceIncreasePerLose: 100
   txt_useRainbowCoinPrice: {fileID: 4665819054581274871}
   notEnoughGoldToast: Not enough gold
   step1MoveFromOffsetY: 800
@@ -3490,7 +3491,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 79}
-  m_SizeDelta: {x: 364.8, y: 360.6}
+  m_SizeDelta: {x: 456, y: 370}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1549693049360811608
 CanvasRenderer:
@@ -3520,7 +3521,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 00971cd418a4249529289ad5a98a117e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c0018a9617a8c4c88828192a3face3b8, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
