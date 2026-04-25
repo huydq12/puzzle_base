@@ -150,41 +150,41 @@ public class Gate : MonoBehaviour
             _door.gameObject.SetActive(false);
             _total.enabled = false;
             _belt.localPosition = new Vector3(0f, -0.175f, -0.5f);
-            _belt.localScale = new Vector3(0.5f, 0.67f , 0.67f)*3;
+            _belt.localScale = new Vector3(0.5f, 0.67f, 0.67f) * 3;
         }
         else
         {
             _tunnel.gameObject.SetActive(true);
             _total.enabled = true;
             _belt.localPosition = new Vector3(0f, -0.175f, -0.55f);
-            _belt.localScale = new Vector3(1.65f, 1.83f , 3f);
+            _belt.localScale = new Vector3(1.65f, 1.83f, 3f);
         }
 
-	        for (int i = 0; i < Shooters.Count; i++)
-	        {
-                if (IsLockShooter(Shooters[i]))
-                {
-                    _shooterInstances.Add(null);
-                    _locksByIndex.Add(SpawnLockAtIndex(i));
-                    continue;
-                }
+        for (int i = 0; i < Shooters.Count; i++)
+        {
+            if (IsLockShooter(Shooters[i]))
+            {
+                _shooterInstances.Add(null);
+                _locksByIndex.Add(SpawnLockAtIndex(i));
+                continue;
+            }
 
-                _locksByIndex.Add(null);
-	            if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null)
-                {
-                    _shooterInstances.Add(null);
-                    continue;
-                }
-	            Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
-	            if (shoot == null)
-                {
-                    _shooterInstances.Add(null);
-                    continue;
-                }
-	            shoot.ResetForReuse();
-	            shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
-	            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-	            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
+            _locksByIndex.Add(null);
+            if (ShooterController.Instance == null || ShooterController.Instance.ShooterPrefab == null)
+            {
+                _shooterInstances.Add(null);
+                continue;
+            }
+            Shooter shoot = Instantiate(ShooterController.Instance.ShooterPrefab);
+            if (shoot == null)
+            {
+                _shooterInstances.Add(null);
+                continue;
+            }
+            shoot.ResetForReuse();
+            shoot.transform.SetParent(GetShooterHolderByIndex(i), false);
+            shoot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            shoot.SetSize(i == 0 ? 0.75f : 0.65f);
             shoot.transform.localPosition = Vector3.zero;
             shoot.SetColor(Shooters[i].Color);
             shoot.SetType(Shooters[i].Type);
@@ -358,7 +358,7 @@ public class Gate : MonoBehaviour
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         // _maskDoor.gameObject.SetActive(false);
-        _belt.transform.localScale = new Vector3(0.62f, 0.67f , 0.67f);
+        _belt.transform.localScale = new Vector3(0.62f, 0.67f, 0.67f);
         // _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
     }
 
@@ -633,10 +633,10 @@ public class Gate : MonoBehaviour
 
         Board.Instance?.NotifyShooterDisappeared(shooter, "RemoveShooterFromQueue");
 
-	        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
-	        {
-	            if (shooter != null) Destroy(shooter.gameObject);
-	        });
+        shooter.transform.DOScale(Vector3.zero, 0.2f).OnComplete(() =>
+        {
+            if (shooter != null) Destroy(shooter.gameObject);
+        });
 
         // Update NextShooter and QueueShooter references
         NextShooter = (_currentShooterIndex + 1 < _shooterInstances.Count) ? _shooterInstances[_currentShooterIndex + 1] : null;
@@ -677,6 +677,7 @@ public class Gate : MonoBehaviour
 
         Board.Instance?.NotifyShooterDisappeared(prevCurrent, "CollectCurrentShooter");
         AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
+        VibrateManager.Instance.MediumVibrate();
         _collectEffect.Stop();
         _collectEffect.Play();
 

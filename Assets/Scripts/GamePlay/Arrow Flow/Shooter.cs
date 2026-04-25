@@ -463,7 +463,6 @@ public class Shooter : MonoBehaviour
 
     private void AbsorbCube(CubeLine cube)
     {
-        AudioManager.Instance.PlaySFX(SFXType.Shoot);
         _nextFireTime = Time.time + _fireCooldown;
         _lastActivityTime = Time.time;
 
@@ -473,6 +472,7 @@ public class Shooter : MonoBehaviour
         bool destroyed = cube.OnHitByHole(IsRainbow, peakPosition, _holeBottom, () =>
         {
             // Called when the cube reaches the bottom of the hole.
+            AudioManager.Instance.PlaySFX(SFXType.Shoot);
             SpawnHoleHitEffect();
             _inFlightCount = Mathf.Max(0, _inFlightCount - 1);
             Board.Instance?.NotifyLineDoorHit(hitColor, this);
@@ -738,6 +738,8 @@ public class Shooter : MonoBehaviour
         _hidenRenderer.sharedMaterial = _materialHoleDefault;
         _hiddenEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _hiddenEffect.Play(true);
+        AudioManager.Instance.PlaySFX(SFXType.ShowHidden);
+        VibrateManager.Instance.MediumVibrate();
     }
 
     private void OnDrawGizmos()

@@ -85,6 +85,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetState(GameStateInGame.Result);
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
+        VibrateManager.Instance.MediumVibrate();
         if (_loseShowTween != null) _loseShowTween.Kill();
         _loseShowTween = DOVirtual.DelayedCall(1f, () => GameUI.Instance.Get<UIPauseLose>().Show());
     }
@@ -111,10 +112,10 @@ public class ConveyorController : Singleton<ConveyorController>
 #endif
     }
 
-	    void SpawnArrowAlongSpline()
-	    {
-	        if (_arrow == null) return;
-	        float splineLength = _splineComputer.CalculateLength();
+    void SpawnArrowAlongSpline()
+    {
+        if (_arrow == null) return;
+        float splineLength = _splineComputer.CalculateLength();
 
         int total = Mathf.Max(2, Mathf.RoundToInt(splineLength * 0.35f));
 
@@ -123,20 +124,20 @@ public class ConveyorController : Singleton<ConveyorController>
         float stepDistance = splineLength / (total - 1);
         double percent = 0.0;
 
-	        for (int i = 0; i < total - 1; i++)
-	        {
+        for (int i = 0; i < total - 1; i++)
+        {
             _splineComputer.Evaluate(percent, ref sample);
 
-	            GameObject arrow = Instantiate(_arrow);
-	            if (arrow == null) continue;
-	            arrow.transform.SetParent(Board.Instance.transform, false);
-	            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+            GameObject arrow = Instantiate(_arrow);
+            if (arrow == null) continue;
+            arrow.transform.SetParent(Board.Instance.transform, false);
+            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
 
-                float moved;
-                percent = _splineComputer.Travel(percent, stepDistance, out moved);
-                if (percent >= 1.0) percent -= 1.0;
-	        }
-	    }
+            float moved;
+            percent = _splineComputer.Travel(percent, stepDistance, out moved);
+            if (percent >= 1.0) percent -= 1.0;
+        }
+    }
     public void WinGame()
     {
         if (GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)

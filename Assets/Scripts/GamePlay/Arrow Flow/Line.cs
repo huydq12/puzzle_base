@@ -72,6 +72,7 @@ public class Line : MonoBehaviour
         _reuseGridDirNextMove = false;
         _hasNotifiedConveyorEnter = false;
 
+
         CancelConveyorWait();
 
         if (_blockingCubeTiltTween != null && _blockingCubeTiltTween.IsActive())
@@ -270,6 +271,7 @@ public class Line : MonoBehaviour
             if (!_willDefinitelyRevert)
             {
                 AudioManager.Instance.PlaySFX(SFXType.Select);
+                VibrateManager.Instance.MediumVibrate();
             }
         }
         _isMoving = true;
@@ -690,6 +692,7 @@ public class Line : MonoBehaviour
         _targetConveyorCell = null;
         _waitingForConveyorEnter = false;
         _blockingCube = null;
+
         CancelConveyorWait();
     }
 
@@ -826,16 +829,16 @@ public class Line : MonoBehaviour
         for (int i = 0; i < Cubes.Count; i++)
             Cubes[i].ShowWarning();
     }
-	    public void DestroyLine()
-	    {
-	        ResetMoveState();
+    public void DestroyLine()
+    {
+        ResetMoveState();
 
-	        Board.Instance.NotifyAnyLineEnteredConveyor();
+        Board.Instance.NotifyAnyLineEnteredConveyor();
 
-	        // Track destroyed cubes by color
-	        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
-	        Dictionary<ObjectColor, int> fullyDestroyedByColor = new Dictionary<ObjectColor, int>();
-	        bool destroyedKey = false;
+        // Track destroyed cubes by color
+        Dictionary<ObjectColor, int> destroyedByColor = new Dictionary<ObjectColor, int>();
+        Dictionary<ObjectColor, int> fullyDestroyedByColor = new Dictionary<ObjectColor, int>();
+        bool destroyedKey = false;
 
         for (int i = Cubes.Count - 1; i >= 0; i--)
         {
@@ -860,21 +863,21 @@ public class Line : MonoBehaviour
 
                 cube.OnHit();
             }
-	            else
-	            {
-	                // Actually destroy the cube
-	                // Use current Color for cubes that are fully destroyed
-	                ObjectColor cubeColor = cube.Color;
-	                if (!destroyedByColor.ContainsKey(cubeColor))
-	                    destroyedByColor[cubeColor] = 0;
-	                destroyedByColor[cubeColor]++;
+            else
+            {
+                // Actually destroy the cube
+                // Use current Color for cubes that are fully destroyed
+                ObjectColor cubeColor = cube.Color;
+                if (!destroyedByColor.ContainsKey(cubeColor))
+                    destroyedByColor[cubeColor] = 0;
+                destroyedByColor[cubeColor]++;
 
-	                if (!fullyDestroyedByColor.ContainsKey(cubeColor))
-	                    fullyDestroyedByColor[cubeColor] = 0;
-	                fullyDestroyedByColor[cubeColor]++;
+                if (!fullyDestroyedByColor.ContainsKey(cubeColor))
+                    fullyDestroyedByColor[cubeColor] = 0;
+                fullyDestroyedByColor[cubeColor]++;
 
-	                if (cube.ElementType == _keyElementType)
-	                    destroyedKey = true;
+                if (cube.ElementType == _keyElementType)
+                    destroyedKey = true;
 
                 if (cube.Cell != null && cube.Cell.CubeOnCell == cube)
                 {
@@ -890,20 +893,20 @@ public class Line : MonoBehaviour
             }
         }
 
-	        // Reduce shooters for each color
-	        foreach (var kvp in destroyedByColor)
-	        {
-	            ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
-	        }
+        // Reduce shooters for each color
+        foreach (var kvp in destroyedByColor)
+        {
+            ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);
+        }
 
-	        // Hammer destroys cubes too, so they should also count toward LineDoor (same-color) consumption.
-	        if (Board.Instance != null)
-	        {
-	            foreach (var kvp in fullyDestroyedByColor)
-	            {
-	                Board.Instance.NotifyLineDoorHit(kvp.Key, kvp.Value);
-	            }
-	        }
+        // Hammer destroys cubes too, so they should also count toward LineDoor (same-color) consumption.
+        if (Board.Instance != null)
+        {
+            foreach (var kvp in fullyDestroyedByColor)
+            {
+                Board.Instance.NotifyLineDoorHit(kvp.Key, kvp.Value);
+            }
+        }
 
         if (Cubes.Count == 0)
         {
@@ -953,7 +956,6 @@ public class Line : MonoBehaviour
 
         if (!_willDefinitelyRevert && !TryReserveConveyorBaseIfNeeded())
         {
-            // Không reserve được conveyor -> chuyển sang revert
             _isMoving = false;
             _willDefinitelyRevert = true;
             StartRevert();
@@ -1243,29 +1245,8 @@ public class Line : MonoBehaviour
                 {
                     _targetConveyorCell = conveyorCell;
                     int distToConveyor = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position) - 1;
-
-                    if (occupiedCell != null)
-                    {
-                        int distToObstacle = Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position) - 1;
-                        if (distToObstacle < distToConveyor)
-                        {
-                            _willDefinitelyRevert = true;
-                            _targetConveyorCell = null;
-                            _totalSteps = distToObstacle;
-                            _remainingSteps = _totalSteps;
-                            SetTempTypeOnBodyOnly(CubeType.Normal);
-                        }
-                        else
-                        {
-                            _totalSteps = distToConveyor;
-                            _remainingSteps = _totalSteps;
-                        }
-                    }
-                    else
-                    {
-                        _totalSteps = distToConveyor;
-                        _remainingSteps = _totalSteps;
-                    }
+                    _totalSteps = distToConveyor;
+                    _remainingSteps = _totalSteps;
                 }
             }
         }
@@ -1276,6 +1257,7 @@ public class Line : MonoBehaviour
     private void StartRevert()
     {
         AudioManager.Instance.PlaySFX(SFXType.SelectWrong);
+        VibrateManager.Instance.MediumVibrate();
         if (_history.Count == 0)
         {
             OnLineReverted();
