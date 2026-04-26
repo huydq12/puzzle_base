@@ -670,24 +670,24 @@ public class Board : Singleton<Board>
         ShooterController.Instance.Setup(_currentConfig.Gates, _currentConfig.GatesDouble);
     }
 
-	    private void SetupElevators()
-	    {
+    private void SetupElevators()
+    {
         _elevators.Clear();
         _nextElevatorCheckTime = 0f;
 
-	        if (_currentConfig == null || _currentConfig.Elevators == null || _currentConfig.Elevators.Count == 0)
-	            return;
-	        if (_elevatorPrefab == null) return;
+        if (_currentConfig == null || _currentConfig.Elevators == null || _currentConfig.Elevators.Count == 0)
+            return;
+        if (_elevatorPrefab == null) return;
 
-	        for (int i = 0; i < _currentConfig.Elevators.Count; i++)
-	        {
+        for (int i = 0; i < _currentConfig.Elevators.Count; i++)
+        {
             ElevatorData data = _currentConfig.Elevators[i];
             if (data == null) continue;
             if (data.Size.x <= 0 || data.Size.y <= 0) continue;
 
-	            Elevator elevator = Instantiate(_elevatorPrefab);
-	            if (elevator == null) continue;
-	            elevator.transform.SetParent(transform, false);
+            Elevator elevator = Instantiate(_elevatorPrefab);
+            if (elevator == null) continue;
+            elevator.transform.SetParent(transform, false);
 
             Vector3 center = GetRectCenterWorld(data.Position, data.Size);
             elevator.transform.position = center;
@@ -734,14 +734,14 @@ public class Board : Singleton<Board>
             door.transform.position = center;
             door.transform.rotation = DirectionToRotation(data.Direction);
 
-	            door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            door.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
-	            int remaining = data.Counter;
-	            door.Setup(data.Color, remaining, data.Size);
-	            var entry = new LineDoorEntry
-	            {
-	                door = door,
-	                data = data,
+            int remaining = data.Counter;
+            door.Setup(data.Color, remaining, data.Size);
+            var entry = new LineDoorEntry
+            {
+                door = door,
+                data = data,
                 remaining = remaining,
                 opened = false,
                 spawned = false
@@ -787,6 +787,20 @@ public class Board : Singleton<Board>
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            GameManagerInGame.Instance.SetState(GameStateInGame.Result);
+            GameUI.Instance.Get<UILose>().Show();
+        }
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            GameManagerInGame.Instance.SetState(GameStateInGame.Result);
+            GameUI.Instance.Get<UIWin>().Show();
+        }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
         if (_currentConfig == null) return;
         UpdateElevators();
         UpdateLineDoors();
@@ -902,68 +916,68 @@ public class Board : Singleton<Board>
         }
     }
 
-	    private bool IsRectEmpty(Vector2Int pos, Vector2Int size)
-	    {
-	        int minX = pos.x;
-	        int minY = pos.y;
-	        int maxX = pos.x + size.x - 1;
-	        int maxY = pos.y + size.y - 1;
+    private bool IsRectEmpty(Vector2Int pos, Vector2Int size)
+    {
+        int minX = pos.x;
+        int minY = pos.y;
+        int maxX = pos.x + size.x - 1;
+        int maxY = pos.y + size.y - 1;
 
         if (Cells == null) return false;
         int w = Cells.GetLength(0);
         int h = Cells.GetLength(1);
         if (minX < 0 || minY < 0 || maxX >= w || maxY >= h) return false;
 
-	        for (int x = minX; x <= maxX; x++)
-	        {
-	            for (int y = minY; y <= maxY; y++)
-	            {
-	                if (IsCellBlockedByClosedLineDoor(new Vector2Int(x, y))) return false;
-	                GridCell cell = Cells[x, y];
-	                if (cell == null) continue;
-	                if (cell.CubeOnCell != null) return false;
-	            }
-	        }
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                if (IsCellBlockedByClosedLineDoor(new Vector2Int(x, y))) return false;
+                GridCell cell = Cells[x, y];
+                if (cell == null) continue;
+                if (cell.CubeOnCell != null) return false;
+            }
+        }
 
-	        return true;
-	    }
+        return true;
+    }
 
-	    private bool IsCellBlockedByClosedLineDoor(Vector2Int cellPos)
-	    {
-	        if (_lineDoors == null || _lineDoors.Count == 0) return false;
-	        for (int i = 0; i < _lineDoors.Count; i++)
-	        {
-	            var entry = _lineDoors[i];
-	            if (entry.opened) continue;
-	            if (entry.data == null) continue;
-	            if (IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size)) return true;
-	        }
-	        return false;
-	    }
+    private bool IsCellBlockedByClosedLineDoor(Vector2Int cellPos)
+    {
+        if (_lineDoors == null || _lineDoors.Count == 0) return false;
+        for (int i = 0; i < _lineDoors.Count; i++)
+        {
+            var entry = _lineDoors[i];
+            if (entry.opened) continue;
+            if (entry.data == null) continue;
+            if (IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size)) return true;
+        }
+        return false;
+    }
 
-	    private bool IsCellBlockedByElevator(Vector2Int originPos, Vector2Int cellPos)
-	    {
-	        if (_elevators == null || _elevators.Count == 0) return false;
-	        for (int i = 0; i < _elevators.Count; i++)
-	        {
-	            var entry = _elevators[i];
-	            if (entry == null || entry.data == null) continue;
-	            bool hasHiddenLines = entry.data.Lines != null && entry.data.Lines.Count > 0;
-	            if (entry.spawned) continue;
-	            if (!hasHiddenLines && entry.readyToSpawn) continue;
-	            bool originInside = IsPointInsideRect(originPos, entry.data.Position, entry.data.Size);
-	            bool targetInside = IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size);
-	            if (originInside && targetInside) continue;
-	            if (targetInside) return true;
-	        }
-	        return false;
-	    }
+    private bool IsCellBlockedByElevator(Vector2Int originPos, Vector2Int cellPos)
+    {
+        if (_elevators == null || _elevators.Count == 0) return false;
+        for (int i = 0; i < _elevators.Count; i++)
+        {
+            var entry = _elevators[i];
+            if (entry == null || entry.data == null) continue;
+            bool hasHiddenLines = entry.data.Lines != null && entry.data.Lines.Count > 0;
+            if (entry.spawned) continue;
+            if (!hasHiddenLines && entry.readyToSpawn) continue;
+            bool originInside = IsPointInsideRect(originPos, entry.data.Position, entry.data.Size);
+            bool targetInside = IsPointInsideRect(cellPos, entry.data.Position, entry.data.Size);
+            if (originInside && targetInside) continue;
+            if (targetInside) return true;
+        }
+        return false;
+    }
 
-	    private static bool IsPointInsideRect(Vector2Int p, Vector2Int pos, Vector2Int size)
-	    {
-	        if (size.x <= 0 || size.y <= 0) return false;
-	        return p.x >= pos.x && p.y >= pos.y && p.x < pos.x + size.x && p.y < pos.y + size.y;
-	    }
+    private static bool IsPointInsideRect(Vector2Int p, Vector2Int pos, Vector2Int size)
+    {
+        if (size.x <= 0 || size.y <= 0) return false;
+        return p.x >= pos.x && p.y >= pos.y && p.x < pos.x + size.x && p.y < pos.y + size.y;
+    }
     public GridCell CellTaptInTutorialControl()
     {
         return GetCellAt(new Vector2Int(2, 1));
@@ -1020,64 +1034,64 @@ public class Board : Singleton<Board>
 #endif
     }
 
-	    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
-	    {
-	        NotifyLineDoorHit(color, 1, shooter != null ? shooter.transform : null, shooter);
-	    }
+    public void NotifyLineDoorHit(ObjectColor color, Shooter shooter = null)
+    {
+        NotifyLineDoorHit(color, 1, shooter != null ? shooter.transform : null, shooter);
+    }
 
-	    public void NotifyLineDoorHit(ObjectColor color, int amount, Transform source = null)
-	    {
-	        NotifyLineDoorHit(color, amount, source, shooter: null);
-	    }
+    public void NotifyLineDoorHit(ObjectColor color, int amount, Transform source = null)
+    {
+        NotifyLineDoorHit(color, amount, source, shooter: null);
+    }
 
-	    private void NotifyLineDoorHit(ObjectColor color, int amount, Transform source, Shooter shooter)
-	    {
-	        if (_lineDoors == null || _lineDoors.Count == 0) return;
-	        if (color == ObjectColor.None) return;
-	        if (amount <= 0) return;
+    private void NotifyLineDoorHit(ObjectColor color, int amount, Transform source, Shooter shooter)
+    {
+        if (_lineDoors == null || _lineDoors.Count == 0) return;
+        if (color == ObjectColor.None) return;
+        if (amount <= 0) return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-	        Debug.Log($"[Board.LineDoor] Hit color={color} shooter={DescribeShooter(shooter)}", shooter);
+        Debug.Log($"[Board.LineDoor] Hit color={color} shooter={DescribeShooter(shooter)}", shooter);
 #endif
 
-	        for (int i = 0; i < _lineDoors.Count; i++)
-	        {
-	            var entry = _lineDoors[i];
-	            int lineDoorIndex = i;
-	            if (entry.opened) continue;
-	            if (entry.data == null) continue;
-	            if (entry.data.Color != color) continue;
+        for (int i = 0; i < _lineDoors.Count; i++)
+        {
+            var entry = _lineDoors[i];
+            int lineDoorIndex = i;
+            if (entry.opened) continue;
+            if (entry.data == null) continue;
+            if (entry.data.Color != color) continue;
 
-	            LineDoor door = entry.door;
+            LineDoor door = entry.door;
 
-	            if (door != null)
-	            {
-	                bool opened = door.Consume(amount, source, () => TrySpawnLineDoorLines(lineDoorIndex));
-	                entry.remaining = door.Remaining;
-	                if (opened)
-	                {
-	                    entry.opened = true;
-	                    RefreshAllHeadHighlights();
-	                }
+            if (door != null)
+            {
+                bool opened = door.Consume(amount, source, () => TrySpawnLineDoorLines(lineDoorIndex));
+                entry.remaining = door.Remaining;
+                if (opened)
+                {
+                    entry.opened = true;
+                    RefreshAllHeadHighlights();
+                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-	                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
+                Debug.Log($"[Board.LineDoor] Door idx={i} color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", door);
 #endif
-	            }
-	            else
-	            {
-	                entry.remaining = Mathf.Max(0, entry.remaining - amount);
-	                if (entry.remaining <= 0)
-	                {
-	                    entry.opened = true;
-	                    RefreshAllHeadHighlights();
-	                    TrySpawnLineDoorLines(i);
-	                }
+            }
+            else
+            {
+                entry.remaining = Mathf.Max(0, entry.remaining - amount);
+                if (entry.remaining <= 0)
+                {
+                    entry.opened = true;
+                    RefreshAllHeadHighlights();
+                    TrySpawnLineDoorLines(i);
+                }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-	                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", this);
+                Debug.Log($"[Board.LineDoor] Door idx={i} (no instance) color={entry.data.Color} remaining={entry.remaining} opened={entry.opened}", this);
 #endif
-	            }
-	        }
-	    }
+            }
+        }
+    }
 
     private void OpenLineDoorAtIndex(int index)
     {
@@ -1216,33 +1230,33 @@ public class Board : Singleton<Board>
         return true;
     }
 
-	    private bool SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
-	    {
-	        if (line == null || line.Cells == null || line.Cells.Count == 0) return false;
+    private bool SpawnLine(ColorLine line, bool animateSpawn = false, float spawnDelay = 0f)
+    {
+        if (line == null || line.Cells == null || line.Cells.Count == 0) return false;
         if (!CanSpawnLine(line)) return false;
 
-	        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
-	        int lineElementType3Count = 0;
-	        if (line.ElementTypes != null)
-	        {
-	            int count = Mathf.Min(line.ElementTypes.Count, line.Cells.Count);
-	            for (int i = 0; i < count; i++)
-	            {
-	                if (line.ElementTypes[i] == 3) lineElementType3Count++;
-	            }
-	        }
+        bool lineHasIce = line.ElementTypes != null && line.ElementTypes.Contains(2);
+        int lineElementType3Count = 0;
+        if (line.ElementTypes != null)
+        {
+            int count = Mathf.Min(line.ElementTypes.Count, line.Cells.Count);
+            for (int i = 0; i < count; i++)
+            {
+                if (line.ElementTypes[i] == 3) lineElementType3Count++;
+            }
+        }
 
-	        bool hasLineInnerColor = false;
-	        ObjectColor lineInnerColor = ObjectColor.None;
-	        if (lineElementType3Count > 0 && _elementType3InnerAllocator != null)
-	        {
-	            hasLineInnerColor = _elementType3InnerAllocator.TryConsumeBatch(line.Color, lineElementType3Count, out lineInnerColor);
-	        }
+        bool hasLineInnerColor = false;
+        ObjectColor lineInnerColor = ObjectColor.None;
+        if (lineElementType3Count > 0 && _elementType3InnerAllocator != null)
+        {
+            hasLineInnerColor = _elementType3InnerAllocator.TryConsumeBatch(line.Color, lineElementType3Count, out lineInnerColor);
+        }
 
-	        Line lineGo = Instantiate(_linePrefab);
-	        lineGo.transform.SetParent(transform, false);
-	        lineGo.transform.localPosition = Vector3.zero;
-	        lineGo.transform.localRotation = Quaternion.identity;
+        Line lineGo = Instantiate(_linePrefab);
+        lineGo.transform.SetParent(transform, false);
+        lineGo.transform.localPosition = Vector3.zero;
+        lineGo.transform.localRotation = Quaternion.identity;
 
         lineGo.Color = line.Color;
         lineGo.InitializeCounter(line.Counter);
@@ -1257,13 +1271,13 @@ public class Board : Singleton<Board>
             Vector2Int? prev = i > 0 ? line.Cells[i - 1] : (Vector2Int?)null;
             Vector2Int? next = i < last ? line.Cells[i + 1] : (Vector2Int?)null;
 
-	            GridCell cell = GetCellAt(curr);
-	            if (cell == null) return false;
-	            if (cell.CubeOnCell != null) return false;
+            GridCell cell = GetCellAt(curr);
+            if (cell == null) return false;
+            if (cell.CubeOnCell != null) return false;
 
-	            CubeLine cube = Instantiate(_cubePrefab);
-	            cube.transform.SetParent(lineGo.transform, false);
-	            cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
+            CubeLine cube = Instantiate(_cubePrefab);
+            cube.transform.SetParent(lineGo.transform, false);
+            cube.transform.SetPositionAndRotation(cell.transform.position, Quaternion.identity);
 
             cube.SetColor(line.Color);
             int elementType = (line.ElementTypes != null && i < line.ElementTypes.Count) ? line.ElementTypes[i] : 0;
@@ -1545,7 +1559,7 @@ public class Board : Singleton<Board>
             List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset);
             if (worldPositions.Count < 2) continue;
 
-	            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
+            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
 
             tunel.transform.SetParent(transform, false);
             tunel.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -2098,41 +2112,41 @@ public class Board : Singleton<Board>
         }
         return null;
     }
-	    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
-	    {
-	        Vector2Int dir = curr - prev;
-	        Vector2Int p = curr + dir;
+    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
+    {
+        Vector2Int dir = curr - prev;
+        Vector2Int p = curr + dir;
 
         int w = Cells.GetLength(0);
         int h = Cells.GetLength(1);
 
-		        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
-		        {
-		            GridCell c = GetCellAt(p);
-		            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p) || IsCellBlockedByElevator(curr, p)))
-		                return c;
+        while (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h)
+        {
+            GridCell c = GetCellAt(p);
+            if (c != null && (c.IsOccupied || IsCellBlockedByClosedLineDoor(p) || IsCellBlockedByElevator(curr, p)))
+                return c;
 
-	            p += dir;
-	        }
-	        return null;
-	    }
+            p += dir;
+        }
+        return null;
+    }
 
-	    private void SetupGrid()
-	    {
+    private void SetupGrid()
+    {
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
         Vector2 spacing = _spacing;
 
         Cells = new GridCell[columns, rows];
 
-	        int expectedChildCount = rows * columns;
-	        GridCell[] gridCells = new GridCell[expectedChildCount];
-	        for (int i = 0; i < expectedChildCount; i++)
-	        {
-	            GridCell cell = Instantiate(_cellPrefab);
-	            cell.transform.SetParent(transform, false);
-	            gridCells[i] = cell;
-	        }
+        int expectedChildCount = rows * columns;
+        GridCell[] gridCells = new GridCell[expectedChildCount];
+        for (int i = 0; i < expectedChildCount; i++)
+        {
+            GridCell cell = Instantiate(_cellPrefab);
+            cell.transform.SetParent(transform, false);
+            gridCells[i] = cell;
+        }
 
         Vector2 offset = new Vector2(
             (columns - 1) * spacing.x / 2f,
@@ -2202,26 +2216,26 @@ public class Board : Singleton<Board>
         return Cells[pos.x, pos.y];
     }
 
-	    private void Clear()
-	    {
-	        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
+    private void Clear()
+    {
+        Transform conveyorTemplate = _conveyorTunelPrefab != null ? _conveyorTunelPrefab.transform : null;
 
-	        for (int i = transform.childCount - 1; i >= 0; i--)
-	        {
-	            Transform child = transform.GetChild(i);
-	            if (conveyorTemplate != null && child == conveyorTemplate) continue;
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = transform.GetChild(i);
+            if (conveyorTemplate != null && child == conveyorTemplate) continue;
             // Stop any tweens on pooled objects so replay spam can't leave them in a mid-animation state.
             DOTween.Kill(child, false);
             var childTransforms = child.GetComponentsInChildren<Transform>(true);
-	            for (int t = 0; t < childTransforms.Length; t++)
-	            {
-	                DOTween.Kill(childTransforms[t], false);
-	            }
-	            if (child.TryGetComponent(out Line line)) line.Clear();
-	            else if (child.TryGetComponent(out CubeLine cube)) cube.Clear();
-	            Destroy(child.gameObject);
-	        }
-	    }
+            for (int t = 0; t < childTransforms.Length; t++)
+            {
+                DOTween.Kill(childTransforms[t], false);
+            }
+            if (child.TryGetComponent(out Line line)) line.Clear();
+            else if (child.TryGetComponent(out CubeLine cube)) cube.Clear();
+            Destroy(child.gameObject);
+        }
+    }
     public void SetupLevel(LevelConfig config)
     {
         GameManagerInGame.Instance.SetState(GameStateInGame.Init);

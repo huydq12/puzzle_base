@@ -10,6 +10,7 @@ public class UILose : UIPopup
     [SerializeField] private Button btn_next;
     [SerializeField] private Button btn_close_hide;
     [SerializeField] private TextMeshProUGUI txt_coin;
+    public Button Next;
     public override void Show()
     {
         base.Show();
@@ -27,6 +28,7 @@ public class UILose : UIPopup
         base.Start();
         btn_next.onClick.AddListener(NextGame);
         btn_close_hide.onClick.AddListener(NextGame);
+        Next.onClick.AddListener(() => AudioManager.Instance.PlaySFX(SFXType.Click));
     }
 
     private void NextGame()

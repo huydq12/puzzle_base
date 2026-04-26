@@ -15,7 +15,8 @@ public enum SFXType
 	Shoot,
 	Win,
 	Lose,
-	ShowHidden
+	ShowHidden,
+	Click
 }
 public class AudioManager : Singleton<AudioManager>
 {
