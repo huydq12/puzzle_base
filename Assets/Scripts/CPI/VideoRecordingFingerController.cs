@@ -16,8 +16,10 @@ public class VideoRecordingFingerController : MonoBehaviour
 
     void Start()
     {
+        canvasGroup.alpha = 0  ;   
         GameManagerInGame.Instance.OnStartLevel += () =>
         {
+            Debug.Log("Show finger");
             transform.position = Input.mousePosition;
             lazyTransform.Position = Input.mousePosition;
             canvasGroup.DOFade(1, 0.25f);

@@ -2238,8 +2238,6 @@ public class Board : Singleton<Board>
     }
     public void SetupLevel(LevelConfig config)
     {
-        GameManagerInGame.Instance.SetState(GameStateInGame.Init);
-
         Clear();
         _currentConfig = config;
         _elementType3InnerAllocator = BuildElementType3InnerAllocator(config);
@@ -2273,7 +2271,19 @@ public class Board : Singleton<Board>
             else
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
-        GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+        Camera.main.transform.position = new Vector3(0, 10, 2.8f);
+        Camera.main.orthographicSize = 10;
+        Sequence sq = DOTween.Sequence();
+        sq.AppendInterval(2.0f);
+        sq.Append(Camera.main.DOOrthoSize(11.58f, 0.5f));
+        sq.Join(Camera.main.transform.DOMoveZ(3.61f, 0.5f));
+        sq.AppendInterval(0.25f);
+        sq.OnComplete(() =>
+              {
+                  GameManagerInGame.Instance.SetState(GameStateInGame.Init);
+                  Debug.Log("init");
+                  GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+              });
     }
 
     public void SpawnLoseRainbowShooter()

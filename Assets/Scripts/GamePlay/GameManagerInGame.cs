@@ -69,12 +69,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         userData = Game.Data.Load<UserData>();
         if (userData != null && !userData.isDefaultData)
         {
-         //   userData.SetDefaultData();
-        //    userData.Save();
+            //   userData.SetDefaultData();
+            //    userData.Save();
         }
         if (!InitLevel)
         {
-        //    LoadData();
+            //    LoadData();
         }
         API.Initialize();
     }
@@ -178,6 +178,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
                     break;
                 }
             case GameStateInGame.Init:
+                {
+                    break;
+                }
+            case GameStateInGame.Playing:
                 {
                     OnStartLevel?.Invoke();
                     break;

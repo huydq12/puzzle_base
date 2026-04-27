@@ -28,8 +28,8 @@ public class AudioManager : Singleton<AudioManager>
 	private new void Awake()
 	{
 		base.Awake();
-		_bgAudioSource.volume = PlayerPrefs.GetFloat("BGVolume", 1);
-		_sfxAudioSource.volume = PlayerPrefs.GetFloat("SFXVolume", 1);
+		_bgAudioSource.volume = 1;
+		_sfxAudioSource.volume = 1;
 		Game.Launch();
 		var userData = Game.Data.Load<UserData>();
 		if (userData != null)
@@ -45,13 +45,13 @@ public class AudioManager : Singleton<AudioManager>
 
 	public void SetVolumeBG(float volume)
 	{
-		_bgAudioSource.volume = volume;
+		_bgAudioSource.volume = 1;
 		PlayerPrefs.SetFloat("BGVolume", volume);
 		PlayerPrefs.Save();
 	}
 	public void SetVolumeSFX(float volume)
 	{
-		_sfxAudioSource.volume = volume;
+		_sfxAudioSource.volume = 1;
 		PlayerPrefs.SetFloat("SFXVolume", volume);
 		PlayerPrefs.Save();
 	}

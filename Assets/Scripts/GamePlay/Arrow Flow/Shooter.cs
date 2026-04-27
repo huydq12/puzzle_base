@@ -532,6 +532,15 @@ public class Shooter : MonoBehaviour
         UnityEngine.Color shooterFxColor = ResolveShooterFxColor();
         ApplyColorToEffect(_hitEffect, shooterFxColor);
         ApplyColorToEffect(_activeEffect, shooterFxColor);
+        ApplyTotalTextColor(shooterFxColor);
+    }
+
+    private void ApplyTotalTextColor(UnityEngine.Color baseColor)
+    {
+        if (_total == null) return;
+        UnityEngine.Color c = UnityEngine.Color.Lerp(UnityEngine.Color.white, baseColor, 0.95f);
+        c.a = 1f;
+        _total.color = c;
     }
 
     private UnityEngine.Color ResolveShooterFxColor()

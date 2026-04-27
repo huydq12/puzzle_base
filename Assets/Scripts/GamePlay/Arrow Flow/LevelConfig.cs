@@ -80,6 +80,60 @@ public class LevelConfig : SerializedScriptableObject
         ResizeGridCells();
     }
 #endif
+    [Button]
+    public void SwapColor(ObjectColor from, ObjectColor to)
+    {
+        // Shooters in Gates
+        if (Gates != null)
+        {
+            foreach (var gate in Gates)
+            {
+                if (gate.Shooters == null) continue;
+                foreach (var shooter in gate.Shooters)
+                    if (shooter.Color == from) shooter.Color = to;
+            }
+        }
+
+        // Shooters in GatesDouble
+        if (GatesDouble != null)
+        {
+            foreach (var gateDouble in GatesDouble)
+            {
+                if (gateDouble.ShootersDouble == null) continue;
+                foreach (var sd in gateDouble.ShootersDouble)
+                {
+                    if (sd.ShootersLeft != null)
+                        foreach (var s in sd.ShootersLeft)
+                            if (s.Color == from) s.Color = to;
+                    if (sd.ShootersRight != null)
+                        foreach (var s in sd.ShootersRight)
+                            if (s.Color == from) s.Color = to;
+                }
+            }
+        }
+
+        // ColorLines
+        if (ColorLines != null)
+            foreach (var line in ColorLines)
+                if (line.Color == from) line.Color = to;
+
+        // Elevators
+        if (Elevators != null)
+            foreach (var elevator in Elevators)
+                if (elevator.Lines != null)
+                    foreach (var line in elevator.Lines)
+                        if (line.Color == from) line.Color = to;
+
+        // LineDoors
+        if (LineDoors != null)
+            foreach (var door in LineDoors)
+            {
+                if (door.Color == from) door.Color = to;
+                if (door.Lines != null)
+                    foreach (var line in door.Lines)
+                        if (line.Color == from) line.Color = to;
+            }
+    }
 }
 
 [Serializable]

@@ -87,7 +87,7 @@ public class ConveyorController : Singleton<ConveyorController>
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
         VibrateManager.Instance.MediumVibrate();
         if (_loseShowTween != null) _loseShowTween.Kill();
-        _loseShowTween = DOVirtual.DelayedCall(1f, () => GameUI.Instance.Get<UIPauseLose>().Show());
+        _loseShowTween = DOVirtual.DelayedCall(1f, () => GameUI.Instance.Get<UILose>().Show());
     }
     public void OnLineMoved()
     {
@@ -131,7 +131,7 @@ public class ConveyorController : Singleton<ConveyorController>
             GameObject arrow = Instantiate(_arrow);
             if (arrow == null) continue;
             arrow.transform.SetParent(Board.Instance.transform, false);
-            arrow.transform.SetPositionAndRotation(sample.position, Quaternion.LookRotation(sample.forward, sample.up));
+            arrow.transform.SetPositionAndRotation(sample.position.With(y: 0.5f), Quaternion.LookRotation(sample.forward, sample.up));
 
             float moved;
             percent = _splineComputer.Travel(percent, stepDistance, out moved);
