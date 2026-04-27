@@ -20,15 +20,16 @@ public class Gate : MonoBehaviour
     [SerializeField] private ParticleSystem _collectEffect;
     [SerializeField] private ParticleSystem _closeEffect;
     [SerializeField] private IceShooter _iceShooterPrefab;
+    [SerializeField] private ParticleSystem _niceEffect;
+    [SerializeField] private ParticleSystem _coolEffect;
+    [SerializeField] private ParticleSystem _greatEffect;
+
     [ReadOnly] public List<ShooterData> Shooters;
-    [SerializeField] private TextMeshPro _collectText;
     private List<Shooter> _shooterInstances = new List<Shooter>();
     public Shooter CurrentShooter { get; private set; }
     private Shooter NextShooter { get; set; }
     private Shooter QueueShooter { get; set; }
     private int _currentShooterIndex = 0;
-    private Tween _collectTextTween;
-    private string[] _collectTexts = { "Done", "Perfect" };
 
     private struct ShuffleShooterEntry
     {
@@ -787,16 +788,12 @@ public class Gate : MonoBehaviour
 
     private void ShowCollectText()
     {
-        _collectTextTween?.Kill();
-        _collectText.text = _collectTexts[Random.Range(0, _collectTexts.Length)];
-        _collectText.alpha = 0f;
-        _collectText.transform.localScale = Vector3.zero;
-
-        _collectTextTween = DOTween.Sequence()
-            .Append(_collectText.DOFade(1f, 0.2f))
-            .Join(_collectText.transform.DOScale(1f, 0.2f).SetEase(Ease.OutBack))
-            .AppendInterval(1f)
-            .Append(_collectText.DOFade(0f, 0.2f))
-            .Join(_collectText.transform.DOScale(0f, 0.2f).SetEase(Ease.InBack));
+        ParticleSystem[] effects = { _niceEffect, _coolEffect, _greatEffect };
+        ParticleSystem chosen = effects[Random.Range(0, effects.Length)];
+        if (chosen != null)
+        {
+            chosen.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            chosen.Play();
+        }
     }
 }
