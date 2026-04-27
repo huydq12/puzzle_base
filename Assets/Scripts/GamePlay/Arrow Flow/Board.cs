@@ -2271,23 +2271,14 @@ public class Board : Singleton<Board>
             else
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
-        Camera.main.transform.position = new Vector3(0, 10, 2.8f);
-        Camera.main.orthographicSize = 10;
+        Camera.main.transform.position = new Vector3(0, 10, 6f);
+        Camera.main.orthographicSize = 9.41f;
+        StartCoroutine(Common.DelayAction(1, () =>
+        {
+            GameManagerInGame.Instance.SetState(GameStateInGame.Init);
+            GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
+        }));
         SyncEffectCameraFromMainInternal();
-        Sequence sq = DOTween.Sequence();
-        sq.AppendInterval(2.0f);
-        sq.Append(Camera.main.DOOrthoSize(11.58f, 0.5f));
-        sq.Join(Camera.main.transform.DOMoveZ(3.61f, 0.5f));
-        sq.OnUpdate(() =>
-                    {
-                        SyncEffectCameraFromMainInternal();
-                    });
-        sq.AppendInterval(0.25f);
-        sq.OnComplete(() =>
-              {
-                  GameManagerInGame.Instance.SetState(GameStateInGame.Init);
-                  GameManagerInGame.Instance.SetState(GameStateInGame.Playing);
-              });
     }
 
     public void SpawnLoseRainbowShooter()
