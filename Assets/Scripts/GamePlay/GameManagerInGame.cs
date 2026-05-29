@@ -9,6 +9,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using Gley.Notifications;
+using TMPro;
 using UnityEngine.UI;
 
 public enum GameStateInGame
@@ -61,6 +62,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 #endif
 
     [SerializeField] private Button nextLevel;
+    [SerializeField] private Button backLevel;
+    [SerializeField] private TMP_InputField selectlevel;
+
     private new void Awake()
     {
         base.Awake();
@@ -85,12 +89,24 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         if (nextLevel != null)
             nextLevel.onClick.AddListener(NextLevelButton);
+
+        if (backLevel != null)
+            backLevel.onClick.AddListener(BackLevelButton);
+
+        if (selectlevel != null)
+            selectlevel.onEndEdit.AddListener(SelectLevelEndEdit);
     }
 
     private void OnDisable()
     {
         if (nextLevel != null)
             nextLevel.onClick.RemoveListener(NextLevelButton);
+
+        if (backLevel != null)
+            backLevel.onClick.RemoveListener(BackLevelButton);
+
+        if (selectlevel != null)
+            selectlevel.onEndEdit.RemoveListener(SelectLevelEndEdit);
     }
 
     void Start()
@@ -218,6 +234,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _queuedNextLevel = level;
         CurrentLevel = level;
         MaxLevel = Mathf.Max(MaxLevel, level);
+        RefreshSelectLevelInput(level);
         SaveData();
 
         TrackLevelStarted(level);
@@ -276,6 +293,29 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         int baseLevel = Mathf.Max(1, _levelInPlay, CurrentLevel);
         StartGame(baseLevel + 1);
+    }
+
+    private void BackLevelButton()
+    {
+        int baseLevel = Mathf.Max(1, _levelInPlay, CurrentLevel);
+        StartGame(Mathf.Max(1, baseLevel - 1));
+    }
+
+    private void SelectLevelEndEdit(string value)
+    {
+        if (!int.TryParse(value, out int level))
+        {
+            RefreshSelectLevelInput(CurrentLevel);
+            return;
+        }
+
+        StartGame(Mathf.Max(1, level));
+    }
+
+    private void RefreshSelectLevelInput(int level)
+    {
+        if (selectlevel == null) return;
+        selectlevel.SetTextWithoutNotify(Mathf.Max(1, level).ToString());
     }
 
     public void ReplayLevel()
