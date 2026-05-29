@@ -149,7 +149,8 @@ public class Gate : MonoBehaviour
             _tunnel.gameObject.SetActive(false);
             _door.gameObject.SetActive(false);
             _total.enabled = false;
-            _belt.localPosition = new Vector3(0f, -0.175f, -2.25f);
+            _belt.localPosition = new Vector3(0f, -0.175f, -1.74f);
+            _belt.localScale = new Vector3(0.4f, 0.67f, 0.67f);
         }
         else
         {

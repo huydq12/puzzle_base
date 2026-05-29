@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
 using DG.Tweening;
 using Dreamteck.Splines;
 using Sirenix.OdinInspector;
@@ -1340,10 +1339,19 @@ public class Board : Singleton<Board>
             return;
         }
 
-        var orderedCells = IsClosedNeighborLoop(conveyorCells) ? conveyorCells : BuildOrderedBoundaryCells(conveyorCells);
+        bool isClosedLoop = IsClosedNeighborLoop(conveyorCells);
+        bool isOpenChain = IsNeighborChain(conveyorCells);
+
+        if (!isClosedLoop && !isOpenChain)
+        {
+            Debug.LogWarning("ConveyorLine cells are not connected in serialized order; skipping conveyor setup instead of auto-connecting them.");
+            return;
+        }
+
+        var orderedCells = conveyorCells;
         if (orderedCells == null || orderedCells.Count < 3)
         {
-            Debug.LogWarning("ConveyorLine cannot be ordered into a valid loop; skipping conveyor setup.");
+            Debug.LogWarning("ConveyorLine cannot be used as a valid path; skipping conveyor setup.");
             return;
         }
 
@@ -1381,9 +1389,25 @@ public class Board : Singleton<Board>
 
         for (int i = 0; i < orderedCells.Count; i++)
         {
-            GridCell prevCell = GetCellAt(orderedCells[(i - 1 + orderedCells.Count) % orderedCells.Count]);
+            bool openEndpoint = !isClosedLoop && (i == 0 || i == orderedCells.Count - 1);
+            if (openEndpoint)
+            {
+                GridCell endpointCell = GetCellAt(orderedCells[i]);
+                if (endpointCell == null)
+                {
+                    Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
+                    return;
+                }
+
+                allPositions.Add(endpointCell.transform.position);
+                continue;
+            }
+
+            int prevIndex = isClosedLoop ? (i - 1 + orderedCells.Count) % orderedCells.Count : i - 1;
+            int nextIndex = isClosedLoop ? (i + 1) % orderedCells.Count : i + 1;
+            GridCell prevCell = GetCellAt(orderedCells[prevIndex]);
             GridCell currCell = GetCellAt(orderedCells[i]);
-            GridCell nextCell = GetCellAt(orderedCells[(i + 1) % orderedCells.Count]);
+            GridCell nextCell = GetCellAt(orderedCells[nextIndex]);
 
             if (prevCell == null || currCell == null || nextCell == null)
             {
@@ -1410,7 +1434,8 @@ public class Board : Singleton<Board>
         }
 
         float totalDistance = 0f;
-        for (int i = 0; i < allPositions.Count; i++)
+        int segmentCount = isClosedLoop ? allPositions.Count : allPositions.Count - 1;
+        for (int i = 0; i < segmentCount; i++)
         {
             int nextIdx = (i + 1) % allPositions.Count;
             totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
@@ -1428,9 +1453,13 @@ public class Board : Singleton<Board>
         for (int i = 0; i < allPositions.Count; i++)
         {
             Vector3 curr = allPositions[i];
-            Vector3 next = allPositions[(i + 1) % allPositions.Count];
 
             points.Add(CreatePoint(curr));
+
+            if (!isClosedLoop && i == allPositions.Count - 1)
+                continue;
+
+            Vector3 next = allPositions[(i + 1) % allPositions.Count];
 
             float distance = Vector3.Distance(curr, next);
             int numMidPoints = Mathf.RoundToInt(distance / avgSegmentLength) - 1;
@@ -1443,7 +1472,10 @@ public class Board : Singleton<Board>
         }
 
         ConveyorController.Instance.SplineComputer.SetPoints(points.ToArray());
-        ConveyorController.Instance.SplineComputer.Close();
+        if (isClosedLoop)
+            ConveyorController.Instance.SplineComputer.Close();
+        else
+            ConveyorController.Instance.SplineComputer.Break();
         ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
 
@@ -1676,53 +1708,21 @@ public class Board : Singleton<Board>
         return true;
     }
 
-
-    static List<Vector2Int> BuildOrderedBoundaryCells(List<Vector2Int> cells)
+    private static bool IsNeighborChain(List<Vector2Int> cells)
     {
-        HashSet<Vector2Int> set = new(cells);
+        if (cells == null || cells.Count < 2) return false;
 
-        Vector2Int[] dirs =
+        for (int i = 0; i < cells.Count - 1; i++)
         {
-        Vector2Int.right,
-        Vector2Int.down,
-        Vector2Int.left,
-        Vector2Int.up
-    };
+            Vector2Int a = cells[i];
+            Vector2Int b = cells[i + 1];
+            Vector2Int d = b - a;
+            int ax = Mathf.Abs(d.x);
+            int ay = Mathf.Abs(d.y);
+            if (Mathf.Max(ax, ay) != 1) return false;
+        }
 
-        Vector2Int start = cells
-            .OrderBy(c => c.y)
-            .ThenBy(c => c.x)
-            .First();
-
-        List<Vector2Int> result = new();
-        Vector2Int current = start;
-        Vector2Int dir = Vector2Int.right;
-
-        do
-        {
-            result.Add(current);
-
-            bool moved = false;
-            for (int i = 0; i < 4; i++)
-            {
-                Vector2Int nextDir = dirs[(Array.IndexOf(dirs, dir) + 3 + i) % 4];
-                Vector2Int next = current + nextDir;
-
-                if (set.Contains(next))
-                {
-                    dir = nextDir;
-                    current = next;
-                    moved = true;
-                    break;
-                }
-            }
-
-            if (!moved)
-                break;
-
-        } while (current != start);
-
-        return result;
+        return true;
     }
 
     bool IsCorner(Vector2Int prev, Vector2Int curr, Vector2Int next)

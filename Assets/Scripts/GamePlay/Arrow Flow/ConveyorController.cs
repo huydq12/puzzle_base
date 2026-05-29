@@ -305,6 +305,7 @@ public class ConveyorController : Singleton<ConveyorController>
         {
             if (pathSlot.CubeSlot != null)
             {
+                SetCubeVisible(pathSlot.CubeSlot, true);
                 pathSlot.CubeSlot.transform.DOKill();
             }
         }
@@ -630,11 +631,13 @@ public class ConveyorController : Singleton<ConveyorController>
                 }
 
                 bool standStill = false;
+                bool hideDuringMove = false;
 
                 if (_lstPaths[curIndex].CubeSlot == null)
                 {
                     if (curIndex == 0)
                     {
+                        hideDuringMove = tempCubeSlot != null;
                         _lstPaths[curIndex].CubeSlot = tempCubeSlot;
                         tempCubeSlot = null;
                     }
@@ -651,7 +654,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
                 if (_lstPaths[curIndex].CubeSlot != null && !standStill)
                 {
-                    CubeMoving(curIndex, timePerCycle);
+                    CubeMoving(curIndex, timePerCycle, hideDuringMove);
                 }
             }
 
@@ -669,7 +672,7 @@ public class ConveyorController : Singleton<ConveyorController>
         return _cycleWait;
     }
 
-    private void CubeMoving(int idx, float time)
+    private void CubeMoving(int idx, float time, bool hideUntilArrived = false)
     {
         var slot = _lstPaths[idx];
         if (slot.CubeSlot == null) return;
@@ -680,8 +683,39 @@ public class ConveyorController : Singleton<ConveyorController>
         if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
         Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
 
-        slot.CubeSlot.transform.DOMove(targetPos, time).SetEase(Ease.Linear);
-        slot.CubeSlot.transform.LookAt(targetPos + dir);
+        CubeLine cube = slot.CubeSlot;
+        cube.transform.DOKill();
+
+        if (hideUntilArrived)
+            SetCubeVisible(cube, false);
+
+        cube.transform.DOMove(targetPos, time)
+            .SetEase(Ease.Linear)
+            .OnComplete(() =>
+            {
+                if (cube != null)
+                    SetCubeVisible(cube, true);
+            });
+        cube.transform.LookAt(targetPos + dir);
+    }
+
+    private void SetCubeVisible(CubeLine cube, bool visible)
+    {
+        if (cube == null) return;
+
+        Renderer[] renderers = cube.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                renderers[i].enabled = visible;
+        }
+
+        Collider[] colliders = cube.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null)
+                colliders[i].enabled = visible;
+        }
     }
     private void StartBlink()
     {
