@@ -9,6 +9,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using Gley.Notifications;
+using UnityEngine.UI;
 
 public enum GameStateInGame
 {
@@ -59,6 +60,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     [SerializeField] private int _debugAddCoinAmount = 100;
 #endif
 
+    [SerializeField] private Button nextLevel;
     private new void Awake()
     {
         base.Awake();
@@ -78,6 +80,19 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
         API.Initialize();
     }
+
+    private void OnEnable()
+    {
+        if (nextLevel != null)
+            nextLevel.onClick.AddListener(NextLevelButton);
+    }
+
+    private void OnDisable()
+    {
+        if (nextLevel != null)
+            nextLevel.onClick.RemoveListener(NextLevelButton);
+    }
+
     void Start()
     {
         StartGame(CurrentLevel);
@@ -255,6 +270,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void StartNextLevel()
     {
         StartGame(_queuedNextLevel);
+    }
+
+    private void NextLevelButton()
+    {
+        int baseLevel = Mathf.Max(1, _levelInPlay, CurrentLevel);
+        StartGame(baseLevel + 1);
     }
 
     public void ReplayLevel()
