@@ -881,19 +881,28 @@ public class Line : MonoBehaviour
     {
         if (Cubes == null || Cubes.Count == 0) return false;
         if (_gridDir == Vector2Int.zero) return false;
+        if (Board.Instance == null) return false;
 
         EnsureTargetsBuffer();
 
         for (int i = 0; i < Cubes.Count; i++)
         {
+            CubeLine cube = Cubes[i];
+            if (cube == null || cube.Cell == null)
+                return false;
+
             if (i == Cubes.Count - 1)
             {
-                Vector2Int next = Cubes[i].Cell.Position + _gridDir;
+                Vector2Int next = cube.Cell.Position + _gridDir;
                 _targetsBuffer[i] = Board.Instance.GetCellAt(next);
             }
             else
             {
-                _targetsBuffer[i] = Cubes[i + 1].Cell;
+                CubeLine nextCube = Cubes[i + 1];
+                if (nextCube == null || nextCube.Cell == null)
+                    return false;
+
+                _targetsBuffer[i] = nextCube.Cell;
             }
 
             if (_targetsBuffer[i] == null)
@@ -1069,7 +1078,18 @@ public class Line : MonoBehaviour
             if (!_waitingForConveyorEnter)
                 yield break;
             if (head == null)
+            {
+                _waitingForConveyorEnter = false;
+                _isMoving = false;
                 yield break;
+            }
+            if (GameManagerInGame.Instance != null &&
+                GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
+            {
+                _waitingForConveyorEnter = false;
+                _isMoving = false;
+                yield break;
+            }
             if (ConveyorController.Instance == null)
             {
                 yield return null;
@@ -1087,6 +1107,13 @@ public class Line : MonoBehaviour
 
     private void OnHeadInsertedToConveyor(CubeLine head)
     {
+        if (head == null)
+        {
+            _waitingForConveyorEnter = false;
+            _isMoving = false;
+            return;
+        }
+
         head.transform.DOKill();
 
         if (head != null && head.Cell != null && head.Cell.CubeOnCell == head)
@@ -1118,58 +1145,44 @@ public class Line : MonoBehaviour
         _reservedConveyorBaseIndex = -1;
         _targetConveyorCell = null;
 
-        if (Cubes.Count > 0)
+        if (!TryRebuildMovePlanAfterConveyorEnter())
         {
-            CubeLine newHead = Cubes[^1];
-            if (newHead != null && newHead.Cell != null)
-            {
-                Vector2Int newHeadPos = newHead.Cell.Position;
-                Vector2Int prev = newHeadPos - _gridDir;
-
-                GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, newHeadPos);
-                GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, newHeadPos);
-
-                if (conveyorCell != null && Board.Instance.IsConveyorCellBlockedByTunnel(conveyorCell.Position))
-                {
-                    int distToTunnel = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position);
-                    int distToOccupied = occupiedCell != null ? Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position) : int.MaxValue;
-                    if (distToTunnel <= distToOccupied)
-                        occupiedCell = conveyorCell;
-                    conveyorCell = null;
-                }
-
-                if (conveyorCell != null)
-                {
-                    _targetConveyorCell = conveyorCell;
-                    int distToConveyor = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position) - 1;
-
-                    if (occupiedCell != null)
-                    {
-                        int distToObstacle = Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position) - 1;
-                        if (distToObstacle < distToConveyor)
-                        {
-                            _willDefinitelyRevert = true;
-                            _targetConveyorCell = null;
-                            _totalSteps = distToObstacle;
-                            _remainingSteps = _totalSteps;
-                            SetTempTypeOnBodyOnly(CubeType.Normal);
-                        }
-                        else
-                        {
-                            _totalSteps = distToConveyor;
-                            _remainingSteps = _totalSteps;
-                        }
-                    }
-                    else
-                    {
-                        _totalSteps = distToConveyor;
-                        _remainingSteps = _totalSteps;
-                    }
-                }
-            }
+            _isMoving = false;
+            return;
         }
 
         StepForward();
+    }
+
+    private bool TryRebuildMovePlanAfterConveyorEnter()
+    {
+        if (Board.Instance == null) return false;
+        if (Cubes == null || Cubes.Count == 0) return false;
+        if (_gridDir == Vector2Int.zero) return false;
+
+        CubeLine newHead = Cubes[^1];
+        if (newHead == null || newHead.Cell == null) return false;
+
+        Vector2Int newHeadPos = newHead.Cell.Position;
+        Vector2Int prev = newHeadPos - _gridDir;
+
+        GridCell conveyorCell = Board.Instance.FindConveyorCell(prev, newHeadPos);
+        GridCell occupiedCell = Board.Instance.FindOccupiedCell(prev, newHeadPos);
+
+        if (conveyorCell != null && Board.Instance.IsConveyorCellBlockedByTunnel(conveyorCell.Position))
+        {
+            int distToTunnel = Board.Instance.GetManhattanDistance(newHeadPos, conveyorCell.Position);
+            int distToOccupied = occupiedCell != null
+                ? Board.Instance.GetManhattanDistance(newHeadPos, occupiedCell.Position)
+                : int.MaxValue;
+
+            if (distToTunnel <= distToOccupied)
+                occupiedCell = conveyorCell;
+
+            conveyorCell = null;
+        }
+
+        return TryBuildMovePlan(Board.Instance, newHeadPos, conveyorCell, occupiedCell);
     }
 
     private void StartRevert()

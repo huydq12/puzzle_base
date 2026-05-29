@@ -2125,6 +2125,8 @@ public class Board : Singleton<Board>
     public GridCell FindConveyorCell(Vector2Int prev, Vector2Int curr)
     {
         Vector2Int dir = curr - prev;
+        if (dir == Vector2Int.zero) return null;
+
         Vector2Int p = curr + dir;
 
         int w = Cells.GetLength(0);
@@ -2143,6 +2145,8 @@ public class Board : Singleton<Board>
 	    public GridCell FindOccupiedCell(Vector2Int prev, Vector2Int curr)
 	    {
 	        Vector2Int dir = curr - prev;
+	        if (dir == Vector2Int.zero) return null;
+
 	        Vector2Int p = curr + dir;
 
         int w = Cells.GetLength(0);
