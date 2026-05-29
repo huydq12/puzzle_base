@@ -41,6 +41,8 @@ public class CubeLine : SerializedMonoBehaviour
     private ObjectColor _originalColor;
     private bool _hasElementType3InnerColor;
     private ObjectColor _elementType3InnerColor;
+    private readonly Dictionary<Renderer, bool> _runtimeHiddenRendererStates = new();
+    private readonly Dictionary<Collider, bool> _runtimeHiddenColliderStates = new();
 
     public bool Cantouch
     {
@@ -77,6 +79,75 @@ public class CubeLine : SerializedMonoBehaviour
             _wariningEffect.Play();
         }
     }
+
+    public void SetConveyorVisual()
+    {
+        if (_warningHeadEffect != null)
+            _warningHeadEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        if (_outline != null)
+            _outline.enabled = false;
+
+        if (_head != null)
+            _head.enabled = false;
+
+        RefreshColorAndMaterials(CubeType.Normal);
+
+        if (_renderers != null)
+        {
+            foreach (var pair in _renderers)
+            {
+                if (pair.Value == null) continue;
+                pair.Value.enabled = pair.Key == CubeType.Normal;
+            }
+        }
+
+        if (_doubleHeadCube != null)
+            _doubleHeadCube.gameObject.SetActive(false);
+    }
+
+    public void SetRuntimeHidden(bool hidden)
+    {
+        if (hidden)
+        {
+            _runtimeHiddenRendererStates.Clear();
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null) continue;
+                _runtimeHiddenRendererStates[renderer] = renderer.enabled;
+                renderer.enabled = false;
+            }
+
+            _runtimeHiddenColliderStates.Clear();
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null) continue;
+                _runtimeHiddenColliderStates[collider] = collider.enabled;
+                collider.enabled = false;
+            }
+
+            return;
+        }
+
+        foreach (var pair in _runtimeHiddenRendererStates)
+        {
+            if (pair.Key != null)
+                pair.Key.enabled = pair.Value;
+        }
+        _runtimeHiddenRendererStates.Clear();
+
+        foreach (var pair in _runtimeHiddenColliderStates)
+        {
+            if (pair.Key != null)
+                pair.Key.enabled = pair.Value;
+        }
+        _runtimeHiddenColliderStates.Clear();
+    }
+
     public bool BringToTop
     {
         set
@@ -399,6 +470,7 @@ public class CubeLine : SerializedMonoBehaviour
         Cantouch = true;
         HighlightHead = false;
         BringToTop = false;
+        SetRuntimeHidden(false);
 
         if (_renderers != null)
         {

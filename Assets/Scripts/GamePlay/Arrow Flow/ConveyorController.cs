@@ -305,7 +305,7 @@ public class ConveyorController : Singleton<ConveyorController>
         {
             if (pathSlot.CubeSlot != null)
             {
-                SetCubeVisible(pathSlot.CubeSlot, true);
+                pathSlot.CubeSlot.SetRuntimeHidden(false);
                 pathSlot.CubeSlot.transform.DOKill();
             }
         }
@@ -579,6 +579,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
                             if (cube != null)
                             {
+                                cube.SetConveyorVisual();
                                 enteringRequest.Line?.NotifyEnteredConveyor();
                                 enteringRequest.OnInserted?.Invoke();
 
@@ -687,35 +688,16 @@ public class ConveyorController : Singleton<ConveyorController>
         cube.transform.DOKill();
 
         if (hideUntilArrived)
-            SetCubeVisible(cube, false);
+            cube.SetRuntimeHidden(true);
 
         cube.transform.DOMove(targetPos, time)
             .SetEase(Ease.Linear)
             .OnComplete(() =>
             {
                 if (cube != null)
-                    SetCubeVisible(cube, true);
+                    cube.SetRuntimeHidden(false);
             });
         cube.transform.LookAt(targetPos + dir);
-    }
-
-    private void SetCubeVisible(CubeLine cube, bool visible)
-    {
-        if (cube == null) return;
-
-        Renderer[] renderers = cube.GetComponentsInChildren<Renderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] != null)
-                renderers[i].enabled = visible;
-        }
-
-        Collider[] colliders = cube.GetComponentsInChildren<Collider>(true);
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            if (colliders[i] != null)
-                colliders[i].enabled = visible;
-        }
     }
     private void StartBlink()
     {

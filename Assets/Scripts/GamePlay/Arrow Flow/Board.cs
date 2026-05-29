@@ -19,12 +19,17 @@ public enum BoosterType
 }
 public class Board : Singleton<Board>
 {
+    private const float ConveyorEnterEndpointYawOffset = -90f;
+    private const float ConveyorExitEndpointYawOffset = 90f;
+
     [SerializeField] private GridCell _cellPrefab;
     [SerializeField] private Line _linePrefab;
     [SerializeField] private CubeLine _cubePrefab;
     [SerializeField] private Elevator _elevatorPrefab;
     [SerializeField] private LineDoor _lineDoorPrefab;
     [SerializeField] private ConveyorTunel _conveyorTunelPrefab;
+    [SerializeField] private GameObject _conveyorEnterInOutPrefab;
+    [SerializeField] private GameObject _conveyorExitInOutPrefab;
     [SerializeField] private GameColorConfig _colorConfig;
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
@@ -1479,7 +1484,45 @@ public class Board : Singleton<Board>
         ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
 
+        if (!isClosedLoop)
+            SpawnOpenConveyorEndpoints(orderedCells);
+
         SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
+    }
+
+    private void SpawnOpenConveyorEndpoints(List<Vector2Int> orderedCells)
+    {
+        if (orderedCells == null || orderedCells.Count < 2) return;
+
+        GridCell startCell = GetCellAt(orderedCells[0]);
+        GridCell startNextCell = GetCellAt(orderedCells[1]);
+        GridCell endPrevCell = GetCellAt(orderedCells[^2]);
+        GridCell endCell = GetCellAt(orderedCells[^1]);
+
+        SpawnConveyorEndpoint(_conveyorEnterInOutPrefab, startCell, startCell, startNextCell, ConveyorEnterEndpointYawOffset);
+        SpawnConveyorEndpoint(_conveyorExitInOutPrefab, endCell, endPrevCell, endCell, ConveyorExitEndpointYawOffset);
+    }
+
+    private void SpawnConveyorEndpoint(GameObject prefab, GridCell positionCell, GridCell fromCell, GridCell toCell, float yawOffset)
+    {
+        if (prefab == null) return;
+        if (positionCell == null || fromCell == null || toCell == null) return;
+
+        Vector3 from = fromCell.transform.position;
+        Vector3 to = toCell.transform.position;
+        Vector3 dir = to - from;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = Vector3.forward;
+        else
+            dir.Normalize();
+
+        GameObject endpoint = Instantiate(prefab);
+        if (endpoint == null) return;
+
+        Quaternion rotation = Quaternion.LookRotation(dir, Vector3.up) * Quaternion.Euler(0f, yawOffset, 0f);
+        endpoint.transform.SetParent(transform, false);
+        endpoint.transform.SetPositionAndRotation(positionCell.transform.position, rotation);
     }
 
     private static Dictionary<Vector2Int, ConveyorMeta> BuildConveyorMetaByCell(ConveyorLine line)
