@@ -19,6 +19,7 @@ public class UIHome : BaseScreen
     [SerializeField] private Button btn_noAds;
     [SerializeField] private Button btn_specialDeal;
     [SerializeField] private Button btn_dailyReward;
+    [SerializeField] private Button btn_playLevel;
 
     [Header("Top Bar")]
     [SerializeField] private TextMeshProUGUI txt_playerCash;
@@ -41,6 +42,7 @@ public class UIHome : BaseScreen
         btn_noAds.onClick.AddListener(OnClickNoAds);
         btn_specialDeal.onClick.AddListener(OnClickSpecialDeal);
         btn_dailyReward.onClick.AddListener(OnClickDailyReward);
+        if (btn_playLevel != null) btn_playLevel.onClick.AddListener(OnClickPlayLevel);
 
         var heatManager = HeatManager.TryGetInstance();
         if (heatManager != null)
@@ -63,6 +65,19 @@ public class UIHome : BaseScreen
     private void OnClickDailyReward()
     {
         UIManager.Instance.Get<UIDailyReward>().Show();
+    }
+
+    private void OnClickPlayLevel()
+    {
+        var gameManager = GameManagerInGame.Instance != null
+            ? GameManagerInGame.Instance
+            : FindFirstObjectByType<GameManagerInGame>();
+
+        if (gameManager == null) return;
+
+        var userData = GetUserData();
+        int level = userData != null ? userData.currentLevel : gameManager.CurrentLevel;
+        gameManager.StartLevelFromHome(Mathf.Max(1, level));
     }
     
     protected override void OnDestroy()
@@ -91,7 +106,8 @@ public class UIHome : BaseScreen
     public override void Show()
     {
         base.Show();
-        UpdateCash(GameManager.Instance.userData.playerCash);
+        var userData = GetUserData();
+        if (userData != null) UpdateCash(userData.playerCash);
         UpdateHeatDisplay();
         UpdateLevelHome();
         Game.Update.AddTask(UpdateHeatCountdown);
@@ -116,6 +132,15 @@ public class UIHome : BaseScreen
     public void UpdateCash(int cash)
     {
         txt_playerCash.text = cash.ToString();
+    }
+
+    private UserData GetUserData()
+    {
+        var gameManagerInGame = FindFirstObjectByType<GameManagerInGame>();
+        if (gameManagerInGame != null && gameManagerInGame.userData != null)
+            return gameManagerInGame.userData;
+
+        return null;
     }
 
     public void UpdateHeatDisplay()

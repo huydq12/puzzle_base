@@ -31,10 +31,6 @@ public class UISettingInGame : UIPopup
         {
             userData = gameManagerInGame.userData;
         }
-        else if (GameManager.Instance != null)
-        {
-            userData = GameManager.Instance.userData;
-        }
 
         // Đăng ký sự kiện click cho các button
         btnSFX.onClick.AddListener(ToggleSound);

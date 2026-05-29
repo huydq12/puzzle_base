@@ -50,17 +50,36 @@ public class UIMenuBar : BaseScreen
     [SerializeField] private float chooseTabOffsetRanking = 0f;
 
     private HomeTab currentTab = HomeTab.None;
+    private readonly Dictionary<HomeTab, BaseUIElement> _tabElements = new();
+    private readonly Dictionary<HomeTab, RectTransform> _tabRects = new();
+    private readonly Dictionary<HomeTab, CanvasGroup> _tabCanvasGroups = new();
+    private RectTransform _btnShopRect;
+    private RectTransform _btnHomeRect;
+    private RectTransform _btnRankingRect;
+    private RectTransform _chooseParentRect;
+    private Canvas _canvas;
+    private RectTransform _canvasRect;
 
     public System.Action<HomeTab> OnTabChanged;
 
 
     private void Start()
     {
-        btn_Shop.onClick.AddListener(() => SwitchToTab(HomeTab.Shop));
-        btn_Home.onClick.AddListener(() => SwitchToTab(HomeTab.Home));
-        btn_Ranking.onClick.AddListener(() => SwitchToTab(HomeTab.Ranking));
+        CacheStaticRefs();
+
+        if (btn_Shop != null) btn_Shop.onClick.AddListener(() => SwitchToTab(HomeTab.Shop));
+        if (btn_Home != null) btn_Home.onClick.AddListener(() => SwitchToTab(HomeTab.Home));
+        if (btn_Ranking != null) btn_Ranking.onClick.AddListener(() => SwitchToTab(HomeTab.Ranking));
 
         StartCoroutine(InitializeMenuBar());
+    }
+
+    private void OnDisable()
+    {
+        KillTabTweens(HomeTab.Shop);
+        KillTabTweens(HomeTab.Home);
+        KillTabTweens(HomeTab.Ranking);
+        rectChooseTab?.DOKill();
     }
 
     private IEnumerator InitializeMenuBar()
@@ -82,17 +101,11 @@ public class UIMenuBar : BaseScreen
     {
         if (rectChooseTab == null) return;
 
-        float canvasWidth = 0f;
-        if (UIManager.Instance != null) canvasWidth = UIManager.Instance.CanvasWidth;
+        float canvasWidth = _canvasRect != null ? _canvasRect.rect.width : 0f;
 
         if (canvasWidth <= 0f)
         {
-            var canvas = GetComponentInParent<Canvas>();
-            if (canvas != null)
-            {
-                var canvasRect = canvas.GetComponent<RectTransform>();
-                if (canvasRect != null) canvasWidth = canvasRect.rect.width;
-            }
+            if (UIManager.Instance != null) canvasWidth = UIManager.Instance.CanvasWidth;
         }
 
         if (canvasWidth <= 0f) return;
@@ -102,6 +115,8 @@ public class UIMenuBar : BaseScreen
     public void SwitchToTab(HomeTab tab)
     {
         if (currentTab == tab) return;
+        CacheTabElement(tab);
+        CacheTabElement(currentTab);
 
         AnimateChooseTab(tab);
         AnimateIconScale(currentTab, tab);
@@ -130,33 +145,18 @@ public class UIMenuBar : BaseScreen
 
     private float GetChooseTabTargetLocalX(HomeTab tab)
     {
-        RectTransform target = null;
-        switch (tab)
-        {
-            case HomeTab.Shop:
-                if (btn_Shop != null) target = btn_Shop.GetComponent<RectTransform>();
-                break;
-            case HomeTab.Home:
-                if (btn_Home != null) target = btn_Home.GetComponent<RectTransform>();
-                break;
-            case HomeTab.Ranking:
-                if (btn_Ranking != null) target = btn_Ranking.GetComponent<RectTransform>();
-                break;
-        }
+        RectTransform target = GetButtonRect(tab);
+        if (target == null || _chooseParentRect == null) return rectChooseTab.localPosition.x;
 
-        var parentRect = rectChooseTab.parent as RectTransform;
-        if (target == null || parentRect == null) return rectChooseTab.localPosition.x;
-
-        var canvas = GetComponentInParent<Canvas>();
-        float targetCenterX = RectTransformUtility.CalculateRelativeRectTransformBounds(parentRect, target).center.x;
-        float chooseTabCenterX = RectTransformUtility.CalculateRelativeRectTransformBounds(parentRect, rectChooseTab).center.x;
+        float targetCenterX = RectTransformUtility.CalculateRelativeRectTransformBounds(_chooseParentRect, target).center.x;
+        float chooseTabCenterX = RectTransformUtility.CalculateRelativeRectTransformBounds(_chooseParentRect, rectChooseTab).center.x;
         float pivotToChooseCenterX = chooseTabCenterX - rectChooseTab.localPosition.x;
         float x = targetCenterX - pivotToChooseCenterX;
 
         x += GetChooseTabOffset(tab);
 
-        if (canvas != null)
-            x = RectTransformUtility.PixelAdjustPoint(new Vector2(x, 0f), parentRect, canvas).x;
+        if (_canvas != null)
+            x = RectTransformUtility.PixelAdjustPoint(new Vector2(x, 0f), _chooseParentRect, _canvas).x;
 
         return x;
     }
@@ -179,13 +179,12 @@ public class UIMenuBar : BaseScreen
 
     private void AnimateTabTransition(HomeTab fromTab, HomeTab toTab)
     {
-        GameObject fromHolder = GetHolderByTab(fromTab);
-        GameObject toHolder = GetHolderByTab(toTab);
+        RectTransform fromRect = GetTabRect(fromTab);
+        RectTransform toRect = GetTabRect(toTab);
 
-        if (fromTab != HomeTab.Home && fromHolder != null)
+        if (fromTab != HomeTab.None && fromTab != HomeTab.Home && fromRect != null)
         {
-            RectTransform fromRect = fromHolder.GetComponent<RectTransform>();
-            fromRect.DOKill();
+            KillTabTweens(fromTab);
             
             float exitOffset = fromTab == HomeTab.Shop ? -slideDistance : slideDistance;
             fromRect.DOAnchorPosX(exitOffset, animationDuration)
@@ -197,13 +196,11 @@ public class UIMenuBar : BaseScreen
                 });
         }
 
-        if (toTab != HomeTab.Home && toHolder != null)
+        if (toTab != HomeTab.Home && toRect != null)
         {
             ShowTabUI(toTab);
-            
-            RectTransform toRect = toHolder.GetComponent<RectTransform>();
-            toRect.DOKill();
-            
+            KillTabTweens(toTab);
+
             float enterOffset = toTab == HomeTab.Shop ? -slideDistance : slideDistance;
             toRect.anchoredPosition = new Vector2(enterOffset, 0);
 
@@ -214,45 +211,147 @@ public class UIMenuBar : BaseScreen
 
     private void ShowTabUI(HomeTab tab)
     {
-        Hide();
+        BaseUIElement element = CacheTabElement(tab);
+        ResetTabVisualState(tab);
+
         switch (tab)
         {
             case HomeTab.Shop:
-                UIManager.Instance.Get<UIShop>().Show();
+                element?.Show();
                 break;
             case HomeTab.Ranking:
-                UIManager.Instance.Get<UIPopupRank>().Show();
+                element?.Show();
                 break;
         }
-        Show();
+        BringToFront();
     }
 
     private void HideTabUI(HomeTab tab)
     {
+        BaseUIElement element = CacheTabElement(tab);
+        ResetTabVisualState(tab);
+
         switch (tab)
         {
             case HomeTab.Shop:
-                UIManager.Instance.Get<UIShop>().Hide();
+                element?.Hide();
                 break;
             case HomeTab.Ranking:
-                UIManager.Instance.Get<UIPopupRank>().Hide();
+                element?.Hide();
                 break;
         }
     }
 
-    private GameObject GetHolderByTab(HomeTab tab)
+    private RectTransform GetTabRect(HomeTab tab)
     {
-        switch (tab)
+        if (_tabRects.TryGetValue(tab, out RectTransform rect) && rect != null)
+            return rect;
+
+        BaseUIElement element = CacheTabElement(tab);
+        GameObject tabHolder = element != null ? element.holder : null;
+        rect = tabHolder != null ? tabHolder.GetComponent<RectTransform>() : null;
+        if (rect != null) _tabRects[tab] = rect;
+        return rect;
+    }
+
+    private BaseUIElement CacheTabElement(HomeTab tab)
+    {
+        if (tab == HomeTab.None) return null;
+        if (_tabElements.TryGetValue(tab, out BaseUIElement element) && element != null)
         {
-            case HomeTab.Shop:
-                return UIManager.Instance.Get<UIShop>()?.holder;
-            case HomeTab.Home:
-                return UIManager.Instance.Get<UIHome>()?.holder;
-            case HomeTab.Ranking:
-                return UIManager.Instance.Get<UIPopupRank>()?.holder;
-            default:
-                return null;
+            PrepareTabElementForMenu(element);
+            return element;
         }
+
+        if (UIManager.Instance == null) return null;
+
+        element = tab switch
+        {
+            HomeTab.Shop => UIManager.Instance.Get<UIShop>(),
+            HomeTab.Home => UIManager.Instance.Get<UIHome>(),
+            HomeTab.Ranking => UIManager.Instance.Get<UIRank>(),
+            _ => null
+        };
+
+        if (element != null)
+        {
+            _tabElements[tab] = element;
+            PrepareTabElementForMenu(element);
+        }
+
+        return element;
+    }
+
+    private void PrepareTabElementForMenu(BaseUIElement element)
+    {
+        if (element == null) return;
+        element.SetAnim(UIAnimType.None);
+    }
+
+    private void BringToFront()
+    {
+        transform.SetAsLastSibling();
+        if (holder != null) holder.transform.SetAsLastSibling();
+    }
+
+    private void CacheStaticRefs()
+    {
+        _btnShopRect = btn_Shop != null ? btn_Shop.GetComponent<RectTransform>() : null;
+        _btnHomeRect = btn_Home != null ? btn_Home.GetComponent<RectTransform>() : null;
+        _btnRankingRect = btn_Ranking != null ? btn_Ranking.GetComponent<RectTransform>() : null;
+        _chooseParentRect = rectChooseTab != null ? rectChooseTab.parent as RectTransform : null;
+        _canvas = GetComponentInParent<Canvas>();
+        _canvasRect = _canvas != null ? _canvas.GetComponent<RectTransform>() : null;
+    }
+
+    private RectTransform GetButtonRect(HomeTab tab)
+    {
+        return tab switch
+        {
+            HomeTab.Shop => _btnShopRect,
+            HomeTab.Home => _btnHomeRect,
+            HomeTab.Ranking => _btnRankingRect,
+            _ => null
+        };
+    }
+
+    private void KillTabTweens(HomeTab tab)
+    {
+        if (_tabRects.TryGetValue(tab, out RectTransform rect) && rect != null)
+            rect.DOKill();
+
+        if (_tabCanvasGroups.TryGetValue(tab, out CanvasGroup group) && group != null)
+            group.DOKill();
+    }
+
+    private void ResetTabVisualState(HomeTab tab)
+    {
+        BaseUIElement element = CacheTabElement(tab);
+        Transform root = element != null && element.holder != null ? element.holder.transform : null;
+        if (root == null) return;
+
+        CanvasGroup group = GetTabCanvasGroup(tab);
+        if (group != null)
+        {
+            group.alpha = 1f;
+            group.interactable = true;
+            group.blocksRaycasts = true;
+        }
+
+        UIFadeUtil.Restore(root);
+    }
+
+    private CanvasGroup GetTabCanvasGroup(HomeTab tab)
+    {
+        if (_tabCanvasGroups.TryGetValue(tab, out CanvasGroup group))
+            return group;
+
+        BaseUIElement element = CacheTabElement(tab);
+        if (element == null || element.holder == null) return null;
+
+        group = element.holder.GetComponent<CanvasGroup>();
+        _tabCanvasGroups[tab] = group;
+        return group;
     }
 
     private void AnimateIconScale(HomeTab fromTab, HomeTab toTab)

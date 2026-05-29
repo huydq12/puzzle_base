@@ -40,7 +40,10 @@ public class ItemDailyBonus : MonoBehaviour
 
     void SetActive(object index)
     {
-        var currentIndexBonus = GameManager.Instance.userData.dailyBonus.currentIndex;
+        var userData = GameManagerInGame.Instance.userData;
+        if (userData == null) return;
+
+        var currentIndexBonus = userData.dailyBonus.currentIndex;
 
         if(m_Index == currentIndexBonus )
         {

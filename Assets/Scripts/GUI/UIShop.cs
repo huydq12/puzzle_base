@@ -15,7 +15,7 @@ public class UIShop : BaseScreen
     public override void Show()
     {
         base.Show();
-        UpdateCash(GameManager.Instance.userData.playerCash);
+        UpdateCash(GameManagerInGame.Instance.userData.playerCash);
     }
 
     public void UpdateCash(int cash)

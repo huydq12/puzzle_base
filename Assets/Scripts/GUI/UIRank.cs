@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 
-public class UIPopupRank : BasePopup
+public class UIRank : BaseScreen
 {
     #region Constants
     private const int TOP_PLAYERS_COUNT = 3;
@@ -73,6 +73,7 @@ public class UIPopupRank : BasePopup
     {
         base.Show();
         
+        EnsureRewardHandlersInitialized();
         InitializeRankingData();
         DisplayTopPlayers();
         UpdateEndTimeDisplay();
@@ -99,6 +100,8 @@ public class UIPopupRank : BasePopup
     #region Initialization
     private void InitializeRewardHandlers()
     {
+        if (rewardHandlers != null) return;
+
         rewardHandlers = new Dictionary<string, Action<int, UIRankDataPlayer>>
         {
             { ItemTypeNames.COIN, SetCoinReward },
@@ -140,7 +143,7 @@ public class UIPopupRank : BasePopup
 
     private void EnsureLeaderboardEndDateExists()
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         
         if (string.IsNullOrEmpty(userData.dateLeaderBoard))
         {
@@ -158,7 +161,7 @@ public class UIPopupRank : BasePopup
     #region Player Rank Update
     private void UpdatePlayerRankByScore()
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         var rankConfig = RankingManager.Instance.GetRankByScore(userData.playerScore);
         
         if (rankConfig != null)
@@ -192,9 +195,14 @@ public class UIPopupRank : BasePopup
     {
         var rankingData = runtimeRankingData[index];
         var playerUI = topPlayers[index];
+        if (playerUI == null) return;
         
-        playerUI.UI_NamePlayer.text = rankingData.NamePlayer;
-        playerUI.UI_Score.text = FormatScore(rankingData.Score);
+        if (playerUI.UI_NamePlayer != null)
+            playerUI.UI_NamePlayer.text = rankingData.NamePlayer;
+
+        if (playerUI.UI_Score != null)
+            playerUI.UI_Score.text = FormatScore(rankingData.Score);
+
         ParseAndApplyRewards(rankingData.Reward, playerUI);
     }
 
@@ -207,7 +215,7 @@ public class UIPopupRank : BasePopup
     #region Reward Parsing
     private void ParseAndApplyRewards(string rewardString, UIRankDataPlayer playerUI)
     {
-        if (string.IsNullOrEmpty(rewardString)) return;
+        if (playerUI == null || string.IsNullOrEmpty(rewardString)) return;
 
         var rewardItems = ParseRewardString(rewardString);
         ApplyRewardsToUI(rewardItems, playerUI);
@@ -245,6 +253,9 @@ public class UIPopupRank : BasePopup
 
     private void ApplyRewardsToUI(Dictionary<string, int> rewards, UIRankDataPlayer playerUI)
     {
+        if (rewards == null || playerUI == null) return;
+        EnsureRewardHandlersInitialized();
+
         foreach (var reward in rewards)
         {
             if (rewardHandlers.TryGetValue(reward.Key, out var handler))
@@ -256,7 +267,7 @@ public class UIPopupRank : BasePopup
 
     private void SetCoinReward(int amount, UIRankDataPlayer playerUI)
     {
-        if (amount > 0)
+        if (amount > 0 && playerUI.UI_Reward_Coin != null)
         {
             playerUI.UI_Reward_Coin.text = amount.ToString();
         }
@@ -266,8 +277,11 @@ public class UIPopupRank : BasePopup
     {
         if (amount > 0)
         {
-            playerUI.UI_Reward_Item_Coin.text = amount.ToString();
-            playerUI.UI_Item.sprite = boosterType1Sprite;
+            if (playerUI.UI_Reward_Item_Coin != null)
+                playerUI.UI_Reward_Item_Coin.text = amount.ToString();
+
+            if (playerUI.UI_Item != null)
+                playerUI.UI_Item.sprite = boosterType1Sprite;
         }
     }
 
@@ -275,16 +289,25 @@ public class UIPopupRank : BasePopup
     {
         if (amount > 0)
         {
-            playerUI.UI_Reward_Item_Coin.text = amount.ToString();
-            playerUI.UI_Item.sprite = boosterType2Sprite;
+            if (playerUI.UI_Reward_Item_Coin != null)
+                playerUI.UI_Reward_Item_Coin.text = amount.ToString();
+
+            if (playerUI.UI_Item != null)
+                playerUI.UI_Item.sprite = boosterType2Sprite;
         }
+    }
+
+    private void EnsureRewardHandlersInitialized()
+    {
+        if (rewardHandlers == null)
+            InitializeRewardHandlers();
     }
     #endregion
 
     #region End Time Display
     private void UpdateEndTimeDisplay()
     {
-        var leaderboardEndDate = GameManager.Instance.userData.dateLeaderBoard;
+        var leaderboardEndDate = GameManagerInGame.Instance.userData.dateLeaderBoard;
         
         if (!string.IsNullOrEmpty(leaderboardEndDate))
         {
@@ -433,7 +456,7 @@ public class UIPopupRank : BasePopup
 
         lastFirstVisibleIndex = firstVisibleIndex;
 
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         int playerRankIndex = userData.playerRank - 1;
 
         // Reuse pooled cells
@@ -506,7 +529,7 @@ public class UIPopupRank : BasePopup
 
     private void SetupPlayerRankCell(RankCell rankCell, int index)
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         rankCell.SetupData(
             userData.playerRank,
             userData.playerName,
@@ -536,7 +559,7 @@ public class UIPopupRank : BasePopup
     {
         if (rankingListContainer == null) return;
 
-        int playerRank = GameManager.Instance.userData.playerRank;
+        int playerRank = GameManagerInGame.Instance.userData.playerRank;
         int dataIndex = playerRank - 1 - TOP_PLAYERS_COUNT; // Index trong data list (trừ top 3)
         
         if (dataIndex < 0) return; // Player trong top 3, không cần scroll
@@ -578,5 +601,3 @@ public class UIRankDataPlayer
     public Image UI_Item;
 }
 #endregion
-
-

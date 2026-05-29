@@ -32,12 +32,12 @@ public class UIDailyReward : UIPopup
 
     private void Start()
     {
-        if (!GameManager.Instance.userData.isFirstClaimDailyReward)
+        if (!GameManagerInGame.Instance.userData.isFirstClaimDailyReward)
         {
-            GameManager.Instance.userData.dailyBonus.currentIndex = 0;
-            GameManager.Instance.userData.isFirstClaimDailyReward = true;
+            GameManagerInGame.Instance.userData.dailyBonus.currentIndex = 0;
+            GameManagerInGame.Instance.userData.isFirstClaimDailyReward = true;
         }
-        else if (GameManager.Instance.userData.isShowDailyReward)
+        else if (GameManagerInGame.Instance.userData.isShowDailyReward)
         {
             btn_clam.SetActive(false);
         }
@@ -52,23 +52,23 @@ public class UIDailyReward : UIPopup
     {
         btn_clam.enabled = false;
         
-        GameManager.Instance.userData.isShowDailyReward = true;
-        if (imagesDataBonus[GameManager.Instance.userData.dailyBonus.currentIndex].Cach != 0)
+        GameManagerInGame.Instance.userData.isShowDailyReward = true;
+        if (imagesDataBonus[GameManagerInGame.Instance.userData.dailyBonus.currentIndex].Cach != 0)
         {
-            NextGame(imagesDataBonus[GameManager.Instance.userData.dailyBonus.currentIndex].Cach);
+            NextGame(imagesDataBonus[GameManagerInGame.Instance.userData.dailyBonus.currentIndex].Cach);
         }
         else
         {
             NextGame(0);
         }
-        GameManager.Instance.userData.dailyBonus.currentIndex++;
+        GameManagerInGame.Instance.userData.dailyBonus.currentIndex++;
     }
 
     private void SetupImagePopup()
     {
-        if(GameManager.Instance.userData.dailyBonus.currentIndex > 6)
+        if(GameManagerInGame.Instance.userData.dailyBonus.currentIndex > 6)
         {
-            GameManager.Instance.userData.dailyBonus.currentIndex = 6;
+            GameManagerInGame.Instance.userData.dailyBonus.currentIndex = 6;
             btn_clam.SetActive(false);
         }
     }
@@ -121,7 +121,7 @@ public class UIDailyReward : UIPopup
         DOTween.To(() => currentValue, x => currentValue = (int)x, targetCoin, 1f)
             .OnUpdate(() => { this.userCoinTxt.text = $"{currentValue}"; });
         yield return new WaitForSeconds(1.5f);
-        UpdateCash(GameManager.Instance.userData.playerCash);
+        UpdateCash(GameManagerInGame.Instance.userData.playerCash);
 
         UIManager.Instance.Get<UIInGame>().Show();
         Hide();

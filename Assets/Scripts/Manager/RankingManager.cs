@@ -87,7 +87,7 @@ public class RankingManager : Singleton<RankingManager>
 
     public void UpdatePlayerScore(int newScore)
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         userData.playerScore = newScore;
         
         var rankConfig = GetRankByScore(newScore);

@@ -142,7 +142,7 @@ public class UINoAds : UIPopup
     {
         if (currentPack == null || btn_buy == null) return;
         
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         if (currentPack.limit == PurchaseLimit.OneTime && userData.purchasedPackIds.Contains(currentPack.id))
         {
             btn_buy.interactable = false;

@@ -165,11 +165,11 @@ public class UIProfile : UIPopup
     public override void Show()
     {
         base.Show();
-        text_name.text = GameManager.Instance.userData.playerName;
+        text_name.text = GameManagerInGame.Instance.userData.playerName;
 
         // Load current index from UserData
-        currentAvatarIndex = GameManager.Instance.userData.currentAvatarIndex;
-        currentFrameIndex = GameManager.Instance.userData.currentFrameIndex;
+        currentAvatarIndex = GameManagerInGame.Instance.userData.currentAvatarIndex;
+        currentFrameIndex = GameManagerInGame.Instance.userData.currentFrameIndex;
 
 
         // Open Avatar tab by default
@@ -183,7 +183,7 @@ public class UIProfile : UIPopup
 
     public void UpdatePLayerName()
     {
-        text_name.text = GameManager.Instance.userData.playerName;
+        text_name.text = GameManagerInGame.Instance.userData.playerName;
     }
 
     private void CreateAvatarItems()
@@ -195,7 +195,7 @@ public class UIProfile : UIPopup
             ProfileItem item = Instantiate(profileItemPrefab, parentAvatar);
 
             // Check from UserData if this avatar is unlocked
-            bool isLocked = !GameManager.Instance.userData.unlockedAvatars.Contains(i);
+            bool isLocked = !GameManagerInGame.Instance.userData.unlockedAvatars.Contains(i);
             bool isSelected = i == currentAvatarIndex;
 
             item.SetData(
@@ -233,7 +233,7 @@ public class UIProfile : UIPopup
             ProfileItem item = Instantiate(profileItemPrefab, parentFrame);
 
             // Check from UserData if this frame is unlocked
-            bool isLocked = !GameManager.Instance.userData.unlockedFrames.Contains(i);
+            bool isLocked = !GameManagerInGame.Instance.userData.unlockedFrames.Contains(i);
             bool isSelected = i == currentFrameIndex;
 
             item.SetData(
@@ -265,8 +265,8 @@ public class UIProfile : UIPopup
         Debug.Log($"Selected {tab}: {index}");
         
         bool isLocked = tab == TabProfile.Avatar 
-            ? !GameManager.Instance.userData.unlockedAvatars.Contains(index)
-            : !GameManager.Instance.userData.unlockedFrames.Contains(index);
+            ? !GameManagerInGame.Instance.userData.unlockedAvatars.Contains(index)
+            : !GameManagerInGame.Instance.userData.unlockedFrames.Contains(index);
         
         if (tab == TabProfile.Avatar)
         {
@@ -297,15 +297,15 @@ public class UIProfile : UIPopup
         if (tab == TabProfile.Avatar)
         {
             currentAvatarIndex = index;
-            GameManager.Instance.userData.currentAvatarIndex = index;
-            GameManager.Instance.userData.Save();
+            GameManagerInGame.Instance.userData.currentAvatarIndex = index;
+            GameManagerInGame.Instance.userData.Save();
             SetSelectedAvatar(index);
         }
         else
         {
             currentFrameIndex = index;
-            GameManager.Instance.userData.currentFrameIndex = index;
-            GameManager.Instance.userData.Save();
+            GameManagerInGame.Instance.userData.currentFrameIndex = index;
+            GameManagerInGame.Instance.userData.Save();
             SetSelectedFrame(index);
         }
         
@@ -411,10 +411,10 @@ public class UIProfile : UIPopup
         if (index >= 0 && index < dataAvatar.listAvatar.Count)
         {
             // Add to unlocked list in UserData
-            if (!GameManager.Instance.userData.unlockedAvatars.Contains(index))
+            if (!GameManagerInGame.Instance.userData.unlockedAvatars.Contains(index))
             {
-                GameManager.Instance.userData.unlockedAvatars.Add(index);
-                GameManager.Instance.userData.Save();
+                GameManagerInGame.Instance.userData.unlockedAvatars.Add(index);
+                GameManagerInGame.Instance.userData.Save();
             }
 
             // Update UI if item was already created
@@ -436,10 +436,10 @@ public class UIProfile : UIPopup
         if (index >= 0 && index < dataFrame.listFrame.Count)
         {
             // Add to unlocked list in UserData
-            if (!GameManager.Instance.userData.unlockedFrames.Contains(index))
+            if (!GameManagerInGame.Instance.userData.unlockedFrames.Contains(index))
             {
-                GameManager.Instance.userData.unlockedFrames.Add(index);
-                GameManager.Instance.userData.Save();
+                GameManagerInGame.Instance.userData.unlockedFrames.Add(index);
+                GameManagerInGame.Instance.userData.Save();
             }
 
             // Update UI if item was already created
@@ -470,7 +470,7 @@ public class UIProfile : UIPopup
         string unlockText = "";
         bool canUnlock = false;
         int playerLevel = GetPlayerLevel();
-        int playerCash = GameManager.Instance.userData.playerCash;
+        int playerCash = GameManagerInGame.Instance.userData.playerCash;
         OffInfo();
         btn_unlock.gameObject.SetActive(true);
         switch (unlockType)
@@ -577,7 +577,7 @@ public class UIProfile : UIPopup
     private bool TryUnlockItem(UnlockType unlockType, int unlockLevel, int price)
     {
         int playerLevel = GetPlayerLevel();
-        int playerCash = GameManager.Instance.userData.playerCash;
+        int playerCash = GameManagerInGame.Instance.userData.playerCash;
 
         switch (unlockType)
         {
@@ -595,9 +595,9 @@ public class UIProfile : UIPopup
             case UnlockType.Purchase:
                 if (playerCash >= price)
                 {
-                    GameManager.Instance.userData.playerCash -= price;
-                    GameManager.Instance.userData.Save();
-                    GameManager.Instance.UpdateValueData();
+                    GameManagerInGame.Instance.userData.playerCash -= price;
+                    GameManagerInGame.Instance.userData.Save();
+                    GameManagerInGame.Instance.UpdateValueData();
                     return true;
                 }
                 text_unlock_info.text = $"Not enough coins! Need {price} coins";
@@ -610,9 +610,9 @@ public class UIProfile : UIPopup
                 }
                 if (playerCash >= price)
                 {
-                    GameManager.Instance.userData.playerCash -= price;
-                    GameManager.Instance.userData.Save();
-                    GameManager.Instance.UpdateValueData();
+                    GameManagerInGame.Instance.userData.playerCash -= price;
+                    GameManagerInGame.Instance.userData.Save();
+                    GameManagerInGame.Instance.UpdateValueData();
                     return true;
                 }
                 text_unlock_info.text = $"Need level {unlockLevel} or {price} coins";
@@ -637,9 +637,9 @@ public class UIProfile : UIPopup
 
     private int GetPlayerLevel()
     {
-        if (GameManager.Instance.userData.listMap.Count > 0)
+        if (GameManagerInGame.Instance.userData.listMap.Count > 0)
         {
-            return GameManager.Instance.userData.listMap[GameManager.Instance.userData.currentMap].mapLevel;
+            return GameManagerInGame.Instance.userData.listMap[GameManagerInGame.Instance.userData.currentMap].mapLevel;
         }
         return 1;
     }

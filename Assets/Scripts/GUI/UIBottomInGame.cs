@@ -98,6 +98,15 @@ public class UIBottomInGame : BaseScreen
 
 
 
+    protected override void Awake()
+    {
+        base.Awake();
+        if (IsHomeState())
+        {
+            HideImmediate();
+        }
+    }
+
     private void Start()
     {
         // Only 3 boosters are supported in this mode: Hammer / Conveyor / Rainbow.
@@ -259,6 +268,12 @@ public class UIBottomInGame : BaseScreen
 
     public override void Show()
     {
+        if (IsHomeState())
+        {
+            HideImmediate();
+            return;
+        }
+
         CacheHolderPos();
         _slideTween?.Kill();
         if (_holderRect != null)
@@ -289,6 +304,24 @@ public class UIBottomInGame : BaseScreen
                 _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
             .SetEase(Ease.InCubic)
             .OnComplete(() => base.Hide());
+    }
+
+    private bool IsHomeState()
+    {
+        var gameManager = FindFirstObjectByType<GameManagerInGame>();
+        return gameManager != null && gameManager.CurrentGameStateInGame == GameStateInGame.Home;
+    }
+
+    private void HideImmediate()
+    {
+        _slideTween?.Kill();
+        _slideTween = null;
+        _isHide = true;
+
+        if (holder != null)
+            holder.SetActive(false);
+        else
+            gameObject.SetActive(false);
     }
 
     private void CacheHolderPos()

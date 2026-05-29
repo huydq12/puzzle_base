@@ -24,13 +24,13 @@ public class UISettingHome : UIPopup
     protected override void Start()
     {
         base.Start();
-        userData = GameManager.Instance.userData;
+        userData = GetUserData();
 
         // Đăng ký sự kiện click cho các button
-        btnSFX.onClick.AddListener(ToggleSound);
-        btnBGM.onClick.AddListener(ToggleMusic);
-        btnVibrate.onClick.AddListener(ToggleVibrate);
-        btnClose.onClick.AddListener(ClosePopup);
+        if (btnSFX != null) btnSFX.onClick.AddListener(ToggleSound);
+        if (btnBGM != null) btnBGM.onClick.AddListener(ToggleMusic);
+        if (btnVibrate != null) btnVibrate.onClick.AddListener(ToggleVibrate);
+        if (btnClose != null) btnClose.onClick.AddListener(ClosePopup);
 
         // Cập nhật UI theo trạng thái hiện tại
         UpdateUI();
@@ -80,6 +80,7 @@ public class UISettingHome : UIPopup
 
     private void UpdateUI()
     {
+        if (userData == null) return;
         UpdateSoundUI();
         UpdateMusicUI();
         UpdateVibrateUI();
@@ -87,6 +88,7 @@ public class UISettingHome : UIPopup
 
     private void UpdateSoundUI()
     {
+        if (userData == null) return;
         if (soundOnIcon != null && soundOffIcon != null)
         {
             soundOnIcon.SetActive(userData.soundOn);
@@ -96,6 +98,7 @@ public class UISettingHome : UIPopup
 
     private void UpdateMusicUI()
     {
+        if (userData == null) return;
         if (musicOnIcon != null && musicOffIcon != null)
         {
             musicOnIcon.SetActive(userData.musicOn);
@@ -105,6 +108,7 @@ public class UISettingHome : UIPopup
 
     private void UpdateVibrateUI()
     {
+        if (userData == null) return;
         if (vibrateOnIcon != null && vibrateOffIcon != null)
         {
             vibrateOnIcon.SetActive(userData.vibrateOn);
@@ -115,5 +119,14 @@ public class UISettingHome : UIPopup
     private void ClosePopup()
     {
         Hide();
+    }
+
+    private UserData GetUserData()
+    {
+        var gameManagerInGame = FindFirstObjectByType<GameManagerInGame>();
+        if (gameManagerInGame != null && gameManagerInGame.userData != null)
+            return gameManagerInGame.userData;
+
+        return null;
     }
 }

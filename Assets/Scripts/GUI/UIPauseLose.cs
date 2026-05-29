@@ -169,8 +169,6 @@ public class UIPauseLose : BasePopup
             coin = InventoryManager.Instance.GetCoin();
         else if (GameManagerInGame.intance != null && GameManagerInGame.intance.userData != null)
             coin = GameManagerInGame.intance.userData.playerCash;
-        else if (GameManager.Instance != null && GameManager.Instance.userData != null)
-            coin = GameManager.Instance.userData.playerCash;
 
         txt_coin.text = coin.ToString();
     }

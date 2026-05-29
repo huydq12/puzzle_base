@@ -87,7 +87,7 @@ public class ShopManager : Singleton<ShopManager>
             return;
         }
 
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
         
         for (int i = 0; i < packDataList.Count; i++)
         {
@@ -205,7 +205,7 @@ public class ShopManager : Singleton<ShopManager>
                 
                 if (packData.limit == PurchaseLimit.OneTime)
                 {
-                    var userData = GameManager.Instance.userData;
+                    var userData = GameManagerInGame.Instance.userData;
                     if (!userData.purchasedPackIds.Contains(packData.id))
                     {
                         userData.purchasedPackIds.Add(packData.id);
@@ -292,7 +292,7 @@ public class ShopManager : Singleton<ShopManager>
 
     private void PurchaseWithCoin(ShopPackData pack, Action onSuccess, Action<string> onFailed)
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
 
         if (userData.playerCash < pack.priceCoin)
         {
@@ -303,13 +303,13 @@ public class ShopManager : Singleton<ShopManager>
         userData.playerCash -= pack.priceCoin;
         GiveRewards(pack.reward);
         RecordPurchase(pack);
-        GameManager.Instance.userData.Save();
+        GameManagerInGame.Instance.userData.Save();
         onSuccess?.Invoke();
     }
 
     private void PurchaseWithDiamond(ShopPackData pack, Action onSuccess, Action<string> onFailed)
     {
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
 
         if (userData.playerDiamond < pack.priceDiamond)
         {
@@ -320,7 +320,7 @@ public class ShopManager : Singleton<ShopManager>
         userData.playerDiamond -= pack.priceDiamond;
         GiveRewards(pack.reward);
         RecordPurchase(pack);
-        GameManager.Instance.userData.Save();
+        GameManagerInGame.Instance.userData.Save();
         onSuccess?.Invoke();
     }
 
@@ -329,9 +329,9 @@ public class ShopManager : Singleton<ShopManager>
         Debug.Log($"Initiating IAP purchase for: {pack.priceIAPId}");
         GiveRewards(pack.reward);
         RecordPurchase(pack);
-        GameManager.Instance.UpdateValueData();
-        UIManager.Instance.Get<UIShop>().UpdateCash(GameManager.Instance.userData.playerCash);
-        GameManager.Instance.userData.Save();
+        GameManagerInGame.Instance.UpdateValueData();
+        UIManager.Instance.Get<UIShop>().UpdateCash(GameManagerInGame.Instance.userData.playerCash);
+        GameManagerInGame.Instance.userData.Save();
         onSuccess?.Invoke();
     }
 
@@ -340,7 +340,7 @@ public class ShopManager : Singleton<ShopManager>
         if (reward == null || reward.items == null)
             return;
 
-        var userData = GameManager.Instance.userData;
+        var userData = GameManagerInGame.Instance.userData;
 
         foreach (var item in reward.items)
         {
@@ -389,7 +389,7 @@ public class ShopManager : Singleton<ShopManager>
         
         if (pack.limit == PurchaseLimit.OneTime)
         {
-            var userData = GameManager.Instance.userData;
+            var userData = GameManagerInGame.Instance.userData;
             if (!userData.purchasedPackIds.Contains(pack.id))
             {
                 userData.purchasedPackIds.Add(pack.id);

@@ -46,6 +46,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _isFirstSceneStart = true;
     private bool _nextStartIsAfterWin;
     private bool _pendingAutoHideLoading;
+    private bool _initialLoadingCompleted;
     private float _pendingAutoHideSeconds;
 
     private const int LoopStartLevel = 30;
@@ -83,6 +84,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             LoadData();
         }
+        if (userData != null && HeatManager.Instance != null)
+        {
+            HeatManager.Instance.Initialize(userData);
+        }
         API.Initialize();
     }
 
@@ -110,8 +115,20 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             selectlevel.onEndEdit.RemoveListener(SelectLevelEndEdit);
     }
 
-    void Start()
+    private void Start()
     {
+        StartCoroutine(StartAfterInitialLoading());
+    }
+
+    private IEnumerator StartAfterInitialLoading()
+    {
+        if (UILoadingInGame.Instance != null)
+        {
+            UILoadingInGame.Instance.Show();
+            yield return new WaitForSeconds(Mathf.Max(0f, CONST_TIME_HIDE_LOADING_FIRST));
+        }
+
+        _initialLoadingCompleted = true;
         StartGame(CurrentLevel);
     }
 
@@ -222,7 +239,18 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         StartGame(CurrentLevel);
     }
+
+    public void StartLevelFromHome(int level)
+    {
+        StartGame(level, false);
+    }
+
     public void StartGame(int level)
+    {
+        StartGame(level, true);
+    }
+
+    private void StartGame(int level, bool allowShowHome)
     {
         level = Mathf.Max(1, level);
         // Prevent spam-tapping Replay/Restart from interrupting setup and leaving pooled objects mid-state.
@@ -237,6 +265,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         MaxLevel = Mathf.Max(MaxLevel, level);
         RefreshSelectLevelInput(level);
         SaveData();
+
+        if (allowShowHome && ShouldShowHome(level))
+        {
+            ShowHome();
+            return;
+        }
 
         TrackLevelStarted(level);
 
@@ -253,7 +287,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
 
         bool isFirstStart = _isFirstSceneStart;
-        _pendingAutoHideLoading = _isFirstSceneStart || (_nextStartIsAfterWin && level > CONST_LEVEL_SHOW_LOADING);
+        _pendingAutoHideLoading = (_isFirstSceneStart && !_initialLoadingCompleted) || (_nextStartIsAfterWin && level > CONST_LEVEL_SHOW_LOADING);
         _pendingAutoHideSeconds = isFirstStart ? Mathf.Max(CONST_TIME_HIDE_LOADING, CONST_TIME_HIDE_LOADING_FIRST) : CONST_TIME_HIDE_LOADING;
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;
@@ -270,6 +304,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void SpawnUI()
     {
+        var home = UIManager.Instance.GetExistUI<UIHome>();
+        if (home != null) home.Hide();
+
+        var menuBar = UIManager.Instance.GetExistUI<UIMenuBar>();
+        if (menuBar != null) menuBar.Hide();
+
         UIManager.Instance.Get<UITopInGame>().Show();
         UIManager.Instance.Get<UIBottomInGame>().Show();
         if (UILoadingInGame.Instance == null) return;
@@ -278,6 +318,64 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             UILoadingInGame.Instance.Show();
         else
             UILoadingInGame.Instance.Hide();
+    }
+
+    public void ShowHome()
+    {
+        if (_playRoutine != null)
+        {
+            StopCoroutine(_playRoutine);
+            _playRoutine = null;
+        }
+
+        if (_hideLoadingRoutine != null)
+        {
+            StopCoroutine(_hideLoadingRoutine);
+            _hideLoadingRoutine = null;
+        }
+
+        var top = UIManager.Instance.GetExistUI<UITopInGame>();
+        if (top != null) top.Hide();
+
+        var bottom = UIManager.Instance.GetExistUI<UIBottomInGame>();
+        if (bottom != null)
+        {
+            bottom.Hide();
+            if (bottom.holder != null)
+                bottom.holder.SetActive(false);
+            else
+                bottom.gameObject.SetActive(false);
+        }
+
+        if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Hide();
+
+        SetState(GameStateInGame.Home);
+        UIManager.Instance.Get<UIHome>().Show();
+        var menuBar = UIManager.Instance.Get<UIMenuBar>();
+        menuBar.Show();
+        menuBar.transform.SetAsLastSibling();
+        if (menuBar.holder != null) menuBar.holder.transform.SetAsLastSibling();
+    }
+
+    public void ReturnToHome()
+    {
+        ShowHome();
+    }
+
+    public void UpdateValueData()
+    {
+        var home = UIManager.Instance != null ? UIManager.Instance.GetExistUI<UIHome>() : null;
+        if (home != null && userData != null)
+        {
+            home.UpdateCash(userData.playerCash);
+            home.UpdateHeatDisplay();
+        }
+
+        var shop = UIManager.Instance != null ? UIManager.Instance.GetExistUI<UIShop>() : null;
+        if (shop != null && userData != null)
+        {
+            shop.UpdateCash(userData.playerCash);
+        }
     }
 
     public void RestartLevel()
@@ -317,6 +415,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         if (selectlevel == null) return;
         selectlevel.SetTextWithoutNotify(Mathf.Max(1, level).ToString());
+    }
+
+    private bool ShouldShowHome(int level)
+    {
+        return CONST_LEVEL_HOME > 0 && level >= CONST_LEVEL_HOME;
     }
 
     public void ReplayLevel()

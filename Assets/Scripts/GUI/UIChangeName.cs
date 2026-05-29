@@ -24,7 +24,7 @@ public class UIChangeName : UIPopup
     public override void Show()
     {
         base.Show();
-        text_name.text = GameManager.Instance.userData.playerName;
+        text_name.text = GameManagerInGame.Instance.userData.playerName;
     }
 
     private void Close()
@@ -34,9 +34,9 @@ public class UIChangeName : UIPopup
 
     private void Confirm()
     {
-        GameManager.Instance.userData.playerName = input_name.text;
+        GameManagerInGame.Instance.userData.playerName = input_name.text;
         UIManager.Instance.Get<UIProfile>().UpdatePLayerName();
-        GameManager.Instance.userData.Save();
+        GameManagerInGame.Instance.userData.Save();
         Hide();
         
     }
