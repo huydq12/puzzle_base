@@ -155,7 +155,7 @@ public class Gate : MonoBehaviour
         {
             _tunnel.gameObject.SetActive(true);
             _total.enabled = true;
-            _belt.localPosition = new Vector3(0f, -0.175f, -2.75f);
+            _belt.localPosition = new Vector3(0f, -0.175f, -2.95f);
         }
 
 	        for (int i = 0; i < Shooters.Count; i++)
@@ -354,7 +354,7 @@ public class Gate : MonoBehaviour
         _total.enabled = true;
         _door.gameObject.SetActive(false);
         _maskDoor.gameObject.SetActive(false);
-        _belt.transform.localScale = new Vector3(0.55f, 0.67f , 0.67f);
+        _belt.transform.localScale = new Vector3(0.8f, 0.67f , 0.67f);
         _maskDoor.localPosition = new Vector3(0, 0.3f, -2.5f);
     }
 
