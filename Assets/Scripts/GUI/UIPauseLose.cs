@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine.UI;
 using TMPro;
 
-public class UIPauseLose : UIElement
+public class UIPauseLose : BasePopup
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -103,7 +103,7 @@ public class UIPauseLose : UIElement
         _step2Tween?.Kill();
         base.Hide();
 
-        GameUI.Instance.Get<UILose>().Show();
+        UIManager.Instance.Get<UILose>().Show();
     }
 
     private void Start()
@@ -148,7 +148,7 @@ public class UIPauseLose : UIElement
             bool spent = InventoryManager.Instance != null && InventoryManager.Instance.SpendCoin(_currentUseRainbowCoinPrice);
             if (!spent)
             {
-                var toast = GameUI.Instance != null ? GameUI.Instance.Get<UINotification>() : null;
+                var toast = UIManager.Instance != null ? UIManager.Instance.Get<UINotification>() : null;
                 if (toast != null)
                     toast.ShowToast(notEnoughGoldToast);
                 RefreshCoin();

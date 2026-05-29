@@ -96,17 +96,17 @@ public class GameManager : Singleton<GameManager>
         HeatManager.Instance.Initialize(userData);
         if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Show();
         SetGameState(GameState.Home);
-        GameUI.Instance.Get<UIHome>().Show();
-        GameUI.Instance.Get<UIShop>().Hide();
-        GameUI.Instance.Get<UIPopupRank>().Hide();
-        GameUI.Instance.Get<UIMenuBar>().Show();
+        UIManager.Instance.Get<UIHome>().Show();
+        UIManager.Instance.Get<UIShop>().Hide();
+        UIManager.Instance.Get<UIPopupRank>().Hide();
+        UIManager.Instance.Get<UIMenuBar>().Show();
     }
 
     public void StartGame()
     {
         if (!HeatManager.Instance.CanPlay())
         {
-            GameUI.Instance.Get<UIPopupNoHeat>().Show();
+            UIManager.Instance.Get<UIPopupNoHeat>().Show();
             return;
         }
         
@@ -146,7 +146,7 @@ public class GameManager : Singleton<GameManager>
 
     public void UpdateValueData()
     {
-        var UI_Home = GameUI.Instance.Get<UIHome>();
+        var UI_Home = UIManager.Instance.Get<UIHome>();
         if (UI_Home != null)
         {
             UI_Home.UpdateCash(userData.playerCash);
@@ -158,22 +158,22 @@ public class GameManager : Singleton<GameManager>
     // {
     //     if (Input.GetKey(KeyCode.A))
     //     {
-    //         GameUI.Instance.Get<UIDailyReward>().Show();
+    //         UIManager.Instance.Get<UIDailyReward>().Show();
     //     }
 
     //     if (Input.GetKey(KeyCode.S))
     //     {
-    //         GameUI.Instance.Get<UIWin>().Show();
+    //         UIManager.Instance.Get<UIWin>().Show();
     //     }
 
     //     if (Input.GetKey(KeyCode.D))
     //     {
-    //         GameUI.Instance.Get<UIProfile>().Show();
+    //         UIManager.Instance.Get<UIProfile>().Show();
     //     }
 
     //     if (Input.GetKey(KeyCode.F))
     //     {
-    //         GameUI.Instance.Get<UISettingInGame>().Show();
+    //         UIManager.Instance.Get<UISettingInGame>().Show();
     //     }
         
     // }

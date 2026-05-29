@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 
-public class UIPopupRank : UIElement
+public class UIPopupRank : BasePopup
 {
     #region Constants
     private const int TOP_PLAYERS_COUNT = 3;

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
-public class UIPopup : UIElement
+public class UIPopup : BasePopup
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;

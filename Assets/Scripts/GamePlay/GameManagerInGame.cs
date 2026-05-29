@@ -140,7 +140,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         {
             BoosterUnlockService.TryGrantUnlockGift(contentLevel);
         }
-        var bottom = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+        var bottom = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
         if (bottom != null) bottom.RefreshBoosterQuantity();
         PlayVfxWin();
         TrackLevelFinished(true, completedLevel);
@@ -252,8 +252,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void SpawnUI()
     {
-        GameUI.Instance.Get<UITopInGame>().Show();
-        GameUI.Instance.Get<UIBottomInGame>().Show();
+        UIManager.Instance.Get<UITopInGame>().Show();
+        UIManager.Instance.Get<UIBottomInGame>().Show();
         if (UILoadingInGame.Instance == null) return;
 
         if (_pendingAutoHideLoading)

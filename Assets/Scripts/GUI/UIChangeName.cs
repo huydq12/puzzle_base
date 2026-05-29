@@ -35,7 +35,7 @@ public class UIChangeName : UIPopup
     private void Confirm()
     {
         GameManager.Instance.userData.playerName = input_name.text;
-        GameUI.Instance.Get<UIProfile>().UpdatePLayerName();
+        UIManager.Instance.Get<UIProfile>().UpdatePLayerName();
         GameManager.Instance.userData.Save();
         Hide();
         

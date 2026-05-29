@@ -42,7 +42,7 @@ public class TutorialManager : Singleton<TutorialManager>
 	private UITutorial _uiTutorial;
 	private UITutorialBotter _uiTutorialBotter;
 	private UIBottomInGame _uiBottomInGame;
-	private GameUI _gameUI;
+	private UIManager _gameUI;
 	private GameManagerInGame _gameManagerInGame;
 	private bool _wasAnyPopupVisible;
 	private bool _bottomHiddenByPopup;
@@ -81,12 +81,12 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	private void Update()
 	{
-		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) _gameUI = UIManager.Instance;
 		if (_gameUI == null) return;
 		if (!AllowTutorialPopups())
 		{
-			if (IsUIElementVisible(_uiTutorial)) _uiTutorial.Hide();
-			if (IsUIElementVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
+			if (IsUIVisible(_uiTutorial)) _uiTutorial.Hide();
+			if (IsUIVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
 			ShowBottomIfHiddenByPopup();
 			_wasAnyPopupVisible = false;
 			return;
@@ -148,7 +148,7 @@ public class TutorialManager : Singleton<TutorialManager>
 		bool allow = AllowTutorialPopups();
 		Log($"ShowTutorialPopup: allow={allow} title='{title}'");
 		if (!allow) return;
-		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) _gameUI = UIManager.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
 		if (_uiTutorial == null) _uiTutorial = _gameUI.Get<UITutorial>();
@@ -167,7 +167,7 @@ public class TutorialManager : Singleton<TutorialManager>
 		bool allow = AllowTutorialPopups();
 		Log($"ShowBoosterUnlockTutorial: allow={allow} boosterType={boosterType}");
 		if (!allow) return;
-		if (_gameUI == null) _gameUI = GameUI.Instance;
+		if (_gameUI == null) _gameUI = UIManager.Instance;
 		if (_gameUI == null) return;
 		EnsureUIRefs(_gameUI);
 		if (_uiTutorialBotter == null) _uiTutorialBotter = _gameUI.Get<UITutorialBotter>();
@@ -223,7 +223,7 @@ public class TutorialManager : Singleton<TutorialManager>
 		IsInTutorial = false;
 	}
 
-	private void EnsureUIRefs(GameUI gameUI)
+	private void EnsureUIRefs(UIManager gameUI)
 	{
 		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.Get<UIBottomInGame>();
 	}
@@ -248,10 +248,10 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	private bool IsAnyTutorialPopupVisible()
 	{
-		return IsUIElementVisible(_uiTutorial) || IsUIElementVisible(_uiTutorialBotter);
+		return IsUIVisible(_uiTutorial) || IsUIVisible(_uiTutorialBotter);
 	}
 
-	private static bool IsUIElementVisible(UIElement element)
+	private static bool IsUIVisible(BaseUIElement element)
 	{
 		if (element == null) return false;
 		if (element.holder != null) return element.holder.activeSelf;
@@ -261,7 +261,7 @@ public class TutorialManager : Singleton<TutorialManager>
 	private void HideBottomForPopup()
 	{
 		if (_uiBottomInGame == null) return;
-		bool wasVisible = IsUIElementVisible(_uiBottomInGame);
+		bool wasVisible = IsUIVisible(_uiBottomInGame);
 		if (!wasVisible)
 		{
 			_bottomHiddenByPopup = false;
@@ -281,8 +281,8 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	private void HideTutorialPopups()
 	{
-		if (IsUIElementVisible(_uiTutorial)) _uiTutorial.Hide();
-		if (IsUIElementVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
+		if (IsUIVisible(_uiTutorial)) _uiTutorial.Hide();
+		if (IsUIVisible(_uiTutorialBotter)) _uiTutorialBotter.Hide();
 	}
 
 	private static bool IsTapDown()

@@ -2,6 +2,14 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum TabProfile
+{
+	None,
+	Avatar,
+	Frame,
+	Badge
+}
+
 [RequireComponent(typeof(Button))]
 public class ProfileItem : MonoBehaviour
 {

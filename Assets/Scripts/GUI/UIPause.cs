@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIPause : UIElement
+public class UIPause : BasePopup
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -28,15 +28,15 @@ public class UIPause : UIElement
     private void UIHomne()
     {
         Hide();
-        GameUI.Instance.HideAll();
-        GameUI.Instance.Get<UIHome>().Show();
+        UIManager.Instance.HideAll();
+        UIManager.Instance.Get<UIHome>().Show();
     }
 
     private void UILevel()
     {
         Hide();
-        GameUI.Instance.HideAll();
-        GameUI.Instance.Get<UILevel>().Show();
+        UIManager.Instance.HideAll();
+        UIManager.Instance.Get<UILevel>().Show();
     }
 
 }

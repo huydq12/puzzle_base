@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UILevel : UIElement
+public class UILevel : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -19,7 +19,7 @@ public class UILevel : UIElement
     private void BackHome()
     {
         Hide();
-        GameUI.Instance.Get<UIHome>().Show();
+        UIManager.Instance.Get<UIHome>().Show();
     }
 
 }

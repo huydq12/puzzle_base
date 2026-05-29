@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Sirenix.OdinInspector;
 
-public class UIBottomInGame : UIElement
+public class UIBottomInGame : BaseScreen
 {
     public override bool ManualHide => false;
     public override bool DestroyOnHide => false;
@@ -286,8 +286,7 @@ public class UIBottomInGame : UIElement
             return;
         }
 
-        GameUI.Instance.Unsubmit(this);
-        _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
+                _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
             .SetEase(Ease.InCubic)
             .OnComplete(() => base.Hide());
     }
@@ -378,7 +377,7 @@ public class UIBottomInGame : UIElement
             int count = InventoryManager.Instance.GetBoosterType2();
             if (count <= 0)
             {
-                GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
+                UIManager.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
                 return;
             }
 
@@ -399,7 +398,7 @@ public class UIBottomInGame : UIElement
 
         if (!used)
         {
-            GameUI.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
+            UIManager.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
             return;
         }
 
@@ -434,9 +433,9 @@ public class UIBottomInGame : UIElement
             _ => "Can't use booster right now"
         };
 
-        if (GameUI.Instance != null)
+        if (UIManager.Instance != null)
         {
-            var toast = GameUI.Instance.Get<UINotification>();
+            var toast = UIManager.Instance.Get<UINotification>();
             if (toast != null)
             {
                 toast.ShowToast(msg);
@@ -456,9 +455,9 @@ public class UIBottomInGame : UIElement
     private void ShowLockedToast(int boosterType)
     {
         string msg = BoosterUnlockService.GetLockedToast(boosterType);
-        if (GameUI.Instance != null)
+        if (UIManager.Instance != null)
         {
-            var toast = GameUI.Instance.Get<UINotification>();
+            var toast = UIManager.Instance.Get<UINotification>();
             if (toast != null)
             {
                 toast.ShowToast(msg);

@@ -6,7 +6,7 @@ using DG.Tweening;
 using TMPro;
 using System;
 
-public class UIHome : UIElement
+public class UIHome : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -52,17 +52,17 @@ public class UIHome : UIElement
 
     private void OnClickNoAds()
     {
-        GameUI.Instance.Get<UINoAds>().Show();
+        UIManager.Instance.Get<UINoAds>().Show();
     }
 
     private void OnClickSpecialDeal()
     {
-        GameUI.Instance.Get<UISpecialDeal>().Show();
+        UIManager.Instance.Get<UISpecialDeal>().Show();
     }
 
     private void OnClickDailyReward()
     {
-        GameUI.Instance.Get<UIDailyReward>().Show();
+        UIManager.Instance.Get<UIDailyReward>().Show();
     }
     
     protected override void OnDestroy()
@@ -80,12 +80,12 @@ public class UIHome : UIElement
 
     private void OnClickSetting()
     {
-        GameUI.Instance.Get<UISettingHome>().Show();
+        UIManager.Instance.Get<UISettingHome>().Show();
     }
 
     private void OnClickProfile()
     {
-        GameUI.Instance.Get<UIProfile>().Show();
+        UIManager.Instance.Get<UIProfile>().Show();
     }
 
     public override void Show()

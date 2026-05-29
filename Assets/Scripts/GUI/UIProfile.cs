@@ -3,14 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public enum TabProfile
-{
-    Avatar,
-    Frame,
-    Badge,
-    None
-}
-
 public enum ButtonStatus
 {
     Used,
@@ -341,7 +333,7 @@ public class UIProfile : UIPopup
 
     private void OnChangeName()
     {
-        GameUI.Instance.Get<UIChangeName>().Show();
+        UIManager.Instance.Get<UIChangeName>().Show();
     }
 
     private void OnClickTab(TabProfile tab)

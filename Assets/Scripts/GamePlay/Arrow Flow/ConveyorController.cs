@@ -83,7 +83,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
         if (_loseShowTween != null) _loseShowTween.Kill();
-        _loseShowTween = DOVirtual.DelayedCall(1f, () => GameUI.Instance.Get<UIPauseLose>().Show());
+        _loseShowTween = DOVirtual.DelayedCall(1f, () => UIManager.Instance.Get<UIPauseLose>().Show());
     }
     public void OnLineMoved()
     {
@@ -141,7 +141,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
         StopConveyor();
         GameManagerInGame.Instance.SetWin();
-        DOVirtual.DelayedCall(1.0f, () => GameUI.Instance.Get<UIWin>().Show());
+        DOVirtual.DelayedCall(1.0f, () => UIManager.Instance.Get<UIWin>().Show());
     }
 
     private class PathSlot
@@ -168,7 +168,7 @@ public class ConveyorController : Singleton<ConveyorController>
             percent = Mathf.Clamp(percent, 0f, 100f);
         }
 
-        var ui = GameUI.Instance.Get<UIBottomInGame>();
+        var ui = UIManager.Instance.Get<UIBottomInGame>();
         if (ui != null)
         {
             ui.SetConveyorPercent(percent);
@@ -176,7 +176,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
         bool shouldBlink = percent >= 70f;
 
-        var topUi = GameUI.Instance.Get<UITopInGame>();
+        var topUi = UIManager.Instance.Get<UITopInGame>();
         if (topUi != null)
         {
             topUi.SetConveyorWarning(shouldBlink);

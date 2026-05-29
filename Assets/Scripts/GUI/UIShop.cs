@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 
-public class UIShop : UIElement
+public class UIShop : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;

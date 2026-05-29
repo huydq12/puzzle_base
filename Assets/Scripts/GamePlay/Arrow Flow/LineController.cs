@@ -90,9 +90,9 @@ public class LineController : Singleton<LineController>
                 if (ShooterController.Instance == null) return;
                 if (!ShooterController.Instance.CanShuffleShootersOnGate(gate))
                 {
-                    if (GameUI.Instance != null)
+                    if (UIManager.Instance != null)
                     {
-                        var toast = GameUI.Instance.Get<UINotification>();
+                        var toast = UIManager.Instance.Get<UINotification>();
                         if (toast != null)
                         {
                             toast.ShowToast("This gate must have at least 2 shooters.");
@@ -105,15 +105,15 @@ public class LineController : Singleton<LineController>
                 bool used = InventoryManager.Instance.UseBoosterType2();
                 if (!used)
                 {
-                    if (GameUI.Instance != null)
+                    if (UIManager.Instance != null)
                     {
-                        var buy = GameUI.Instance.Get<UIBuyBooster>();
+                        var buy = UIManager.Instance.Get<UIBuyBooster>();
                         if (buy != null) buy.ShowForBooster(2);
                     }
 
                     Board.Instance.CurrentBooster = BoosterType.None;
                     Board.Instance.ResetBooster();
-                    var ui = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+                    var ui = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
                     if (ui != null) ui.RefreshBoosterUIImmediate();
                     return;
                 }
@@ -131,7 +131,7 @@ public class LineController : Singleton<LineController>
 
                     Board.Instance.CurrentBooster = BoosterType.None;
                     Board.Instance.ResetBooster();
-                    var bottomUi = GameUI.Instance != null ? GameUI.Instance.Get<UIBottomInGame>() : null;
+                    var bottomUi = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
                     if (bottomUi != null) bottomUi.RefreshBoosterUIImmediate();
                 }));
             }

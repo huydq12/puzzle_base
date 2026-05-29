@@ -6,7 +6,7 @@ using Utils.Pattern;
 using Config;
 
 
-public class UIInGame : UIElement
+public class UIInGame : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -22,7 +22,7 @@ public class UIInGame : UIElement
 
     private void UIPause()
     {
-        GameUI.Instance.Get<UIPause>().Show();
+        UIManager.Instance.Get<UIPause>().Show();
     }
 
 }

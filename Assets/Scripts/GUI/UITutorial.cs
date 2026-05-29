@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
-public class UITutorial : UIElement
+public class UITutorial : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -70,8 +70,7 @@ public class UITutorial : UIElement
             return;
         }
 
-        GameUI.Instance.Unsubmit(this);
-        _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
+                _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
             .SetEase(Ease.InCubic)
             .OnComplete(() => base.Hide());
     }

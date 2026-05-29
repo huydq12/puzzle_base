@@ -137,7 +137,7 @@ public class UIBuyBooster : UIPopup
         int price = GetPrice();
         if (!InventoryManager.Instance.SpendCoin(price))
         {
-            GameUI.Instance.Get<UINotification>().ShowToast("Not enough gold");
+            UIManager.Instance.Get<UINotification>().ShowToast("Not enough gold");
             RefreshView();
             return;
         }
@@ -158,9 +158,9 @@ public class UIBuyBooster : UIPopup
                 break;
         }
 
-        GameUI.Instance.Get<UINotification>().ShowToast("Booster bought");
+        UIManager.Instance.Get<UINotification>().ShowToast("Booster bought");
 
-        var bottomInGame = GameUI.Instance.Get<UIBottomInGame>();
+        var bottomInGame = UIManager.Instance.Get<UIBottomInGame>();
         if (bottomInGame != null)
         {
             bottomInGame.RefreshBoosterQuantity();

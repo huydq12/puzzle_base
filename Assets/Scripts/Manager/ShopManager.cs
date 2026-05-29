@@ -330,7 +330,7 @@ public class ShopManager : Singleton<ShopManager>
         GiveRewards(pack.reward);
         RecordPurchase(pack);
         GameManager.Instance.UpdateValueData();
-        GameUI.Instance.Get<UIShop>().UpdateCash(GameManager.Instance.userData.playerCash);
+        UIManager.Instance.Get<UIShop>().UpdateCash(GameManager.Instance.userData.playerCash);
         GameManager.Instance.userData.Save();
         onSuccess?.Invoke();
     }

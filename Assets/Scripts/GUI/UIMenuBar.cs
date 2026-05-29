@@ -12,7 +12,7 @@ public enum HomeTab
     None
 }
 
-public class UIMenuBar : UIElement
+public class UIMenuBar : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
@@ -83,7 +83,7 @@ public class UIMenuBar : UIElement
         if (rectChooseTab == null) return;
 
         float canvasWidth = 0f;
-        if (GameUI.Instance != null) canvasWidth = GameUI.Instance.CanvasWidth;
+        if (UIManager.Instance != null) canvasWidth = UIManager.Instance.CanvasWidth;
 
         if (canvasWidth <= 0f)
         {
@@ -218,10 +218,10 @@ public class UIMenuBar : UIElement
         switch (tab)
         {
             case HomeTab.Shop:
-                GameUI.Instance.Get<UIShop>().Show();
+                UIManager.Instance.Get<UIShop>().Show();
                 break;
             case HomeTab.Ranking:
-                GameUI.Instance.Get<UIPopupRank>().Show();
+                UIManager.Instance.Get<UIPopupRank>().Show();
                 break;
         }
         Show();
@@ -232,10 +232,10 @@ public class UIMenuBar : UIElement
         switch (tab)
         {
             case HomeTab.Shop:
-                GameUI.Instance.Get<UIShop>().Hide();
+                UIManager.Instance.Get<UIShop>().Hide();
                 break;
             case HomeTab.Ranking:
-                GameUI.Instance.Get<UIPopupRank>().Hide();
+                UIManager.Instance.Get<UIPopupRank>().Hide();
                 break;
         }
     }
@@ -245,11 +245,11 @@ public class UIMenuBar : UIElement
         switch (tab)
         {
             case HomeTab.Shop:
-                return GameUI.Instance.Get<UIShop>()?.holder;
+                return UIManager.Instance.Get<UIShop>()?.holder;
             case HomeTab.Home:
-                return GameUI.Instance.Get<UIHome>()?.holder;
+                return UIManager.Instance.Get<UIHome>()?.holder;
             case HomeTab.Ranking:
-                return GameUI.Instance.Get<UIPopupRank>()?.holder;
+                return UIManager.Instance.Get<UIPopupRank>()?.holder;
             default:
                 return null;
         }

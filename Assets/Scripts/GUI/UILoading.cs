@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
-public class UILoading : UIElement
+public class UILoading : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => true;
@@ -50,21 +50,21 @@ public class UILoading : UIElement
         //    int money = GameManager.Instance.userData.GetInCome();
         //    GameManager.Instance.PlayerCash = money;
             
-        //    GameUI.Instance.Get<UIComebackRewards>().Show();
-        //    //GameUI.Instance.Get<UIGamePlay>().ResetCountDiamond();
+        //    UIManager.Instance.Get<UIComebackRewards>().Show();
+        //    //UIManager.Instance.Get<UIGamePlay>().ResetCountDiamond();
         //}
         ////Debug.Log(GameManager.Instance.userData.GetValidTimeShow() + "time");
         //if(GameManager.Instance.userData.GetValidTimeShow() >= 1440)
         //{
         //    //Debug.Log("Okireset");
-        //    GameUI.Instance.Get<UIGamePlay>().ResetCountDiamond();
+        //    UIManager.Instance.Get<UIGamePlay>().ResetCountDiamond();
         //}
 
         //else
         //{
         //    if (GameManager.Instance.userData.firstOpenAppShop && !GameManager.Instance.userData.premiumPackBought)
         //    {
-        //        GameUI.Instance.Get<UIShopPack>().Show();
+        //        UIManager.Instance.Get<UIShopPack>().Show();
         //    }
         //}
         //GameManager.Instance.canResetTimeShowRewardGetOfflineMoney = true;
