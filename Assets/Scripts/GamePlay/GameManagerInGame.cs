@@ -53,6 +53,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
+    [SerializeField] private int CONST_LEVEL_HOME = 15;
 
     [SerializeField] private int CONST_LEVEL_SHOW_LOADING = 121;
 
