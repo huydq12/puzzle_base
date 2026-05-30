@@ -1039,7 +1039,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2a99b655745403644aa7d008b0d6c7ea, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f87a354564bd5b94d92d0226030c4aa2, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1208,7 +1208,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f22b6261070e5454e9495e5bd7d40532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: OnTabChanged
+      Entry: 6
+      Data: 
   holder: {fileID: 6165325997338533550}
+  hasOverlay: 0
+  uIOverlayConfig:
+    sprite: {fileID: 0}
+    color: {r: 0, g: 0, b: 0, a: 1}
+    alpha: 0.5
+    raycast: 1
+  animType: 0
+  currentAnimType: 0
   btn_Shop: {fileID: 7465504288412849939}
   btn_Home: {fileID: 8792396500552061536}
   btn_Ranking: {fileID: 6737423576680088538}
@@ -1227,6 +1247,9 @@ MonoBehaviour:
   iconScaleNormal: 0.58
   iconScaleSelected: 1
   iconScaleDuration: 0.2
+  chooseTabOffsetShop: -5
+  chooseTabOffsetHome: -2.7
+  chooseTabOffsetRanking: 0
 --- !u!1 &5938580684170198745
 GameObject:
   m_ObjectHideFlags: 0
@@ -1599,8 +1622,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 255.00342, y: -125.9}
-  m_SizeDelta: {x: 509.0069, y: 217.1}
+  m_AnchoredPosition: {x: 255.00342, y: 29.77501}
+  m_SizeDelta: {x: 509.0069, y: 59.55}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8407345095271712834
 CanvasRenderer:
@@ -1630,8 +1653,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a8735df96731a694ba3fc7b9ab164cd3, type: 3}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: da2d446f5f0f05543aad3665fa4a6fd3, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
