@@ -145,8 +145,8 @@ public class ToolInPlayLevel : MonoBehaviour
         _draggingGate = false;
 
         GameManagerInGame gm = GameManagerInGame.Instance;
-        if (gm != null)
-            gm.StartGameWithoutSavingProgress(level);
+        //if (gm != null)
+        //    gm.StartGameWithoutSavingProgress(level);
     }
 
     private void DrawGateMarkers()
