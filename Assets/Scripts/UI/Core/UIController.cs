@@ -52,9 +52,20 @@ public class UIController<T> : IUIController where T : BaseUIElement
         }
 
         T result = null;
+        if (currentElement != null && currentElement.GetType() == elementType)
+        {
+            result = currentElement;
+        }
+
+        if (result == null)
+        {
+            result = await GetOrLoadElement(elementType);
+        }
+
+        bool isManualScreen = uiType == UIType.Screen && result != null && result.ManualHide;
 
         // ===== HANDLE CURRENT =====
-        if (currentElement != null)
+        if (!isManualScreen && currentElement != null)
         {
             var curType = currentElement.GetType();
 
@@ -66,13 +77,8 @@ public class UIController<T> : IUIController where T : BaseUIElement
             {
                 _stack.Push(new UIStackItem(currentElement, data));
 
-                if(hideCurrent) await currentElement.HideAsync();
+                if (hideCurrent) await currentElement.HideAsync();
             }
-        }
-
-        if (result == null)
-        {
-            result = await GetOrLoadElement(elementType);
         }
 
         bool isShow = false;
@@ -88,9 +94,13 @@ public class UIController<T> : IUIController where T : BaseUIElement
                 isShow = true;
             }
         }
-        currentElement = result;
 
-        currentElement.transform.SetAsLastSibling();
+        if (!isManualScreen)
+        {
+            currentElement = result;
+        }
+
+        result.transform.SetAsLastSibling();
 
         onStartShowAction?.Invoke();
 
@@ -124,7 +134,11 @@ public class UIController<T> : IUIController where T : BaseUIElement
 
         T newElement = await GetNewElement(elementType);
 
-        if (newElement != null && !elements.ContainsKey(elementType))
+        if (newElement != null && elements.ContainsKey(elementType))
+        {
+            UnityEngine.Object.Destroy(newElement.gameObject);
+        }
+        else if (newElement != null)
         {
             elements.Add(elementType, newElement);
         }
@@ -199,6 +213,12 @@ public class UIController<T> : IUIController where T : BaseUIElement
         {
             onStartHideAction?.Invoke();
             await elementToHide.HideAsync();
+
+            bool isManualScreen = uiType == UIType.Screen && elementToHide.ManualHide;
+            if (isManualScreen)
+            {
+                return;
+            }
 
             if (currentElement == elementToHide)
             {

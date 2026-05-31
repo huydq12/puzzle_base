@@ -91,7 +91,7 @@ public class UITutorial : BaseScreen
         _overrideIcon = icon;
         _overrideTitle = title;
         _overrideDescription = description;
-        Show();
+        UIManager.Instance.ShowUI<UITutorial>(null, true, false, UIAnimType.None);
     }
 
     private void RefreshView()

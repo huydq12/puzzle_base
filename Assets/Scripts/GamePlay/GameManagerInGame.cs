@@ -291,8 +291,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void SpawnUI()
     {
-        var menuBar = UIManager.Instance.GetExistUI<UIMenuBar>();
-        if (menuBar != null) menuBar.Hide();
+        UIManager.Instance.HideUI<UIMenuBar>(UIAnimType.None);
 
         UIManager.Instance.ShowUI<UITopInGame>();
         UIManager.Instance.ShowUI<UIBottomInGame>();

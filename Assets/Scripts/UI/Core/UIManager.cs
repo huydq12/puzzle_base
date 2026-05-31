@@ -217,6 +217,10 @@ public class UIManager : Singleton<UIManager>
         instance.transform.localScale = Vector3.one;
         instance.transform.localPosition = Vector3.zero;
 
+#if UNITY_EDITOR
+        instance.name = $"{uiType.ToString().ToUpper()}_{type.Name}";
+#endif
+
         T element = instance.GetComponent<T>();
         if (element == null)
         {

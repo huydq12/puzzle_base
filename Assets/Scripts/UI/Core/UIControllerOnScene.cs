@@ -40,8 +40,12 @@ public class UIControllerOnScene<T> : IUIController where T : BaseUIElement
         }
 
         bool shouldShow = forceShowData || element.IsHide;
+        bool isManualScreen = element is BaseScreen baseScreen && baseScreen.ManualHide;
 
-        currentElement = element;
+        if (!isManualScreen)
+        {
+            currentElement = element;
+        }
 
         onStartShowAction?.Invoke();
 
@@ -61,6 +65,12 @@ public class UIControllerOnScene<T> : IUIController where T : BaseUIElement
         onStartHideAction?.Invoke();
 
         await element.HideAsync();
+
+        bool isManualScreen = element is BaseScreen baseScreen && baseScreen.ManualHide;
+        if (isManualScreen)
+        {
+            return;
+        }
 
         if (currentElement == element)
         {

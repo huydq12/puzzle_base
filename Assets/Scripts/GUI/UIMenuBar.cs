@@ -217,10 +217,10 @@ public class UIMenuBar : BaseScreen
         switch (tab)
         {
             case HomeTab.Shop:
-                element?.Show();
+                if (element != null) UIManager.Instance.ShowUI<UIShop>(null, true, false, UIAnimType.None);
                 break;
             case HomeTab.Ranking:
-                element?.Show();
+                if (element != null) UIManager.Instance.ShowUI<UIRank>(null, true, false, UIAnimType.None);
                 break;
         }
         BringToFront();
@@ -234,10 +234,10 @@ public class UIMenuBar : BaseScreen
         switch (tab)
         {
             case HomeTab.Shop:
-                element?.Hide();
+                if (element != null) UIManager.Instance.HideUI<UIShop>(UIAnimType.None);
                 break;
             case HomeTab.Ranking:
-                element?.Hide();
+                if (element != null) UIManager.Instance.HideUI<UIRank>(UIAnimType.None);
                 break;
         }
     }
