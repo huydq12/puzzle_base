@@ -51,8 +51,8 @@ public static class TMPPrefabRepairTool
                 EditorUtility.DisplayProgressBar("TMP Repair", path, (float)i / prefabPaths.Count);
 
                 string content = File.ReadAllText(path);
-                int localFixCount = 0;
-                string updated = RepairPrefabContent(content, ref localFixCount);
+                int localFixCount;
+                string updated = RepairPrefabContent(content, out localFixCount);
                 if (localFixCount <= 0 || updated == content)
                 {
                     continue;
@@ -89,9 +89,10 @@ public static class TMPPrefabRepairTool
         return paths;
     }
 
-    private static string RepairPrefabContent(string content, ref int localFixCount)
+    private static string RepairPrefabContent(string content, out int localFixCount)
     {
-        return TmpBlockRegex.Replace(content, match =>
+        int fixCount = 0;
+        string updated = TmpBlockRegex.Replace(content, match =>
         {
             string block = match.Value;
             string original = block;
@@ -135,10 +136,13 @@ public static class TMPPrefabRepairTool
 
             if (block != original)
             {
-                localFixCount++;
+                fixCount++;
             }
 
             return block;
         });
+
+        localFixCount = fixCount;
+        return updated;
     }
 }
