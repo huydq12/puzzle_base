@@ -61040,6 +61040,8 @@ MonoBehaviour:
   spawnPos: {fileID: 1336296104500186485}
   target: {fileID: 1485077775696947044}
   fxCount: 10
+  claimReward: {fileID: 938975668963082033}
+  claimRewardAds: {fileID: 4250454669261073100}
   groupReward: {fileID: 7863927912262321267}
 --- !u!1 &4411552222962799606
 GameObject:
@@ -75928,6 +75930,7 @@ GameObject:
   - component: {fileID: 6693367509685890779}
   - component: {fileID: 4400201832932585785}
   - component: {fileID: 4010992414078159169}
+  - component: {fileID: 938975668963082033}
   m_Layer: 5
   m_Name: ButtonRV
   m_TagString: Untagged
@@ -76032,6 +76035,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &938975668963082033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5553420801841136743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 9
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &5576037621923649217
 GameObject:
   m_ObjectHideFlags: 0
@@ -102967,6 +102998,7 @@ GameObject:
   - component: {fileID: 6370844619933516231}
   - component: {fileID: 1513144551214987476}
   - component: {fileID: 6541516423651448480}
+  - component: {fileID: 4250454669261073100}
   m_Layer: 5
   m_Name: ButtonRV
   m_TagString: Untagged
@@ -103071,6 +103103,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &4250454669261073100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8742299952198671757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 9
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &8818781941800487774
 GameObject:
   m_ObjectHideFlags: 0

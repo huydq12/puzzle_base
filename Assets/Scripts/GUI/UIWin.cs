@@ -28,6 +28,10 @@ public class UIWin : UIPopup
     [SerializeField] private Transform target;
     [SerializeField] private int fxCount = 10;
 
+    [SerializeField] private ButtonBehavior claimReward;
+    [SerializeField] private ButtonBehavior claimRewardAds;
+
+
     private readonly List<GameObject> activeFx = new List<GameObject>();
 
     [SerializeField] private GameObject groupReward;
