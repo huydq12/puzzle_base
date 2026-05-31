@@ -13,6 +13,7 @@ public class UITopInGame : BaseScreen
     public override bool UseBehindPanel => false;
     
     [SerializeField] private TextMeshProUGUI txt_level;
+    [SerializeField] private TextMeshProUGUI txt_coin;
     [SerializeField] private ButtonBehavior buttonSetting;
     // [SerializeField] private ButtonBehavior buttonReplay;
 
@@ -38,6 +39,7 @@ public class UITopInGame : BaseScreen
     private readonly List<Tween> _warningNoticeTweens = new List<Tween>();
     private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
     private bool _isHardLevelPopupActive;
+    private int _lastDisplayedCoin = int.MinValue;
 
     private static bool IsHardLevel(int level)
     {
@@ -56,14 +58,6 @@ public class UITopInGame : BaseScreen
             UIManager.Instance.ShowUI<UISettingInGame>();
         });
         
-        // buttonReplay.onClick.AddListener(() =>
-        // {
-        //     if (GameManagerInGame.Instance != null)
-        //     {
-        //         GameManagerInGame.Instance.ReplayLevel();
-        //     }
-        // });
-
         _warningNoticeDefaultColors.Clear();
         if (warningNotice == null) return;
 
@@ -78,6 +72,7 @@ public class UITopInGame : BaseScreen
     {
         SetConveyorWarning(false);
         SetHardLevelWarningNotice(false);
+        _lastDisplayedCoin = int.MinValue;
 
         if (hardLevelPopupCoroutine != null)
         {
@@ -201,6 +196,7 @@ public class UITopInGame : BaseScreen
         base.Show();
 
         SetConveyorWarning(false);
+        RefreshCoin();
 
         int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
         txt_level.text = "Level " + level.ToString();
@@ -228,6 +224,27 @@ public class UITopInGame : BaseScreen
                 seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
             }
         }
+    }
+
+    private void Update()
+    {
+        RefreshCoin();
+    }
+
+    private void RefreshCoin()
+    {
+        if (txt_coin == null) return;
+
+        int coin = 0;
+        if (InventoryManager.Instance != null)
+            coin = InventoryManager.Instance.GetCoin();
+        else if (GameManagerInGame.Instance != null && GameManagerInGame.Instance.userData != null)
+            coin = GameManagerInGame.Instance.userData.playerCash;
+
+        if (_lastDisplayedCoin == coin) return;
+
+        _lastDisplayedCoin = coin;
+        txt_coin.text = coin.ToString();
     }
 
     private void ShowHardLevelPopup()
