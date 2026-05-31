@@ -22,21 +22,19 @@ public class UIPause : BasePopup
 
     private void Close()
     {
-        Hide();
+        UIManager.Instance.HideUI<UIPause>();
     }
 
     private void UIHomne()
     {
-        Hide();
         UIManager.Instance.HideAll();
-        UIManager.Instance.Get<UIHome>().Show();
+        UIManager.Instance.ShowUI<UIHome>();
     }
 
     private void UILevel()
     {
-        Hide();
         UIManager.Instance.HideAll();
-        UIManager.Instance.Get<UILevel>().Show();
+        UIManager.Instance.ShowUI<UILevel>();
     }
 
 }

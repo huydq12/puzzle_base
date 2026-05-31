@@ -23,6 +23,8 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     [SerializeField] private TextMeshProUGUI _text;
     [SerializeField] private bool _activeTextScale;
     [SerializeField, ShowIf(nameof(_activeTextScale))] private float _textBounceDuration = 0.2f;
+    [SerializeField] private GameObject _activeObject;
+    [SerializeField] private GameObject _deactiveObject;
 
     public UnityEvent OnClick;
     [SerializeField] private bool _activeAnimate;
@@ -53,6 +55,8 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
             _state = isSelected ? ButtonState.Click : ButtonState.Default;
             _text.rectTransform.localScale = isSelected ? Vector3.one : Vector3.zero;
         }
+
+        RefreshStateObjects();
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -60,8 +64,8 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
         if (_button == null || _button.interactable)
         {
             OnButtonClickAnimate();
-            OnClick?.Invoke();
             SetState(ButtonState.Click);
+            OnClick?.Invoke();
         }
     }
 
@@ -100,6 +104,23 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
                 ButtonState.Default when _defaultSprite != null => _defaultSprite,
                 _ => _frame.sprite
             };
+        }
+
+        RefreshStateObjects();
+    }
+
+    private void RefreshStateObjects()
+    {
+        bool isSelected = _state == ButtonState.Click;
+
+        if (_activeObject != null)
+        {
+            _activeObject.SetActive(isSelected);
+        }
+
+        if (_deactiveObject != null)
+        {
+            _deactiveObject.SetActive(!isSelected);
         }
     }
 

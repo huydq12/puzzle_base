@@ -47,7 +47,7 @@ public class UIBuyBooster : UIPopup
     public void ShowForBooster(int boosterType)
     {
         RequestedBoosterType = Mathf.Clamp(boosterType, 1, 4);
-        Show();
+        UIManager.Instance.ShowUI<UIBuyBooster>();
     }
 
     public override void Show()
@@ -168,6 +168,6 @@ public class UIBuyBooster : UIPopup
 
         RefreshView();
 
-        Hide();
+        UIManager.Instance.HideUI<UIBuyBooster>();
     }
 }

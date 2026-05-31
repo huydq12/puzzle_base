@@ -13,8 +13,8 @@ public class UITopInGame : BaseScreen
     public override bool UseBehindPanel => false;
     
     [SerializeField] private TextMeshProUGUI txt_level;
-    [SerializeField] private Button buttonSetting;
-    [SerializeField] private Button buttonReplay;
+    [SerializeField] private ButtonBehavior buttonSetting;
+    // [SerializeField] private ButtonBehavior buttonReplay;
 
     [SerializeField] private RectTransform reactLevelNormal;
     [SerializeField] private RectTransform reactLevelHard;
@@ -51,18 +51,18 @@ public class UITopInGame : BaseScreen
 
     private void Start()
     {
-        buttonSetting.onClick.AddListener(() =>
+        buttonSetting.OnClick.AddListener(() =>
         {
-            UIManager.Instance.Get<UISettingInGame>().Show();
+            UIManager.Instance.ShowUI<UISettingInGame>();
         });
         
-        buttonReplay.onClick.AddListener(() =>
-        {
-            if (GameManagerInGame.Instance != null)
-            {
-                GameManagerInGame.Instance.ReplayLevel();
-            }
-        });
+        // buttonReplay.onClick.AddListener(() =>
+        // {
+        //     if (GameManagerInGame.Instance != null)
+        //     {
+        //         GameManagerInGame.Instance.ReplayLevel();
+        //     }
+        // });
 
         _warningNoticeDefaultColors.Clear();
         if (warningNotice == null) return;

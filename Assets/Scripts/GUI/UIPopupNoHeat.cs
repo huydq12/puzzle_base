@@ -75,16 +75,16 @@ public class UIPopupNoHeat : UIPopup
     
     private void OnClickClose()
     {
-        Hide();
+        UIManager.Instance.HideUI<UIPopupNoHeat>();
     }
     
     private void OnClickWatchAd()
     {
-        Hide();
+        UIManager.Instance.HideUI<UIPopupNoHeat>();
     }
     
     private void OnClickBuyUnlimited()
     {
-        Hide();
+        UIManager.Instance.HideUI<UIPopupNoHeat>();
     }
 }

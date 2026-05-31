@@ -22,7 +22,7 @@ public class UIInGame : BaseScreen
 
     private void UIPause()
     {
-        UIManager.Instance.Get<UIPause>().Show();
+        UIManager.Instance.ShowUI<UIPause>();
     }
 
 }

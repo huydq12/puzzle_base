@@ -18,8 +18,8 @@ public class UILevel : BaseScreen
 
     private void BackHome()
     {
-        Hide();
-        UIManager.Instance.Get<UIHome>().Show();
+        UIManager.Instance.HideUI<UILevel>();
+        UIManager.Instance.ShowUI<UIHome>();
     }
 
 }

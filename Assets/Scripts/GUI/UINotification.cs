@@ -25,7 +25,7 @@ public class UINotification : BaseNotify
     {
         if (toastText == null || toast == null) return;
 
-        Show();
+        UIManager.Instance.ShowUI<UINotification>();
         if (errorToast != null) errorToast.SetActive(false);
         toastText.text = message;
         if (color == default)
@@ -51,7 +51,7 @@ public class UINotification : BaseNotify
         toastSequence.OnComplete(() =>
         {
             toastSequence = null;
-            Hide();
+            UIManager.Instance.HideUI<UINotification>();
         });
     }
 
@@ -59,7 +59,7 @@ public class UINotification : BaseNotify
     {
         if (toastText == null) return;
 
-        Show();
+        UIManager.Instance.ShowUI<UINotification>();
         toastText.text = message;
         if (errorToast != null) errorToast.SetActive(true);
     }

@@ -123,8 +123,8 @@ public class UIDailyReward : UIPopup
         yield return new WaitForSeconds(1.5f);
         UpdateCash(GameManagerInGame.Instance.userData.playerCash);
 
-        UIManager.Instance.Get<UIInGame>().Show();
-        Hide();
+        UIManager.Instance.ShowUI<UIInGame>();
+        UIManager.Instance.HideUI<UIDailyReward>();
         
     }
 

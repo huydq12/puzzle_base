@@ -85,7 +85,7 @@ public class UITutorialBotter : BaseScreen
     private IEnumerator AutoHideRoutine()
     {
         yield return new WaitForSeconds(autoHideSeconds);
-        Hide();
+        UIManager.Instance.HideUI<UITutorialBotter>();
     }
 
     public void ShowForBooster(int boosterType)
@@ -125,6 +125,6 @@ public class UITutorialBotter : BaseScreen
             _description.text = description;
         }
 
-        Show();
+        UIManager.Instance.ShowUI<UITutorialBotter>();
     }
 }

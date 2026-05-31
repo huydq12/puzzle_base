@@ -554,7 +554,7 @@ public class Line : MonoBehaviour
         if (_bombInstance != null)
             _bombInstance.PlayExplosion();
 
-        DOVirtual.DelayedCall(1.0f, () => { GameManagerInGame.Instance.SetLose(); UIManager.Instance.Get<UILose>().Show(); });
+        DOVirtual.DelayedCall(1.0f, () => { GameManagerInGame.Instance.SetLose(); UIManager.Instance.ShowUI<UILose>(); });
     }
 
     private static bool WasAnyPointerPressed()

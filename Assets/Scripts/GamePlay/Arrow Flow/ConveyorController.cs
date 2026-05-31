@@ -83,7 +83,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.ConveyorFull);
         if (_loseShowTween != null) _loseShowTween.Kill();
-        _loseShowTween = DOVirtual.DelayedCall(1f, () => UIManager.Instance.Get<UIPauseLose>().Show());
+        _loseShowTween = DOVirtual.DelayedCall(1f, () => UIManager.Instance.ShowUI<UIPauseLose>());
     }
     public void OnLineMoved()
     {
@@ -141,7 +141,7 @@ public class ConveyorController : Singleton<ConveyorController>
 
         StopConveyor();
         GameManagerInGame.Instance.SetWin();
-        DOVirtual.DelayedCall(1.0f, () => UIManager.Instance.Get<UIWin>().Show());
+        DOVirtual.DelayedCall(1.0f, () => UIManager.Instance.ShowUI<UIWin>());
     }
 
     private class PathSlot

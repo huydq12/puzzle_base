@@ -372,6 +372,6 @@ public class UIWin : UIPopup
     {
         CleanupAnimations();
         GameManagerInGame.Instance.StartNextLevel();
-        Hide();
+        UIManager.Instance.HideUI<UIWin>();
     }
 }

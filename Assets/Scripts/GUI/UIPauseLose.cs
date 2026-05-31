@@ -103,7 +103,7 @@ public class UIPauseLose : BasePopup
         _step2Tween?.Kill();
         base.Hide();
 
-        UIManager.Instance.Get<UILose>().Show();
+        UIManager.Instance.ShowUI<UILose>();
     }
 
     private void Start()

@@ -333,7 +333,7 @@ public class UIProfile : UIPopup
 
     private void OnChangeName()
     {
-        UIManager.Instance.Get<UIChangeName>().Show();
+        UIManager.Instance.ShowUI<UIChangeName>();
     }
 
     private void OnClickTab(TabProfile tab)

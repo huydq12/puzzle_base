@@ -29,7 +29,7 @@ public class UIChangeName : UIPopup
 
     private void Close()
     {
-        Hide();
+        UIManager.Instance.HideUI<UIChangeName>();
     }
 
     private void Confirm()
@@ -37,7 +37,7 @@ public class UIChangeName : UIPopup
         GameManagerInGame.Instance.userData.playerName = input_name.text;
         UIManager.Instance.Get<UIProfile>().UpdatePLayerName();
         GameManagerInGame.Instance.userData.Save();
-        Hide();
+        UIManager.Instance.HideUI<UIChangeName>();
         
     }
 }

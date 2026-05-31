@@ -218,24 +218,79 @@ namespace UnityCopilot
         private static string AddComponent(SimpleJson p)
         {
             string goName = p.GetString("gameObjectName");
+            string goPath = p.GetString("gameObjectPath");
+            string prefabPath = p.GetString("prefabPath");
             string comp = p.GetString("componentType");
-            if (string.IsNullOrEmpty(goName)) { throw new ArgumentException("'gameObjectName' is required"); }
             if (string.IsNullOrEmpty(comp)) { throw new ArgumentException("'componentType' is required"); }
-
-            GameObject go = FindGameObjectInScene(goName);
-            if (go == null) { throw new InvalidOperationException($"GameObject '{goName}' not found in the active scene."); }
 
             Type compType = ResolveComponentType(comp);
             if (compType == null) { throw new InvalidOperationException($"Component type '{comp}' not recognised by Unity."); }
 
-            if (go.GetComponent(compType) != null)
+            if (!typeof(Component).IsAssignableFrom(compType))
             {
-                return $"'{go.name}' already has component '{comp}' — nothing added.";
+                throw new InvalidOperationException($"Type '{comp}' is not a Unity Component.");
             }
 
-            Undo.AddComponent(go, compType);
-            EditorUtility.SetDirty(go);
-            return $"Added '{comp}' to '{go.name}'.";
+            if (!string.IsNullOrEmpty(prefabPath))
+            {
+                string fullPrefabPath = ResolveAssetPath(prefabPath);
+                if (string.IsNullOrEmpty(fullPrefabPath))
+                {
+                    throw new FileNotFoundException($"Prefab not found at '{prefabPath}'.");
+                }
+
+                GameObject prefabRoot = null;
+                try
+                {
+                    prefabRoot = PrefabUtility.LoadPrefabContents(fullPrefabPath);
+                    if (prefabRoot == null)
+                    {
+                        throw new InvalidOperationException($"Unable to load prefab contents at '{fullPrefabPath}'.");
+                    }
+
+                    GameObject go = FindGameObjectInPrefab(prefabRoot, goPath, goName);
+                    if (go == null)
+                    {
+                        string target = !string.IsNullOrEmpty(goPath) ? goPath : goName;
+                        throw new InvalidOperationException($"GameObject '{target}' not found in prefab '{fullPrefabPath}'.");
+                    }
+
+                    if (go.GetComponent(compType) != null)
+                    {
+                        return $"'{go.name}' already has component '{comp}' in prefab '{fullPrefabPath}' — nothing added.";
+                    }
+
+                    go.AddComponent(compType);
+                    EditorUtility.SetDirty(go);
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, fullPrefabPath);
+                    AssetDatabase.SaveAssets();
+                    return $"Added '{comp}' to '{GetHierarchyPath(go.transform)}' in prefab '{fullPrefabPath}'.";
+                }
+                finally
+                {
+                    if (prefabRoot != null)
+                    {
+                        PrefabUtility.UnloadPrefabContents(prefabRoot);
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(goName))
+            {
+                throw new ArgumentException("'gameObjectName' is required when 'prefabPath' is not provided");
+            }
+
+            GameObject sceneGo = FindGameObjectInScene(goName);
+            if (sceneGo == null) { throw new InvalidOperationException($"GameObject '{goName}' not found in the active scene."); }
+
+            if (sceneGo.GetComponent(compType) != null)
+            {
+                return $"'{sceneGo.name}' already has component '{comp}' — nothing added.";
+            }
+
+            Undo.AddComponent(sceneGo, compType);
+            EditorUtility.SetDirty(sceneGo);
+            return $"Added '{comp}' to '{sceneGo.name}'.";
         }
 
         // ── 4. createGameObject ────────────────────────────────────────
@@ -934,6 +989,65 @@ public class {className} : MonoBehaviour
         {
             // Search all root objects (supports nested search by exact name)
             return GameObject.Find(name);
+        }
+
+        private static GameObject FindGameObjectInPrefab(GameObject prefabRoot, string hierarchyPath, string fallbackName)
+        {
+            if (prefabRoot == null) { return null; }
+
+            if (!string.IsNullOrEmpty(hierarchyPath))
+            {
+                string normalizedPath = hierarchyPath.Replace("\\", "/").Trim('/');
+                string rootName = prefabRoot.name;
+                if (normalizedPath == rootName) { return prefabRoot; }
+                if (normalizedPath.StartsWith(rootName + "/", StringComparison.Ordinal))
+                {
+                    normalizedPath = normalizedPath.Substring(rootName.Length + 1);
+                }
+
+                Transform current = prefabRoot.transform;
+                if (!string.IsNullOrEmpty(normalizedPath))
+                {
+                    string[] parts = normalizedPath.Split('/');
+                    for (int i = 0; i < parts.Length; i++)
+                    {
+                        current = current.Find(parts[i]);
+                        if (current == null) { return null; }
+                    }
+                }
+
+                return current != null ? current.gameObject : null;
+            }
+
+            if (string.IsNullOrEmpty(fallbackName)) { return prefabRoot; }
+
+            foreach (var t in prefabRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == fallbackName) { return t.gameObject; }
+            }
+
+            return null;
+        }
+
+        private static string ResolveAssetPath(string input)
+        {
+            if (string.IsNullOrEmpty(input)) { return null; }
+
+            string candidate = input.StartsWith("Assets/") ? input : $"Assets/{input}";
+            if (File.Exists(candidate)) { return candidate; }
+
+            string fileName = Path.GetFileNameWithoutExtension(input);
+            string[] guids = AssetDatabase.FindAssets(fileName);
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.Equals(Path.GetFileNameWithoutExtension(path), fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return path;
+                }
+            }
+
+            return null;
         }
 
         private static string ResolveScenePath(string input)

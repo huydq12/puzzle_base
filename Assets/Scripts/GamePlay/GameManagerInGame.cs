@@ -54,8 +54,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
-    [SerializeField] private int CONST_LEVEL_HOME = 15;
-
     [SerializeField] private int CONST_LEVEL_SHOW_LOADING = 121;
 
     [SerializeField] private List<ParticleSystem> _winEffect;
@@ -242,15 +240,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void StartLevelFromHome(int level)
     {
-        StartGame(level, false);
+        StartGame(level);
     }
 
     public void StartGame(int level)
-    {
-        StartGame(level, true);
-    }
-
-    private void StartGame(int level, bool allowShowHome)
     {
         level = Mathf.Max(1, level);
         // Prevent spam-tapping Replay/Restart from interrupting setup and leaving pooled objects mid-state.
@@ -265,12 +258,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         MaxLevel = Mathf.Max(MaxLevel, level);
         RefreshSelectLevelInput(level);
         SaveData();
-
-        if (allowShowHome && ShouldShowHome(level))
-        {
-            ShowHome();
-            return;
-        }
 
         TrackLevelStarted(level);
 
@@ -304,14 +291,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     public void SpawnUI()
     {
-        var home = UIManager.Instance.GetExistUI<UIHome>();
-        if (home != null) home.Hide();
-
         var menuBar = UIManager.Instance.GetExistUI<UIMenuBar>();
         if (menuBar != null) menuBar.Hide();
 
-        UIManager.Instance.Get<UITopInGame>().Show();
-        UIManager.Instance.Get<UIBottomInGame>().Show();
+        UIManager.Instance.ShowUI<UITopInGame>();
+        UIManager.Instance.ShowUI<UIBottomInGame>();
         if (UILoadingInGame.Instance == null) return;
 
         if (_pendingAutoHideLoading)
@@ -320,57 +304,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             UILoadingInGame.Instance.Hide();
     }
 
-    public void ShowHome()
-    {
-        if (_playRoutine != null)
-        {
-            StopCoroutine(_playRoutine);
-            _playRoutine = null;
-        }
-
-        if (_hideLoadingRoutine != null)
-        {
-            StopCoroutine(_hideLoadingRoutine);
-            _hideLoadingRoutine = null;
-        }
-
-        var top = UIManager.Instance.GetExistUI<UITopInGame>();
-        if (top != null) top.Hide();
-
-        var bottom = UIManager.Instance.GetExistUI<UIBottomInGame>();
-        if (bottom != null)
-        {
-            bottom.Hide();
-            if (bottom.holder != null)
-                bottom.holder.SetActive(false);
-            else
-                bottom.gameObject.SetActive(false);
-        }
-
-        if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Hide();
-
-        SetState(GameStateInGame.Home);
-        UIManager.Instance.Get<UIHome>().Show();
-        var menuBar = UIManager.Instance.Get<UIMenuBar>();
-        menuBar.Show();
-        menuBar.transform.SetAsLastSibling();
-        if (menuBar.holder != null) menuBar.holder.transform.SetAsLastSibling();
-    }
-
-    public void ReturnToHome()
-    {
-        ShowHome();
-    }
-
     public void UpdateValueData()
     {
-        var home = UIManager.Instance != null ? UIManager.Instance.GetExistUI<UIHome>() : null;
-        if (home != null && userData != null)
-        {
-            home.UpdateCash(userData.playerCash);
-            home.UpdateHeatDisplay();
-        }
-
         var shop = UIManager.Instance != null ? UIManager.Instance.GetExistUI<UIShop>() : null;
         if (shop != null && userData != null)
         {
@@ -415,11 +350,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         if (selectlevel == null) return;
         selectlevel.SetTextWithoutNotify(Mathf.Max(1, level).ToString());
-    }
-
-    private bool ShouldShowHome(int level)
-    {
-        return CONST_LEVEL_HOME > 0 && level >= CONST_LEVEL_HOME;
     }
 
     public void ReplayLevel()

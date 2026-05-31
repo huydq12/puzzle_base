@@ -33,7 +33,7 @@ public class UILose : UIPopup
     {
         DOTween.KillAll();
         GameManagerInGame.Instance.StartNextLevel();
-        Hide();
+        UIManager.Instance.HideUI<UILose>();
     }
 
 }

@@ -54,17 +54,17 @@ public class UIHome : BaseScreen
 
     private void OnClickNoAds()
     {
-        UIManager.Instance.Get<UINoAds>().Show();
+        UIManager.Instance.ShowUI<UINoAds>();
     }
 
     private void OnClickSpecialDeal()
     {
-        UIManager.Instance.Get<UISpecialDeal>().Show();
+        UIManager.Instance.ShowUI<UISpecialDeal>();
     }
 
     private void OnClickDailyReward()
     {
-        UIManager.Instance.Get<UIDailyReward>().Show();
+        UIManager.Instance.ShowUI<UIDailyReward>();
     }
 
     private void OnClickPlayLevel()
@@ -95,12 +95,12 @@ public class UIHome : BaseScreen
 
     private void OnClickSetting()
     {
-        UIManager.Instance.Get<UISettingHome>().Show();
+        UIManager.Instance.ShowUI<UISettingHome>();
     }
 
     private void OnClickProfile()
     {
-        UIManager.Instance.Get<UIProfile>().Show();
+        UIManager.Instance.ShowUI<UIProfile>();
     }
 
     public override void Show()

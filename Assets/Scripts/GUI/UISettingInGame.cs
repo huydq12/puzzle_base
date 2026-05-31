@@ -6,39 +6,26 @@ using UnityEngine.UI;
 public class UISettingInGame : UIPopup
 {
     [Header("Setting Buttons")]
-    [SerializeField] private Button btnSFX;
-    [SerializeField] private Button btnBGM;
-    [SerializeField] private Button btnVibrate;
-    [SerializeField] private Button btnClose;
+    [SerializeField] private ButtonBehavior btnSFX;
+    [SerializeField] private ButtonBehavior btnBGM;
+    [SerializeField] private ButtonBehavior btnVibrate;
+    [SerializeField] private ButtonBehavior btnClose;
     [SerializeField] private Button btnContinue;
     [SerializeField] private Button btnResetLevel;
-
-    [Header("Button States")]
-    [SerializeField] private GameObject soundOnIcon;
-    [SerializeField] private GameObject soundOffIcon;
-    [SerializeField] private GameObject musicOnIcon;
-    [SerializeField] private GameObject musicOffIcon;
-    [SerializeField] private GameObject vibrateOnIcon;
-    [SerializeField] private GameObject vibrateOffIcon;
 
     private UserData userData;
 
     protected override void Start()
     {
         base.Start();
-        var gameManagerInGame = GameManagerInGame.Instance;
-        if (gameManagerInGame != null)
-        {
-            userData = gameManagerInGame.userData;
-        }
+        userData = GetUserData();
 
-        // Đăng ký sự kiện click cho các button
-        btnSFX.onClick.AddListener(ToggleSound);
-        btnBGM.onClick.AddListener(ToggleMusic);
-        btnVibrate.onClick.AddListener(ToggleVibrate);
-        btnClose.onClick.AddListener(ClosePopup);
-        btnContinue.onClick.AddListener(ContinueGame);
-        btnResetLevel.onClick.AddListener(ResetLevel);
+        if (btnSFX != null) btnSFX.OnClick.AddListener(ToggleSound);
+        if (btnBGM != null) btnBGM.OnClick.AddListener(ToggleMusic);
+        if (btnVibrate != null) btnVibrate.OnClick.AddListener(ToggleVibrate);
+        if (btnClose != null) btnClose.OnClick.AddListener(ClosePopup);
+        if (btnContinue != null) btnContinue.onClick.AddListener(ContinueGame);
+        if (btnResetLevel != null) btnResetLevel.onClick.AddListener(ResetLevel);
 
         UpdateUI();
     }
@@ -46,43 +33,19 @@ public class UISettingInGame : UIPopup
     private void ToggleSound()
     {
         if (userData == null) return;
-        userData.soundOn = !userData.soundOn;
-        userData.Save();
-        UpdateSoundUI();
-
-        var audioManager = AudioManager.Instance;
-        if (audioManager != null)
-        {
-            audioManager.SetSFXEnabled(userData.soundOn);
-        }
+        SetSoundEnabled(!userData.soundOn);
     }
 
     private void ToggleMusic()
     {
         if (userData == null) return;
-        userData.musicOn = !userData.musicOn;
-        userData.Save();
-        UpdateMusicUI();
-
-        var audioManager = AudioManager.Instance;
-        if (audioManager != null)
-        {
-            audioManager.SetBGEnabled(userData.musicOn);
-        }
+        SetMusicEnabled(!userData.musicOn);
     }
 
     private void ToggleVibrate()
     {
         if (userData == null) return;
-        userData.vibrateOn = !userData.vibrateOn;
-        userData.Save();
-        UpdateVibrateUI();
-
-        var vibrateManager = VibrateManager.Instance;
-        if (vibrateManager != null)
-        {
-            vibrateManager.SetVibrateEnabled(userData.vibrateOn);
-        }
+        SetVibrateEnabled(!userData.vibrateOn);
     }
 
     private void UpdateUI()
@@ -96,51 +59,101 @@ public class UISettingInGame : UIPopup
     private void UpdateSoundUI()
     {
         if (userData == null) return;
-        if (soundOnIcon != null && soundOffIcon != null)
+        if (btnSFX != null)
         {
-            soundOnIcon.SetActive(userData.soundOn);
-            soundOffIcon.SetActive(!userData.soundOn);
+            btnSFX.SetSelected(userData.soundOn, true);
         }
     }
 
     private void UpdateMusicUI()
     {
         if (userData == null) return;
-        if (musicOnIcon != null && musicOffIcon != null)
+        if (btnBGM != null)
         {
-            musicOnIcon.SetActive(userData.musicOn);
-            musicOffIcon.SetActive(!userData.musicOn);
+            btnBGM.SetSelected(userData.musicOn, true);
         }
     }
 
     private void UpdateVibrateUI()
     {
         if (userData == null) return;
-        if (vibrateOnIcon != null && vibrateOffIcon != null)
+        if (btnVibrate != null)
         {
-            vibrateOnIcon.SetActive(userData.vibrateOn);
-            vibrateOffIcon.SetActive(!userData.vibrateOn);
+            btnVibrate.SetSelected(userData.vibrateOn, true);
         }
     }
 
     private void ClosePopup()
     {
-        Hide();
+        UIManager.Instance.HideUI<UISettingInGame>();
+    }
+
+    private void SetSoundEnabled(bool enabled)
+    {
+        if (userData == null) return;
+        userData.soundOn = enabled;
+        userData.Save();
+        UpdateSoundUI();
+
+        var audioManager = AudioManager.Instance;
+        if (audioManager != null)
+        {
+            audioManager.SetSFXEnabled(enabled);
+        }
+    }
+
+    private void SetMusicEnabled(bool enabled)
+    {
+        if (userData == null) return;
+        userData.musicOn = enabled;
+        userData.Save();
+        UpdateMusicUI();
+
+        var audioManager = AudioManager.Instance;
+        if (audioManager != null)
+        {
+            audioManager.SetBGEnabled(enabled);
+        }
+    }
+
+    private void SetVibrateEnabled(bool enabled)
+    {
+        if (userData == null) return;
+        userData.vibrateOn = enabled;
+        userData.Save();
+        UpdateVibrateUI();
+
+        var vibrateManager = VibrateManager.Instance;
+        if (vibrateManager != null)
+        {
+            vibrateManager.SetVibrateEnabled(enabled);
+        }
     }
 
     private void ContinueGame()
     {
-        Hide();
+        UIManager.Instance.HideUI<UISettingInGame>();
     }
 
     private void ResetLevel()
     {
-        Hide();
+        UIManager.Instance.HideUI<UISettingInGame>();
 
         var gameManager = GameManagerInGame.Instance;
         if (gameManager != null)
         {
             gameManager.StartGame(1);
         }
+    }
+
+    private UserData GetUserData()
+    {
+        var gameManagerInGame = GameManagerInGame.Instance;
+        if (gameManagerInGame != null && gameManagerInGame.userData != null)
+        {
+            return gameManagerInGame.userData;
+        }
+
+        return null;
     }
 }
