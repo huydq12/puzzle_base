@@ -40,9 +40,13 @@ public class UIWin : UIPopup
     private Tween slideFillTween;
 
     private int pendingCoinTarget;
+    private int pendingCoinFromAmount;
+    private int pendingRewardAmount;
     private bool pendingCoinApplied = true;
     private int pendingRewardLevel;
     private bool shouldGrantReward;
+    private bool rewardClaimStarted;
+    private bool closeAfterClaimAnimation;
 
     public override void BeforeShow()
     {
@@ -76,8 +80,12 @@ public class UIWin : UIPopup
         Debug.Log($"[UIWin] Show completedLevel={completedLevel} currentLevel={(gameManager != null ? gameManager.CurrentLevel : -1)} rewardCoin={rewardCoin} hasClaimedReward={hasClaimedReward} from={fromAmount} to={toAmount}");
 #endif
 
+        pendingCoinFromAmount = fromAmount;
+        pendingRewardAmount = rewardAmount;
         pendingCoinTarget = toAmount;
         pendingCoinApplied = false;
+        rewardClaimStarted = false;
+        closeAfterClaimAnimation = false;
 
         if (groupReward != null)
         {
@@ -95,10 +103,7 @@ public class UIWin : UIPopup
         }
 
         StopAllCoroutines();
-        if (shouldGrantReward)
-        {
-            StartCoroutine(ShowCoinFxMoveToTarget(fromAmount, toAmount));
-        }
+        RefreshClaimButtons();
     }
 
     public override void BeforeHide()
@@ -155,9 +160,26 @@ public class UIWin : UIPopup
             txt_coin.text = pendingCoinTarget.ToString();
         }
 
+        RefreshClaimButtons();
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[UIWin] ApplyPendingReward level={pendingRewardLevel} granted={shouldGrantReward} playerCash={userData.playerCash}");
 #endif
+    }
+
+    private void RefreshClaimButtons()
+    {
+        bool canClaim = shouldGrantReward && !pendingCoinApplied && !rewardClaimStarted;
+
+        if (claimReward != null)
+        {
+            claimReward.SetInteractable(canClaim);
+        }
+
+        if (claimRewardAds != null)
+        {
+            claimRewardAds.SetInteractable(canClaim);
+        }
     }
 
     private void UpdateNextTutorialFill()
@@ -330,6 +352,36 @@ public class UIWin : UIPopup
         base.Start();
         btn_next.onClick.AddListener(NextGame);
         btn_close_hide.onClick.AddListener(NextGame);
+        if (claimReward != null)
+        {
+            claimReward.OnClick.AddListener(ClaimReward);
+        }
+        if (claimRewardAds != null)
+        {
+            claimRewardAds.OnClick.AddListener(ClaimRewardAds);
+        }
+    }
+
+    private void ClaimReward()
+    {
+        StartClaimRewardFlow(false, false);
+    }
+
+    private void ClaimRewardAds()
+    {
+        StartClaimRewardFlow(false, true);
+    }
+
+    private void StartClaimRewardFlow(bool closeAfterAnimation, bool useAdsMultiplier)
+    {
+        if (!shouldGrantReward || pendingCoinApplied || rewardClaimStarted) return;
+
+        rewardClaimStarted = true;
+        closeAfterClaimAnimation = closeAfterAnimation;
+        pendingCoinTarget = pendingCoinFromAmount + (useAdsMultiplier ? pendingRewardAmount * 2 : pendingRewardAmount);
+        RefreshClaimButtons();
+        StopAllCoroutines();
+        StartCoroutine(ShowCoinFxMoveToTarget(pendingCoinFromAmount, pendingCoinTarget));
     }
 
     private IEnumerator ShowCoinFxMoveToTarget(int fromAmount, int toAmount)
@@ -352,6 +404,11 @@ public class UIWin : UIPopup
         yield return new WaitForSeconds(1.5f);
 
         ApplyPendingReward();
+
+        if (closeAfterClaimAnimation)
+        {
+            CloseAfterClaimAnimation();
+        }
     }
 
     private void PlayCoinFx()
@@ -393,7 +450,21 @@ public class UIWin : UIPopup
 
     private void NextGame()
     {
-        ApplyPendingReward();
+        if (shouldGrantReward && !pendingCoinApplied)
+        {
+            if (!rewardClaimStarted)
+            {
+                StartClaimRewardFlow(true, false);
+            }
+            return;
+        }
+
+        CloseAfterClaimAnimation();
+    }
+
+    private void CloseAfterClaimAnimation()
+    {
+        closeAfterClaimAnimation = false;
         CleanupAnimations();
         GameManagerInGame.Instance.StartNextLevel();
         UIManager.Instance.HideUI<UIWin>();
