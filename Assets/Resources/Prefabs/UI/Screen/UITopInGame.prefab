@@ -1426,12 +1426,32 @@ MonoBehaviour:
     raycast: 1
   animType: 0
   currentAnimType: 0
-  txt_level: {fileID: 369021681216888073}
+  txt_level: {fileID: 7309519740414907879}
+  txt_level_type: {fileID: 2209410269377913303}
   txt_coin: {fileID: 255623018903268563}
   buttonSetting: {fileID: 7551907090447265053}
-  reactLevelNormal: {fileID: 7437402508226690117}
-  reactLevelHard: {fileID: 290966845509392972}
-  ani_hard_level: {fileID: 728526769642797994}
+  imgSettingButton: {fileID: 3617044188673242183}
+  imgLevel1: {fileID: 2016983362736740381}
+  imgLevel2: {fileID: 4659247642752448078}
+  levelUiConfigs:
+  - levelType: 0
+    textLevelType: Normal
+    colorLevel: {r: 0.6509804, g: 0.60784316, b: 0.9254902, a: 1}
+    settingButton: {fileID: 21300000, guid: abe8eb70c624ef840a63fb037de5dddf, type: 2}
+    levelImage1: {fileID: 21300000, guid: 06732380b7148f34f904ab76140d70fe, type: 2}
+    levelImage2: {fileID: 21300000, guid: 5fa53e6da21c4dc40a5cadda9672b53b, type: 2}
+  - levelType: 1
+    textLevelType: Hard
+    colorLevel: {r: 0.94509804, g: 0.39607844, b: 0.59607846, a: 1}
+    settingButton: {fileID: 21300000, guid: 45c3ae0f02f68554cbd7bd61f9ab72a1, type: 2}
+    levelImage1: {fileID: 21300000, guid: 36632fe02ba2b7d4baf05afec9325a5c, type: 2}
+    levelImage2: {fileID: 21300000, guid: da9de4fb714874e4f986ef5d8e194109, type: 2}
+  - levelType: 2
+    textLevelType: Super Hard
+    colorLevel: {r: 0.62352943, g: 0.003921569, b: 0.68235296, a: 1}
+    settingButton: {fileID: 21300000, guid: fc2311079bbc03444bf3dc2ff6c33bc9, type: 2}
+    levelImage1: {fileID: 21300000, guid: 6f70284ce52df694fb4b03c37ad48d81, type: 2}
+    levelImage2: {fileID: 21300000, guid: 02a0481a1c80ff644b8a43511fc63b16, type: 2}
   trayNotificationGroup: {fileID: 2717922297979194173}
   textDeps: {fileID: 2321432995736181489}
   infoSelectButon: {fileID: 6937779597820840414}

@@ -64,13 +64,13 @@ public class UINotification : BaseNotify
         if (errorToast != null) errorToast.SetActive(true);
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
         if (toastSequence != null && toastSequence.IsActive())
         {
             toastSequence.Kill(false);
         }
         toastSequence = null;
-        base.Hide();
     }
 }

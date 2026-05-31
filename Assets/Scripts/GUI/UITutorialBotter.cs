@@ -25,15 +25,15 @@ public class UITutorialBotter : BaseScreen
     private bool _holderPosCached;
     private Tween _slideTween;
 
-    public override void Show()
+    public override void BeforeShow()
     {
+        base.BeforeShow();
         CacheHolderPos();
         _slideTween?.Kill();
         if (_holderRect != null)
         {
             _holderRect.anchoredPosition = _holderShownPos + new Vector2(0f, -_slideOffsetY);
         }
-        base.Show();
 
         if (_holderRect != null)
         {
@@ -42,21 +42,18 @@ public class UITutorialBotter : BaseScreen
         StartAutoHide();
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
         StopAutoHide();
 
         CacheHolderPos();
         _slideTween?.Kill();
-        if (_holderRect == null)
-        {
-            base.Hide();
-            return;
-        }
+        if (_holderRect == null) return;
 
-                _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
+        _slideTween = _holderRect.DOAnchorPos(_holderShownPos + new Vector2(0f, -_slideOffsetY), _slideDuration)
             .SetEase(Ease.InCubic)
-            .OnComplete(() => base.Hide());
+            .OnComplete(() => _slideTween = null);
     }
 
     private void CacheHolderPos()

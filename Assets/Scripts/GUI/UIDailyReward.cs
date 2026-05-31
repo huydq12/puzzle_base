@@ -97,9 +97,9 @@ public class UIDailyReward : UIPopup
 
     
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         UserData userData = Game.Data.Load<UserData>();
         UpdateCash(userData.playerCash);
     }
@@ -166,11 +166,11 @@ public class UIDailyReward : UIPopup
         });
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
         CleanupFx();
         StopAllCoroutines();
-        base.Hide();
     }
 
     protected override void OnDestroy()

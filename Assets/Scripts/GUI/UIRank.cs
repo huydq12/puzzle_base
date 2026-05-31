@@ -69,9 +69,9 @@ public class UIRank : BaseScreen
     #endregion
 
     #region Public Methods
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         
         EnsureRewardHandlersInitialized();
         InitializeRankingData();
@@ -87,13 +87,13 @@ public class UIRank : BaseScreen
         DisableScroll();
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
         if (scrollRect != null)
         {
             scrollRect.onValueChanged.RemoveListener(OnScrollValueChanged);
         }
-        base.Hide();
     }
     #endregion
 

@@ -10,9 +10,9 @@ public class UILose : UIPopup
     [SerializeField] private Button btn_next;
     [SerializeField] private Button btn_close_hide;
     [SerializeField] private TextMeshProUGUI txt_coin;
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         VibrateManager.Instance.MediumVibrate();
         AudioManager.Instance.PlaySFX(SFXType.Lose);
 

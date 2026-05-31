@@ -26,16 +26,16 @@ public class UIPopupNoHeat : UIPopup
             btn_buyUnlimited.onClick.AddListener(OnClickBuyUnlimited);
     }
     
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         UpdateDisplay();
         Game.Update.AddTask(UpdateCountdown);
     }
     
-    public override void Hide()
+    public override void BeforeHide()
     {
-        base.Hide();
+        base.BeforeHide();
         Game.Update.RemoveTask(UpdateCountdown);
     }
 

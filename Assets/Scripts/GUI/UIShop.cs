@@ -12,9 +12,9 @@ public class UIShop : BaseScreen
 
     [SerializeField] private TextMeshProUGUI txt_playerCash;
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         UpdateCash(GameManagerInGame.Instance.userData.playerCash);
     }
 

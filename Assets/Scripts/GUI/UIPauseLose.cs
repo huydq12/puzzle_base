@@ -44,8 +44,9 @@ public class UIPauseLose : BasePopup
     private int _currentUseRainbowCoinPrice;
     private bool _registeredStartLevelCallback;
 
-    public override void Show()
+    public override void BeforeShow()
     {
+        base.BeforeShow();
         EnsureLevelStartCallbackRegistered();
         CacheStep1Pos();
         UpdateUseRainbowCoinPriceOnLose();
@@ -68,8 +69,6 @@ public class UIPauseLose : BasePopup
             step2.localScale = Vector3.one * step2ScaleFrom;
         }
         if (step2Group != null) step2Group.alpha = 0f;
-
-        base.Show();
 
         if (step1 == null)
         {
@@ -96,12 +95,12 @@ public class UIPauseLose : BasePopup
         step2.DOScale(1f, step2ShowDuration).SetEase(step2ShowEase);
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
         KillTweensInHierarchy(false);
         _step1Tween?.Kill();
         _step2Tween?.Kill();
-        base.Hide();
 
         UIManager.Instance.ShowUI<UILose>();
     }

@@ -103,9 +103,9 @@ public class UIHome : BaseScreen
         UIManager.Instance.ShowUI<UIProfile>();
     }
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         var userData = GetUserData();
         if (userData != null) UpdateCash(userData.playerCash);
         UpdateHeatDisplay();
@@ -113,9 +113,9 @@ public class UIHome : BaseScreen
         Game.Update.AddTask(UpdateHeatCountdown);
     }
     
-    public override void Hide()
+    public override void BeforeHide()
     {
-        base.Hide();
+        base.BeforeHide();
         Game.Update.RemoveTask(UpdateHeatCountdown);
     }
 

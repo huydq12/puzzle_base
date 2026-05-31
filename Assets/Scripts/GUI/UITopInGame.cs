@@ -8,29 +8,42 @@ using DG.Tweening;
 
 public class UITopInGame : BaseScreen
 {
+    private enum LevelUiType
+    {
+        Normal,
+        Hard,
+        SuperHard
+    }
+
+    [Serializable]
+    private class LevelUiConfig
+    {
+        public LevelUiType levelType;
+        public string textLevelType;
+        public Color colorLevel = Color.white;
+        public Sprite settingButton;
+        public Sprite levelImage1;
+        public Sprite levelImage2;
+    }
+
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
     public override bool UseBehindPanel => false;
     
     [SerializeField] private TextMeshProUGUI txt_level;
+    [SerializeField] private TextMeshProUGUI txt_level_type;
     [SerializeField] private TextMeshProUGUI txt_coin;
     [SerializeField] private ButtonBehavior buttonSetting;
-    // [SerializeField] private ButtonBehavior buttonReplay;
-
-    [SerializeField] private RectTransform reactLevelNormal;
-    [SerializeField] private RectTransform reactLevelHard;
-    [SerializeField] private Animator ani_hard_level;
+    [SerializeField] private Image imgSettingButton;
+    [SerializeField] private Image imgLevel1;
+    [SerializeField] private Image imgLevel2;
+    [SerializeField] private List<LevelUiConfig> levelUiConfigs = new List<LevelUiConfig>();
 
     [SerializeField] private CanvasGroup trayNotificationGroup;
     [SerializeField] private TextMeshProUGUI textDeps;
 
     [SerializeField] private RectTransform infoSelectButon;
    
-    private Coroutine hardLevelPopupCoroutine;
-    private const float HardLevelPopupAutoHideDelay = 1.2f;
-    private const string PopupOpenStateName = "Open";
-    private const string PopupCloseStateName = "Close";
-
     [SerializeField] private List<Image> warningNotice;
     [SerializeField] private Color warningNoticeColor = Color.red;
     [SerializeField] private float warningNoticeBlinkDuration = 0.3f;
@@ -38,25 +51,23 @@ public class UITopInGame : BaseScreen
     private bool _isWarningNoticeBlinking;
     private readonly List<Tween> _warningNoticeTweens = new List<Tween>();
     private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
-    private bool _isHardLevelPopupActive;
     private int _lastDisplayedCoin = int.MinValue;
+    private int _lastDisplayedLevel = int.MinValue;
+    private LevelUiConfig _activeLevelUiConfig;
+    private bool _settingButtonRegistered;
 
-    private static bool IsHardLevel(int level)
+    private static LevelUiType GetLevelUiType(int level)
     {
-        // Hard levels pattern: 13, 18, 23, 28, 33, 38, ...
-        // i.e. start from level 13 and then every level ending with 3 or 8.
-        if (level == 10) return true;
-        if (level < 18) return false;
+        if (level > 0 && level % 10 == 0) return LevelUiType.SuperHard;
+        if (level == 10) return LevelUiType.SuperHard;
+        if (level < 18) return LevelUiType.Normal;
         int lastDigit = Mathf.Abs(level) % 10;
-        return lastDigit == 3 || lastDigit == 8;
+        return (lastDigit == 3 || lastDigit == 8) ? LevelUiType.Hard : LevelUiType.Normal;
     }
 
     private void Start()
     {
-        buttonSetting.OnClick.AddListener(() =>
-        {
-            UIManager.Instance.ShowUI<UISettingInGame>();
-        });
+        RegisterSettingButtonListener();
         
         _warningNoticeDefaultColors.Clear();
         if (warningNotice == null) return;
@@ -71,57 +82,9 @@ public class UITopInGame : BaseScreen
     private void OnDisable()
     {
         SetConveyorWarning(false);
-        SetHardLevelWarningNotice(false);
         _lastDisplayedCoin = int.MinValue;
-
-        if (hardLevelPopupCoroutine != null)
-        {
-            StopCoroutine(hardLevelPopupCoroutine);
-            hardLevelPopupCoroutine = null;
-        }
-
-        if (ani_hard_level != null)
-        {
-            ani_hard_level.gameObject.SetActive(false);
-        }
-    }
-
-    private void SetHardLevelWarningNotice(bool active)
-    {
-        _isHardLevelPopupActive = active;
-
-        // Hard-level warning notice should follow the hard popup visibility, not conveyor warning state.
-        // When active, show the notice (no blinking). When inactive, hide it.
-        for (int i = 0; i < _warningNoticeTweens.Count; i++)
-        {
-            _warningNoticeTweens[i]?.Kill();
-        }
-        _warningNoticeTweens.Clear();
-        _isWarningNoticeBlinking = false;
-
-        if (warningNotice == null || warningNotice.Count == 0) return;
-
-        if (!active)
-        {
-            SetWarningNoticeVisible(false);
-            for (int i = 0; i < warningNotice.Count; i++)
-            {
-                var img = warningNotice[i];
-                if (img == null) continue;
-                var c = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
-                img.color = c;
-            }
-            return;
-        }
-
-        SetWarningNoticeVisible(true);
-        for (int i = 0; i < warningNotice.Count; i++)
-        {
-            var img = warningNotice[i];
-            if (img == null) continue;
-            var c = i < _warningNoticeDefaultColors.Count ? _warningNoticeDefaultColors[i] : img.color;
-            img.color = c;
-        }
+        _lastDisplayedLevel = int.MinValue;
+        _activeLevelUiConfig = null;
     }
 
     private void SetWarningNoticeVisible(bool visible)
@@ -137,7 +100,6 @@ public class UITopInGame : BaseScreen
 
     public void SetConveyorWarning(bool enabled)
     {
-        if (_isHardLevelPopupActive) return;
         if (enabled && _isWarningNoticeBlinking) return;
         _isWarningNoticeBlinking = enabled;
 
@@ -191,44 +153,19 @@ public class UITopInGame : BaseScreen
         infoSelectButon.gameObject.SetActive(true);
     }
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
 
         SetConveyorWarning(false);
         RefreshCoin();
-
-        int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
-        txt_level.text = "Level " + level.ToString();
-
-        bool isHard = IsHardLevel(level);
-        if (reactLevelNormal != null) reactLevelNormal.gameObject.SetActive(!isHard);
-        if (reactLevelHard != null) reactLevelHard.gameObject.SetActive(isHard);
-        if (isHard) ShowHardLevelPopup();
-
-        RectTransform target = isHard ? reactLevelHard : reactLevelNormal;
-        if (target != null)
-        {
-            DOTween.Kill(target, false);
-            target.localScale = Vector3.one * (isHard ? 0.75f : 0.85f);
-            target.localRotation = Quaternion.identity;
-            target.anchoredPosition3D = target.anchoredPosition3D;
-
-            Sequence seq = DOTween.Sequence().SetTarget(target);
-            seq.Append(target.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack));
-            if (isHard)
-            {
-                seq.Join(target.DOPunchRotation(new Vector3(0f, 0f, 14f), 0.35f, 10, 0.8f));
-                seq.Join(target.DOShakeAnchorPos(0.35f, new Vector2(10f, 0f), 12, 90f, false, true));
-                seq.Append(target.DOScale(1.06f, 0.12f).SetEase(Ease.OutQuad));
-                seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
-            }
-        }
+        RefreshLevel();
     }
 
     private void Update()
     {
         RefreshCoin();
+        RefreshLevel();
     }
 
     private void RefreshCoin()
@@ -247,54 +184,130 @@ public class UITopInGame : BaseScreen
         txt_coin.text = coin.ToString();
     }
 
-    private void ShowHardLevelPopup()
+    private void RefreshLevel()
     {
-        if (ani_hard_level == null) return;
+        int level = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
+        level = Mathf.Max(1, level);
 
-        if (hardLevelPopupCoroutine != null)
+        ApplyLevelUi(level);
+
+        if (_lastDisplayedLevel == level) return;
+
+        _lastDisplayedLevel = level;
+
+        if (txt_level != null)
         {
-            StopCoroutine(hardLevelPopupCoroutine);
-            hardLevelPopupCoroutine = null;
-        }
+            string levelTypeText = "Level";
+            Color levelColor = txt_level_type != null ? txt_level_type.color : txt_level.color;
 
-        hardLevelPopupCoroutine = StartCoroutine(HardLevelPopupRoutine());
+            if (_activeLevelUiConfig != null)
+            {
+                if (!string.IsNullOrEmpty(_activeLevelUiConfig.textLevelType))
+                    levelTypeText = _activeLevelUiConfig.textLevelType;
+
+                levelColor = _activeLevelUiConfig.colorLevel;
+            }
+
+            txt_level.text = level.ToString();
+            if (txt_level_type != null)
+            {
+                txt_level_type.text = levelTypeText;
+                txt_level_type.color = levelColor;
+            }
+        }
     }
 
-    private IEnumerator HardLevelPopupRoutine()
+    private void RegisterSettingButtonListener()
     {
-        var popupGo = ani_hard_level.gameObject;
-        if (popupGo != null) popupGo.SetActive(true);
-        SetHardLevelWarningNotice(true);
+        if (_settingButtonRegistered) return;
+        if (buttonSetting == null) return;
 
-        ani_hard_level.Play(PopupOpenStateName, 0, 0f);
-
-        yield return new WaitForSeconds(HardLevelPopupAutoHideDelay);
-
-        ani_hard_level.Play(PopupCloseStateName, 0, 0f);
-        yield return new WaitForSeconds(GetAnimationClipLengthSeconds(ani_hard_level, PopupCloseStateName, 0.3f));
-
-        if (popupGo != null) popupGo.SetActive(false);
-        SetHardLevelWarningNotice(false);
-        hardLevelPopupCoroutine = null;
+        buttonSetting.OnClick.AddListener(OnClickSetting);
+        _settingButtonRegistered = true;
     }
 
-    private static float GetAnimationClipLengthSeconds(Animator animator, string clipName, float fallbackSeconds)
+    private void OnClickSetting()
     {
-        if (animator == null) return fallbackSeconds;
-        var controller = animator.runtimeAnimatorController;
-        if (controller == null) return fallbackSeconds;
+        UIManager.Instance.ShowUI<UISettingInGame>();
+    }
 
-        var clips = controller.animationClips;
-        if (clips == null) return fallbackSeconds;
+    private void ApplyLevelUi(int level)
+    {
+        LevelUiType levelType = GetLevelUiType(level);
+        _activeLevelUiConfig = GetLevelUiConfig(levelType);
 
-        for (int i = 0; i < clips.Length; i++)
+        ApplyConfigVisibility(_activeLevelUiConfig);
+
+        if (_activeLevelUiConfig == null) return;
+
+        bool isSpecialLevel = levelType != LevelUiType.Normal;
+        ApplyConfigSprites(_activeLevelUiConfig);
+        // AnimateLevelTarget(imgLevel1 != null ? imgLevel1.rectTransform : null, isSpecialLevel);
+        // AnimateLevelTarget(imgLevel2 != null ? imgLevel2.rectTransform : null, isSpecialLevel);
+    }
+
+    private LevelUiConfig GetLevelUiConfig(LevelUiType levelType)
+    {
+        if (levelUiConfigs == null) return null;
+
+        for (int i = 0; i < levelUiConfigs.Count; i++)
         {
-            var clip = clips[i];
-            if (clip != null && string.Equals(clip.name, clipName, StringComparison.Ordinal))
-                return clip.length;
+            var config = levelUiConfigs[i];
+            if (config != null && config.levelType == levelType)
+                return config;
         }
 
-        return fallbackSeconds;
+        return null;
+    }
+
+    private void ApplyConfigVisibility(LevelUiConfig activeConfig)
+    {
+        bool hasActiveConfig = activeConfig != null;
+        if (buttonSetting != null) buttonSetting.gameObject.SetActive(hasActiveConfig);
+        if (imgLevel1 != null) imgLevel1.gameObject.SetActive(hasActiveConfig);
+        if (imgLevel2 != null) imgLevel2.gameObject.SetActive(hasActiveConfig);
+    }
+
+    private void ApplyConfigSprites(LevelUiConfig activeConfig)
+    {
+        if (activeConfig == null) return;
+
+        if (imgSettingButton != null)
+        {
+            imgSettingButton.sprite = activeConfig.settingButton;
+            imgSettingButton.enabled = activeConfig.settingButton != null;
+        }
+
+        if (imgLevel1 != null)
+        {
+            imgLevel1.sprite = activeConfig.levelImage1;
+            imgLevel1.enabled = activeConfig.levelImage1 != null;
+        }
+
+        if (imgLevel2 != null)
+        {
+            imgLevel2.sprite = activeConfig.levelImage2;
+            imgLevel2.enabled = activeConfig.levelImage2 != null;
+        }
+    }
+
+    private void AnimateLevelTarget(RectTransform target, bool isSpecialLevel)
+    {
+        if (target == null) return;
+
+        DOTween.Kill(target, false);
+        target.localScale = Vector3.one * (isSpecialLevel ? 0.75f : 0.85f);
+        target.localRotation = Quaternion.identity;
+        target.anchoredPosition3D = target.anchoredPosition3D;
+
+        Sequence seq = DOTween.Sequence().SetTarget(target);
+        seq.Append(target.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack));
+        if (!isSpecialLevel) return;
+
+        seq.Join(target.DOPunchRotation(new Vector3(0f, 0f, 14f), 0.35f, 10, 0.8f));
+        seq.Join(target.DOShakeAnchorPos(0.35f, new Vector2(10f, 0f), 12, 90f, false, true));
+        seq.Append(target.DOScale(1.06f, 0.12f).SetEase(Ease.OutQuad));
+        seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
     }
 
     public void ShowTrayNotificationLose(float autoHideDelay = 1.2f,string message = "")

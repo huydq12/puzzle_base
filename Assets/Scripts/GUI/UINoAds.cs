@@ -29,9 +29,9 @@ public class UINoAds : UIPopup
         }
     }
     
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         LoadPackData();
     }
     

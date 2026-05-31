@@ -26,6 +26,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public static GameManagerInGame intance => Instance;
     public int MaxLevel = 1;
     public int CurrentLevel = 1;
+    public int LastCompletedLevel { get; private set; }
+    public bool LastResultWasWin { get; private set; }
     [ReadOnly] public GameStateInGame CurrentGameStateInGame = GameStateInGame.Init;
     [HideInInspector] public Action OnEndLevel;
     [HideInInspector] public Action OnStartLevel;
@@ -160,6 +162,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void SetWin()
     {
         int completedLevel = Mathf.Max(1, _levelInPlay);
+        LastCompletedLevel = completedLevel;
+        LastResultWasWin = true;
         int nextLevel = completedLevel + 1;
         CurrentLevel = nextLevel;
         _queuedNextLevel = nextLevel;
@@ -182,6 +186,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void SetLose()
     {
         int failedLevel = Mathf.Max(1, _levelInPlay);
+        LastCompletedLevel = failedLevel;
+        LastResultWasWin = false;
         _queuedNextLevel = failedLevel;
         TrackLevelFinished(false, failedLevel);
         SetState(GameStateInGame.Result);
@@ -252,6 +258,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _lastStartRequestTime = Time.unscaledTime;
 
         _levelInPlay = level;
+        LastCompletedLevel = 0;
+        LastResultWasWin = false;
         _contentLevelInPlay = NormalizeLoopLevel(level);
         _queuedNextLevel = level;
         CurrentLevel = level;

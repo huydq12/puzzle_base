@@ -47,9 +47,9 @@ public class UIBuyBooster : UIPopup
         UIManager.Instance.ShowUI<UIBuyBooster>();
     }
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         RefreshView();
     }
 

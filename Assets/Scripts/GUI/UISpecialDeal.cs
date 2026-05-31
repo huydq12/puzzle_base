@@ -38,9 +38,9 @@ public class UISpecialDeal : UIPopup
         }
     }
     
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         LoadPackData();
         
         if (useTimeLimitedOffer)

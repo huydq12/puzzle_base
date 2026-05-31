@@ -12,6 +12,8 @@ public class UIWin : UIPopup
     [SerializeField] private Button btn_close_hide;
 
     [SerializeField] private TextMeshProUGUI txt_coin;
+    [SerializeField] private TextMeshProUGUI txt_level;
+
 
     [SerializeField] private int rewardCoin;
     [SerializeField] private TextMeshProUGUI txt_coin_reward;
@@ -38,12 +40,13 @@ public class UIWin : UIPopup
     private int pendingRewardLevel;
     private bool shouldGrantReward;
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         VibrateManager.Instance.MediumVibrate();
         AudioManager.Instance.PlaySFX(SFXType.Win);
 
+        ApplyPendingReward();
         CleanupAnimations();
 
         UpdateNextTutorialFill();
@@ -53,12 +56,21 @@ public class UIWin : UIPopup
         int completedLevel = GetCompletedLevel();
         bool hasClaimedReward = HasClaimedReward(userData, completedLevel);
 
+        if (txt_level != null)
+        {
+            txt_level.text = "Level "+completedLevel.ToString()+" complete";
+        }
+
         shouldGrantReward = !hasClaimedReward;
         pendingRewardLevel = shouldGrantReward ? completedLevel : -1;
 
         int fromAmount = userData != null ? userData.playerCash : 0;
         int rewardAmount = shouldGrantReward ? rewardCoin : 0;
         int toAmount = fromAmount + rewardAmount;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[UIWin] Show completedLevel={completedLevel} currentLevel={(gameManager != null ? gameManager.CurrentLevel : -1)} rewardCoin={rewardCoin} hasClaimedReward={hasClaimedReward} from={fromAmount} to={toAmount}");
+#endif
 
         pendingCoinTarget = toAmount;
         pendingCoinApplied = false;
@@ -85,15 +97,15 @@ public class UIWin : UIPopup
         }
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
+        base.BeforeHide();
+        ApplyPendingReward();
         CleanupAnimations();
-        base.Hide();
     }
 
     private void CleanupAnimations()
     {
-        ApplyPendingReward();
         StopAllCoroutines();
 
         if (coinCountTween != null && coinCountTween.IsActive())
@@ -138,21 +150,10 @@ public class UIWin : UIPopup
         {
             txt_coin.text = pendingCoinTarget.ToString();
         }
-    }
 
-    private static bool HasClaimedReward(UserData userData, int level)
-    {
-        return userData != null
-            && userData.claimedWinRewardLevels != null
-            && level > 0
-            && userData.claimedWinRewardLevels.Contains(level);
-    }
-
-    private static int GetCompletedLevel()
-    {
-        if (GameManagerInGame.Instance == null) return 1;
-        int currentLevelAfterWin = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
-        return Mathf.Max(1, currentLevelAfterWin - 1);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[UIWin] ApplyPendingReward level={pendingRewardLevel} granted={shouldGrantReward} playerCash={userData.playerCash}");
+#endif
     }
 
     private void UpdateNextTutorialFill()
@@ -302,6 +303,24 @@ public class UIWin : UIPopup
         return true;
     }
 
+    private static bool HasClaimedReward(UserData userData, int level)
+    {
+        return userData != null
+            && userData.claimedWinRewardLevels != null
+            && level > 0
+            && userData.claimedWinRewardLevels.Contains(level);
+    }
+
+    private static int GetCompletedLevel()
+    {
+        if (GameManagerInGame.Instance == null) return 1;
+        if (GameManagerInGame.Instance.LastCompletedLevel > 0)
+            return GameManagerInGame.Instance.LastCompletedLevel;
+
+        int currentLevelAfterWin = Mathf.Max(1, GameManagerInGame.Instance.CurrentLevel);
+        return Mathf.Max(1, currentLevelAfterWin - 1);
+    }
+
     protected override void Start()
     {
         base.Start();
@@ -370,6 +389,7 @@ public class UIWin : UIPopup
 
     private void NextGame()
     {
+        ApplyPendingReward();
         CleanupAnimations();
         GameManagerInGame.Instance.StartNextLevel();
         UIManager.Instance.HideUI<UIWin>();

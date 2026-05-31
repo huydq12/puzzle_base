@@ -21,9 +21,9 @@ public class UIChangeName : UIPopup
         btn_confirm.onClick.AddListener(Confirm);
     }
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         text_name.text = GameManagerInGame.Instance.userData.playerName;
     }
 

@@ -162,9 +162,9 @@ public class UIProfile : UIPopup
         cloneFrame[index] = newClone;
     }
 
-    public override void Show()
+    public override void BeforeShow()
     {
-        base.Show();
+        base.BeforeShow();
         text_name.text = GameManagerInGame.Instance.userData.playerName;
 
         // Load current index from UserData
@@ -397,9 +397,9 @@ public class UIProfile : UIPopup
         }
     }
 
-    public override void Hide()
+    public override void BeforeHide()
     {
-        base.Hide();
+        base.BeforeHide();
         // Cleanup if needed (don't destroy items as they can be reused)
     }
 
