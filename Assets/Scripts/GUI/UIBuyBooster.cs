@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine.UI;
 
 public class UIBuyBooster : UIPopup
 {
@@ -8,10 +8,7 @@ public class UIBuyBooster : UIPopup
 
     [SerializeField] private TextMeshProUGUI txt_coin;
 
-    [SerializeField] private Button btn_buy;
-    [SerializeField] private Image img_buy;
-    [SerializeField] private Sprite spriteBuy;
-    [SerializeField] private Sprite spriteBuyDisabled;
+    [SerializeField] private ButtonBehavior btn_buy;
     [SerializeField] private TextMeshProUGUI txt_title;
     [SerializeField] private TextMeshProUGUI txt_price;
     [SerializeField] private Image img_booster;
@@ -40,7 +37,7 @@ public class UIBuyBooster : UIPopup
         base.Start();
         if (btn_buy != null)
         {
-            btn_buy.onClick.AddListener(OnBuyClicked);
+            btn_buy.OnClick.AddListener(OnBuyClicked);
         }
     }
 
@@ -79,8 +76,8 @@ public class UIBuyBooster : UIPopup
 
         if (btn_buy != null)
         {
-            // btn_buy.interactable = InventoryManager.Instance != null && InventoryManager.Instance.HasEnoughCoin(price);
-            img_buy.sprite = InventoryManager.Instance.HasEnoughCoin(price) ? spriteBuy : spriteBuyDisabled;
+            bool canBuy = InventoryManager.Instance != null && InventoryManager.Instance.HasEnoughCoin(price);
+            btn_buy.SetInteractable(canBuy);
         }
 
         if (img_booster != null)

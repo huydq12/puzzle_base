@@ -18,6 +18,7 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     [SerializeField] private Image _frame;
     [SerializeField] private Sprite _clickSprite;
     [SerializeField] private Sprite _defaultSprite;
+    [SerializeField] private Sprite _disabledSprite;
     [SerializeField] private SFXType _soundClick;
 
     [SerializeField] private TextMeshProUGUI _text;
@@ -37,6 +38,7 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     private Sequence _clickSequence;
     private Tween _textScaleTween;
     private Button _button;
+    private bool _isInteractable = true;
 
     private void Awake()
     {
@@ -56,6 +58,12 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
             _text.rectTransform.localScale = isSelected ? Vector3.one : Vector3.zero;
         }
 
+        if (_button != null)
+        {
+            _isInteractable = _button.interactable;
+        }
+
+        RefreshVisualState();
         RefreshStateObjects();
     }
 
@@ -67,6 +75,18 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
             SetState(ButtonState.Click);
             OnClick?.Invoke();
         }
+    }
+
+    public void SetInteractable(bool isInteractable)
+    {
+        _isInteractable = isInteractable;
+
+        if (_button != null)
+        {
+            _button.interactable = isInteractable;
+        }
+
+        RefreshVisualState();
     }
 
     public void SetSelected(bool isSelected, bool instant = false)
@@ -96,17 +116,27 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     private void SetState(ButtonState state)
     {
         _state = state;
+        RefreshVisualState();
+        RefreshStateObjects();
+    }
+
+    private void RefreshVisualState()
+    {
         if (_frame != null)
         {
-            _frame.sprite = state switch
+            if (!_isInteractable && _disabledSprite != null)
+            {
+                _frame.sprite = _disabledSprite;
+                return;
+            }
+
+            _frame.sprite = _state switch
             {
                 ButtonState.Click when _clickSprite != null => _clickSprite,
                 ButtonState.Default when _defaultSprite != null => _defaultSprite,
                 _ => _frame.sprite
             };
         }
-
-        RefreshStateObjects();
     }
 
     private void RefreshStateObjects()
