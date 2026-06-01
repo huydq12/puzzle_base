@@ -60,7 +60,7 @@ public class Shooter : MonoBehaviour
 
     private int _totalValue;
 
-    private const float IdleFallbackDelaySeconds = 3f;
+    private const float IdleFallbackDelaySeconds = 1f;
     private float _lastActivityTime;
 
     private ShooterRole _role;
@@ -389,7 +389,8 @@ public class Shooter : MonoBehaviour
 
         if (!IsRainbow && _role == ShooterRole.Current && gameObject.activeInHierarchy && Time.time - _lastActivityTime >= IdleFallbackDelaySeconds)
         {
-            StartIdleTweenIfNeeded();
+            //StartIdleTweenIfNeeded();
+            _animation.Play("ShooterInDeck", PlayMode.StopAll);
         }
 
         // Prevent firing while cooldown active or other conditions block shooting
