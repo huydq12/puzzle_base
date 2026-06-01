@@ -67,6 +67,13 @@ public class UIBottomInGame : BaseScreen
     private bool _holderPosCached;
     private Tween _slideTween;
 
+    [Header("Booster Tray")]
+    [SerializeField] private ButtonBooster _boosterTrayTemplate;
+    [SerializeField] private RectTransform _boosterTrayParent;
+    [SerializeField] private bool _hideLegacyBoosterSlots = true;
+    private readonly Dictionary<int, ButtonBooster> _boosterTrayButtons = new();
+    private bool _boosterTrayInitialized;
+
     [Header("Group Booster")]
     [SerializeField] private GameObject _groupBooster;
     [SerializeField] private RectTransform _spawnPointBooster;
@@ -101,7 +108,7 @@ public class UIBottomInGame : BaseScreen
     protected override void Awake()
     {
         base.Awake();
-        if (IsHomeState())
+        if (ShouldHideForCurrentState())
         {
             HideImmediate();
         }
@@ -117,6 +124,7 @@ public class UIBottomInGame : BaseScreen
         if (_buttonCancelBooster != null) _buttonCancelBooster.onClick.AddListener(CancelBooster);
 
         SetSwapBoosterVisible(false);
+        EnsureBoosterTraySetup();
 
         RefreshBoosterLockState();
         RefreshBoosterQuantity();
@@ -201,6 +209,12 @@ public class UIBottomInGame : BaseScreen
 
     private RectTransform ResolveBoosterButtonRect(int boosterType)
     {
+        EnsureBoosterTraySetup();
+        if (_boosterTrayButtons.TryGetValue(boosterType, out var trayButton) && trayButton != null)
+        {
+            return trayButton.ClickTargetRect;
+        }
+
         Button btn = boosterType switch
         {
             1 => BoosterButtonType1,
@@ -214,6 +228,22 @@ public class UIBottomInGame : BaseScreen
 
     private Sprite ResolveBoosterSprite(int boosterType)
     {
+        Sprite configuredSprite = boosterType switch
+        {
+            1 => _spriteBoosterHammer,
+            2 => _spriteBoosterShuffle,
+            3 => _spriteBoosterConveyor,
+            _ => null
+        };
+
+        if (configuredSprite != null) return configuredSprite;
+
+        EnsureBoosterTraySetup();
+        if (_boosterTrayButtons.TryGetValue(boosterType, out var trayButton) && trayButton != null)
+        {
+            return trayButton.IconSprite;
+        }
+
         GameObject iconRoot = boosterType switch
         {
             1 => iconType1,
@@ -269,7 +299,7 @@ public class UIBottomInGame : BaseScreen
     public override void BeforeShow()
     {
         base.BeforeShow();
-        if (IsHomeState())
+        if (ShouldHideForCurrentState())
         {
             HideImmediate();
             return;
@@ -285,6 +315,8 @@ public class UIBottomInGame : BaseScreen
         {
             _slideTween = _holderRect.DOAnchorPos(_holderShownPos, _slideDuration).SetEase(Ease.OutCubic);
         }
+
+        EnsureBoosterTraySetup();
         RefreshBoosterLockState();
         RefreshBoosterQuantity();
         RefreshGroupBoosterUI(force: true);
@@ -306,6 +338,14 @@ public class UIBottomInGame : BaseScreen
     {
         var gameManager = FindFirstObjectByType<GameManagerInGame>();
         return gameManager != null && gameManager.CurrentGameStateInGame == GameStateInGame.Home;
+    }
+
+    private bool ShouldHideForCurrentState()
+    {
+        if (IsHomeState()) return true;
+
+        int currentLevel = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
+        return currentLevel < 2;
     }
 
     private void HideImmediate()
@@ -506,6 +546,7 @@ public class UIBottomInGame : BaseScreen
         ApplyBoosterLockState(unlocked1, BoosterButtonType1, bgType1, iconType1Locked, iconType1, iconType1Add, BoosterTextType1);
         ApplyBoosterLockState(unlocked2, BoosterButtonType2, bgType2, iconType2Locked, iconType2, iconType2Add, BoosterTextType2);
         ApplyBoosterLockState(unlocked3, BoosterButtonType3, bgType3, iconType3Locked, iconType3, iconType3Add, BoosterTextType3);
+        RefreshBoosterTrayButtons();
     }
 
     private void ApplyBoosterLockState(
@@ -550,6 +591,7 @@ public class UIBottomInGame : BaseScreen
         SetBoosterVisual(unlocked1, b1, iconType1Locked, iconType1, iconType1Add, BoosterTextType1);
         SetBoosterVisual(unlocked2, b2, iconType2Locked, iconType2, iconType2Add, BoosterTextType2);
         SetBoosterVisual(unlocked3, b3, iconType3Locked, iconType3, iconType3Add, BoosterTextType3);
+        RefreshBoosterTrayButtons();
     }
 
     public void RefreshBoosterUIImmediate()
@@ -656,6 +698,102 @@ public class UIBottomInGame : BaseScreen
             if (current == BoosterType.Hammer) _textBoosterDesp.text = _textDespBoosterHammer;
             else if (current == BoosterType.Conveyor) _textBoosterDesp.text = _textDespBoosterConveyor;
             else if (current == BoosterType.Rainbow || current == BoosterType.Shuffle) _textBoosterDesp.text = _textDespBoosterShuffle;
+        }
+    }
+
+    private void EnsureBoosterTraySetup()
+    {
+        if (_boosterTrayInitialized) return;
+
+        if (_boosterTrayTemplate == null)
+        {
+            _boosterTrayTemplate = GetComponentInChildren<ButtonBooster>(true);
+        }
+
+        if (_boosterTrayTemplate == null) return;
+
+        if (_boosterTrayParent == null)
+        {
+            _boosterTrayParent = _boosterTrayTemplate.transform.parent as RectTransform;
+        }
+
+        if (_boosterTrayParent == null) return;
+
+        ButtonBooster template = _boosterTrayTemplate;
+        template.gameObject.SetActive(false);
+
+        CreateBoosterTrayButton(template, 1);
+        CreateBoosterTrayButton(template, 2);
+        CreateBoosterTrayButton(template, 3);
+
+        if (_hideLegacyBoosterSlots)
+        {
+            HideLegacyBoosterSlot(BoosterButtonType1);
+            HideLegacyBoosterSlot(BoosterButtonType2);
+            HideLegacyBoosterSlot(BoosterButtonType3);
+            HideLegacyBoosterSlot(BoosterButtonType4);
+        }
+
+        _boosterTrayInitialized = true;
+        RefreshBoosterTrayButtons();
+    }
+
+    private void CreateBoosterTrayButton(ButtonBooster template, int inventoryBoosterType)
+    {
+        ButtonBooster trayButton = inventoryBoosterType == 1
+            ? template
+            : Instantiate(template, _boosterTrayParent);
+
+        trayButton.name = $"Booster_{inventoryBoosterType}";
+        trayButton.transform.SetSiblingIndex(Mathf.Max(0, inventoryBoosterType - 1));
+        trayButton.gameObject.SetActive(true);
+        _boosterTrayButtons[inventoryBoosterType] = trayButton;
+    }
+
+    private void RefreshBoosterTrayButtons()
+    {
+        if (!_boosterTrayInitialized) return;
+
+        ConfigureBoosterTrayButton(1, _spriteBoosterHammer, UseHammer);
+        ConfigureBoosterTrayButton(2, _spriteBoosterShuffle, UseShuffle);
+        ConfigureBoosterTrayButton(3, _spriteBoosterConveyor, UseConveyor);
+    }
+
+    private void ConfigureBoosterTrayButton(int inventoryBoosterType, Sprite iconSprite, Action onPressed)
+    {
+        if (!_boosterTrayButtons.TryGetValue(inventoryBoosterType, out var trayButton) || trayButton == null)
+        {
+            return;
+        }
+
+        bool unlocked = IsBoosterUnlocked(inventoryBoosterType);
+        int count = GetBoosterCount(inventoryBoosterType);
+        int unlockLevel = BoosterUnlockService.GetUnlockLevel(inventoryBoosterType);
+        trayButton.Configure(iconSprite, unlocked, count, unlockLevel, onPressed);
+    }
+
+    private int GetBoosterCount(int inventoryBoosterType)
+    {
+        if (InventoryManager.Instance == null) return 0;
+
+        return inventoryBoosterType switch
+        {
+            1 => InventoryManager.Instance.GetBoosterType1(),
+            2 => InventoryManager.Instance.GetBoosterType2(),
+            3 => InventoryManager.Instance.GetBoosterType3(),
+            4 => InventoryManager.Instance.GetBoosterType4(),
+            _ => 0
+        };
+    }
+
+    private static void HideLegacyBoosterSlot(Button button)
+    {
+        if (button == null) return;
+
+        Transform root = button.transform.parent != null ? button.transform.parent : button.transform;
+        if (root != null)
+        {
+            root.gameObject.SetActive(false);
         }
     }
 
