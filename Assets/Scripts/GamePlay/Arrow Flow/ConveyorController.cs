@@ -141,7 +141,9 @@ public class ConveyorController : Singleton<ConveyorController>
 
         StopConveyor();
         GameManagerInGame.Instance.SetWin();
-        DOVirtual.DelayedCall(1.0f, () => UIManager.Instance.ShowUI<UIWin>());
+        // DOVirtual.DelayedCall(1.0f, () => UIManager.Instance.ShowUI<UIWin>());
+
+        UIManager.Instance.ShowUI<UIWin>();
     }
 
     private class PathSlot

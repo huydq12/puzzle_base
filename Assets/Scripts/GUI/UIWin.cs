@@ -364,12 +364,12 @@ public class UIWin : UIPopup
 
     private void ClaimReward()
     {
-        StartClaimRewardFlow(false, false);
+        StartClaimRewardFlow(true, false);
     }
 
     private void ClaimRewardAds()
     {
-        StartClaimRewardFlow(false, true);
+        StartClaimRewardFlow(true, true);
     }
 
     private void StartClaimRewardFlow(bool closeAfterAnimation, bool useAdsMultiplier)
@@ -379,6 +379,10 @@ public class UIWin : UIPopup
         rewardClaimStarted = true;
         closeAfterClaimAnimation = closeAfterAnimation;
         pendingCoinTarget = pendingCoinFromAmount + (useAdsMultiplier ? pendingRewardAmount * 2 : pendingRewardAmount);
+        if (useAdsMultiplier)
+        {
+            txt_coin_reward.text = "+ " + (pendingRewardAmount * 2);
+        }
         RefreshClaimButtons();
         StopAllCoroutines();
         StartCoroutine(ShowCoinFxMoveToTarget(pendingCoinFromAmount, pendingCoinTarget));
