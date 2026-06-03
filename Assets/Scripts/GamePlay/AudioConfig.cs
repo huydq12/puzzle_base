@@ -8,20 +8,22 @@ using UnityEngine;
 public class AudioConfig : SerializedScriptableObject
 {
     [OdinSerialize]
-    [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Thiết lập")]
-    public Dictionary<BGType, AudioClip> BackgroundAudioClips;
-    [OdinSerialize]
-    [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Thiết lập")]
-    public Dictionary<SFXType, AudioClip> SFXAudioClips;
+    [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Biến thể")]
+    public Dictionary<BGType, AudioClip[]> BackgroundAudioClipVariants;
     [OdinSerialize]
     [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Biến thể")]
     public Dictionary<SFXType, AudioClip[]> SFXAudioClipVariants;
     public AudioClip GetBGClipSettings(BGType bgType)
     {
-        if (BackgroundAudioClips != null && BackgroundAudioClips.TryGetValue(bgType, out var clip))
+        if (BackgroundAudioClipVariants != null
+            && BackgroundAudioClipVariants.TryGetValue(bgType, out var clips)
+            && clips != null
+            && clips.Length > 0)
         {
-            return clip;
+            int index = Random.Range(0, clips.Length);
+            return clips[index];
         }
+
         Debug.LogWarning($"BGType {bgType} not found in AudioConfig. Returning null.");
         return null;
     }
@@ -36,10 +38,6 @@ public class AudioConfig : SerializedScriptableObject
             return clips[index];
         }
 
-        if (SFXAudioClips != null && SFXAudioClips.TryGetValue(sfxType, out var clip))
-        {
-            return clip;
-        }
         Debug.LogWarning($"SFXType {sfxType} not found in AudioConfig. Returning null.");
         return null;
     }

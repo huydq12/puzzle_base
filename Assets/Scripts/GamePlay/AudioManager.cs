@@ -2,21 +2,11 @@ using UnityEngine;
 
 public enum BGType
 {
-	Default,
 	Gameplay
 }
 public enum SFXType
 {
 	None,
-	CollectShooter,
-	ConveyorFull,
-	Ice,
-	Select,
-	SelectWrong,
-	Shoot,
-	Win,
-	Lose,
-	ButtonClick,
 	BlockTapSelect,
 	BlockSliding,
 	BlockCollisionError,
@@ -51,7 +41,7 @@ public class AudioManager : Singleton<AudioManager>
 			SetBGEnabled(userData.musicOn);
 			SetSFXEnabled(userData.soundOn);
 		}
-		PlayBG(BGType.Default);
+		PlayBG(BGType.Gameplay);
 	}
 
 	public float GetVolumeBG() => _bgAudioSource.volume;
@@ -95,30 +85,9 @@ public class AudioManager : Singleton<AudioManager>
 	public void PlaySFX(SFXType sfxType)
 	{
 		var clip = _audioConfig.GetSFXClipSettings(sfxType);
-		if (clip == null)
-		{
-			clip = _audioConfig.GetSFXClipSettings(GetFallbackSFXType(sfxType));
-		}
 		if (clip != null)
 		{
 			_sfxAudioSource.PlayOneShot(clip);
 		}
-	}
-
-	private SFXType GetFallbackSFXType(SFXType sfxType)
-	{
-		return sfxType switch
-		{
-			SFXType.CollectShooter => SFXType.BlockCollectedHoleIn,
-			SFXType.ConveyorFull => SFXType.LevelFailed,
-			SFXType.Ice => SFXType.BlockCollisionError,
-			SFXType.Select => SFXType.BlockTapSelect,
-			SFXType.SelectWrong => SFXType.BlockCollisionError,
-			SFXType.Shoot => SFXType.TurretShoot,
-			SFXType.Win => SFXType.LevelClearConfetti,
-			SFXType.Lose => SFXType.LevelFailed,
-			SFXType.ButtonClick => SFXType.UIClick,
-			_ => SFXType.None
-		};
 	}
 }

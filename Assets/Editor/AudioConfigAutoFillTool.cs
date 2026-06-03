@@ -37,9 +37,10 @@ public static class AudioConfigAutoFillTool
             return;
         }
 
-        config.BackgroundAudioClips ??= new Dictionary<BGType, AudioClip>();
-        config.SFXAudioClips ??= new Dictionary<SFXType, AudioClip>();
+        config.BackgroundAudioClipVariants ??= new Dictionary<BGType, AudioClip[]>();
         config.SFXAudioClipVariants ??= new Dictionary<SFXType, AudioClip[]>();
+        config.BackgroundAudioClipVariants.Clear();
+        config.SFXAudioClipVariants.Clear();
 
         AssignBackground(config);
         AssignSfx(config);
@@ -56,8 +57,7 @@ public static class AudioConfigAutoFillTool
         AudioClip[] clips = LoadClips(Path.Combine(SfxRoot, "Gameplay_BGM"));
         if (clips.Length <= 0) return;
 
-        config.BackgroundAudioClips[BGType.Gameplay] = clips[0];
-        config.BackgroundAudioClips[BGType.Default] = clips[0];
+        config.BackgroundAudioClipVariants[BGType.Gameplay] = clips;
     }
 
     private static void AssignSfx(AudioConfig config)
@@ -67,7 +67,6 @@ public static class AudioConfigAutoFillTool
             AudioClip[] clips = LoadClips(Path.Combine(SfxRoot, pair.Value));
             if (clips.Length <= 0) continue;
 
-            config.SFXAudioClips[pair.Key] = clips[0];
             config.SFXAudioClipVariants[pair.Key] = clips;
         }
     }

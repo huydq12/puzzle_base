@@ -515,7 +515,7 @@ public class Shooter : MonoBehaviour
 
     private void Shoot(CubeLine cube)
     {
-        AudioManager.Instance.PlaySFX(SFXType.TurretShoot);
+        AudioManager.Instance.PlaySFX(SFXType.BulletHit);
         // Rate control: set next allowed fire time immediately to enforce cooldown
         _nextFireTime = Time.time + _fireCooldown;
         _lastActivityTime = Time.time;
