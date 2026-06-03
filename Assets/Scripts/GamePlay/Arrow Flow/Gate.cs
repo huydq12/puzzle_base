@@ -673,7 +673,7 @@ public class Gate : MonoBehaviour
         var prevQueue = QueueShooter;
 
         Board.Instance?.NotifyShooterDisappeared(prevCurrent, "CollectCurrentShooter");
-        AudioManager.Instance.PlaySFX(SFXType.CollectShooter);
+        AudioManager.Instance.PlaySFX(SFXType.BlockCollectedHoleIn);
         _collectEffect.Stop();
         _collectEffect.Play();
 

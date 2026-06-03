@@ -13,9 +13,12 @@ public class AudioConfig : SerializedScriptableObject
     [OdinSerialize]
     [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Thiết lập")]
     public Dictionary<SFXType, AudioClip> SFXAudioClips;
+    [OdinSerialize]
+    [DictionaryDrawerSettings(KeyLabel = "Loại", ValueLabel = "Biến thể")]
+    public Dictionary<SFXType, AudioClip[]> SFXAudioClipVariants;
     public AudioClip GetBGClipSettings(BGType bgType)
     {
-        if (BackgroundAudioClips.TryGetValue(bgType, out var clip))
+        if (BackgroundAudioClips != null && BackgroundAudioClips.TryGetValue(bgType, out var clip))
         {
             return clip;
         }
@@ -24,7 +27,16 @@ public class AudioConfig : SerializedScriptableObject
     }
     public AudioClip GetSFXClipSettings(SFXType sfxType)
     {
-        if (SFXAudioClips.TryGetValue(sfxType, out var clip))
+        if (SFXAudioClipVariants != null
+            && SFXAudioClipVariants.TryGetValue(sfxType, out var clips)
+            && clips != null
+            && clips.Length > 0)
+        {
+            int index = Random.Range(0, clips.Length);
+            return clips[index];
+        }
+
+        if (SFXAudioClips != null && SFXAudioClips.TryGetValue(sfxType, out var clip))
         {
             return clip;
         }

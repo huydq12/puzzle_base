@@ -261,7 +261,7 @@ public class Line : MonoBehaviour
         {
             if (!_willDefinitelyRevert)
             {
-                AudioManager.Instance.PlaySFX(SFXType.Select);
+                AudioManager.Instance.PlaySFX(SFXType.BlockTapSelect);
             }
         }
         _isMoving = true;
@@ -318,7 +318,7 @@ public class Line : MonoBehaviour
             cube.SetElementType(0);
         }
         SyncElementTypesFromCubes();
-        AudioManager.Instance.PlaySFX(SFXType.Ice);
+        AudioManager.Instance.PlaySFX(SFXType.BlockCollisionError);
     }
 
     private void SyncElementTypesFromCubes()
@@ -1187,7 +1187,7 @@ public class Line : MonoBehaviour
 
     private void StartRevert()
     {
-        AudioManager.Instance.PlaySFX(SFXType.SelectWrong);
+        AudioManager.Instance.PlaySFX(SFXType.BlockCollisionError);
         if (_history.Count == 0)
         {
             OnLineReverted();

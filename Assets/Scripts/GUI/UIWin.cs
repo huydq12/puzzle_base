@@ -52,7 +52,7 @@ public class UIWin : UIPopup
     {
         base.BeforeShow();
         VibrateManager.Instance.MediumVibrate();
-        AudioManager.Instance.PlaySFX(SFXType.Win);
+        AudioManager.Instance.PlaySFX(SFXType.LevelClearConfetti);
 
         ApplyPendingReward();
         CleanupAnimations();
