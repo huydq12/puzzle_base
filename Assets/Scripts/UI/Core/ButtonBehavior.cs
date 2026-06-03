@@ -19,7 +19,7 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     [SerializeField] private Sprite _clickSprite;
     [SerializeField] private Sprite _defaultSprite;
     [SerializeField] private Sprite _disabledSprite;
-    [SerializeField] private SFXType _soundClick;
+    [SerializeField] private SFXType _soundClick = SFXType.UIClick;
 
     [SerializeField] private TextMeshProUGUI _text;
     [SerializeField] private bool _activeTextScale;
@@ -28,7 +28,7 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
     [SerializeField] private GameObject _deactiveObject;
 
     public UnityEvent OnClick;
-    [SerializeField] private bool _activeAnimate;
+    [SerializeField] private bool _activeAnimate = true;
     [SerializeField, ShowIf(nameof(_activeAnimate))] private float _bounceScale = 1.2f;
     [SerializeField, ShowIf(nameof(_activeAnimate))] private float _bounceDuration = 0.2f;
 

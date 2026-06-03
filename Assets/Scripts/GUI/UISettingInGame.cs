@@ -10,8 +10,8 @@ public class UISettingInGame : UIPopup
     [SerializeField] private ButtonBehavior btnBGM;
     [SerializeField] private ButtonBehavior btnVibrate;
     [SerializeField] private ButtonBehavior btnClose;
-    [SerializeField] private Button btnContinue;
-    [SerializeField] private Button btnResetLevel;
+    [SerializeField] private ButtonBehavior btnContinue;
+    [SerializeField] private ButtonBehavior btnResetLevel;
 
     private UserData userData;
 
@@ -24,8 +24,8 @@ public class UISettingInGame : UIPopup
         if (btnBGM != null) btnBGM.OnClick.AddListener(ToggleMusic);
         if (btnVibrate != null) btnVibrate.OnClick.AddListener(ToggleVibrate);
         if (btnClose != null) btnClose.OnClick.AddListener(ClosePopup);
-        if (btnContinue != null) btnContinue.onClick.AddListener(ContinueGame);
-        if (btnResetLevel != null) btnResetLevel.onClick.AddListener(ResetLevel);
+        if (btnContinue != null) btnContinue.OnClick.AddListener(ContinueGame);
+        if (btnResetLevel != null) btnResetLevel.OnClick.AddListener(ResetLevel);
 
         UpdateUI();
     }
@@ -137,12 +137,21 @@ public class UISettingInGame : UIPopup
 
     private void ResetLevel()
     {
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager != null && !heatManager.CanPlay())
+        {
+            UIManager.Instance.HideUI<UISettingInGame>();
+            UIManager.Instance.ShowUI<UIPopupNoHeat>();
+            return;
+        }
+
+        heatManager?.ConsumeHeat();
         UIManager.Instance.HideUI<UISettingInGame>();
 
         var gameManager = GameManagerInGame.Instance;
         if (gameManager != null)
         {
-            gameManager.StartGame(1);
+            gameManager.ReplayLevel();
         }
     }
 

@@ -2730,7 +2730,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Quit Level
+  m_text: Reset LevelReset
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4397d5da568724ddf84c25da23ca7e3b, type: 2}
   m_sharedMaterial: {fileID: -7215136758503587231, guid: 4397d5da568724ddf84c25da23ca7e3b,
@@ -8600,8 +8600,8 @@ MonoBehaviour:
   btnBGM: {fileID: 2439177258067578318}
   btnVibrate: {fileID: 1618730534543554711}
   btnClose: {fileID: 1789489376089305606}
-  btnContinue: {fileID: 6201147349462145473}
-  btnResetLevel: {fileID: 0}
+  btnContinue: {fileID: 7850696944195035348}
+  btnResetLevel: {fileID: 2938005899279251423}
 --- !u!1 &3351892725928116669
 GameObject:
   m_ObjectHideFlags: 0
@@ -10872,6 +10872,7 @@ GameObject:
   - component: {fileID: 9183251454506176545}
   - component: {fileID: 6902590823643528884}
   - component: {fileID: 8623314548664916735}
+  - component: {fileID: 2938005899279251423}
   m_Layer: 5
   m_Name: QuitButtonContainer
   m_TagString: Untagged
@@ -10952,19 +10953,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5418031667738399853}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: SettingsManager, Assembly-CSharp
-        m_MethodName: HomeConsumeLife
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &8623314548664916735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10985,6 +10974,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &2938005899279251423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3375560382467224224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &3408638258258244341
 GameObject:
   m_ObjectHideFlags: 0
@@ -14759,8 +14776,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4283154895
-  m_fontColor: {r: 0.8113208, g: 0.7566174, b: 0.2946778, a: 1}
+    rgba: 4278248703
+  m_fontColor: {r: 1, g: 0.8959538, b: 0, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
   m_fontColorGradient:
@@ -23813,6 +23830,7 @@ GameObject:
   - component: {fileID: 791258932795638098}
   - component: {fileID: 6201147349462145473}
   - component: {fileID: 5545555306768002337}
+  - component: {fileID: 7850696944195035348}
   m_Layer: 5
   m_Name: SupportButtonContainer
   m_TagString: Untagged
@@ -23925,6 +23943,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &7850696944195035348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6986180322654291458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &6988133793118713519
 GameObject:
   m_ObjectHideFlags: 0

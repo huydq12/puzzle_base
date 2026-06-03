@@ -14,11 +14,11 @@ public class UIPauseLose : BasePopup
 
     [SerializeField] private TextMeshProUGUI txt_coin;
     
-    [SerializeField] private Button btnClose;
+    [SerializeField] private ButtonBehavior btnClose;
 
-    [SerializeField] private Button btnUseRainbow;
+    [SerializeField] private ButtonBehavior btnUseRainbow;
 
-    [SerializeField] private Button btnUseRainbowBuyCoin;
+    [SerializeField] private ButtonBehavior btnUseRainbowBuyCoin;
 
     [Header("Use Rainbow (Buy with coin)")]
     [SerializeField] private int useRainbowCoinPrice = 200;
@@ -111,13 +111,13 @@ public class UIPauseLose : BasePopup
         EnsureLevelStartCallbackRegistered();
 
         if (btnClose != null)
-            btnClose.onClick.AddListener(Hide);
+            btnClose.OnClick.AddListener(Hide);
 
         if (btnUseRainbow != null)
-            btnUseRainbow.onClick.AddListener(UseRainbow);
+            btnUseRainbow.OnClick.AddListener(UseRainbow);
 
         if (btnUseRainbowBuyCoin != null)
-            btnUseRainbowBuyCoin.onClick.AddListener(UseRainbowBuyCoin);
+            btnUseRainbowBuyCoin.OnClick.AddListener(UseRainbowBuyCoin);
     }
 
     private void UseRainbow()
