@@ -4,7 +4,7 @@ using UnityEngine;
 public class HeatManager : Singleton<HeatManager>
 {
     public const int MAX_HEAT_DAY = 5;
-    private const float HEAT_REGEN_HOURS = 24f / MAX_HEAT_DAY;
+    private const float HEAT_REGEN_HOURS = 4.5f;
 
     public static HeatManager TryGetInstance()
     {
@@ -90,6 +90,16 @@ public class HeatManager : Singleton<HeatManager>
         userData.unlimitedHeatExpireTime = newExpireTime.ToString();
         userData.Save();
         OnUnlimitedHeatChanged?.Invoke();
+    }
+
+    public void RefillToMax()
+    {
+        if (userData == null) return;
+
+        userData.playerHeat = MAX_HEAT_DAY;
+        userData.lastTimePlayGame = string.Empty;
+        userData.Save();
+        OnHeatChanged?.Invoke();
     }
     
     public bool CanPlay()

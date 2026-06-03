@@ -185,6 +185,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
     public void SetLose()
     {
+        HeatManager.TryGetInstance(out HeatManager heatManager);
+        heatManager?.ConsumeHeat();
+
         int failedLevel = Mathf.Max(1, _levelInPlay);
         LastCompletedLevel = failedLevel;
         LastResultWasWin = false;
@@ -255,6 +258,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         // Prevent spam-tapping Replay/Restart from interrupting setup and leaving pooled objects mid-state.
         if (_playRoutine != null) return;
         if (Time.unscaledTime - _lastStartRequestTime < StartRequestCooldownSeconds) return;
+
+        if (!CanStartLevel()) return;
+
         _lastStartRequestTime = Time.unscaledTime;
 
         _levelInPlay = level;
@@ -295,6 +301,23 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
         TutorialPopupService.TryShowAtLevelStart(_contentLevelInPlay);
         ClearVfx();
+    }
+
+    private bool CanStartLevel()
+    {
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager == null) return true;
+
+        if (!heatManager.CanPlay())
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowUI<UILose>();
+            }
+            return false;
+        }
+
+        return true;
     }
 
     public void SpawnUI()
