@@ -24,6 +24,16 @@ public class AudioConfig : SerializedScriptableObject
             return clips[index];
         }
 
+        if (bgType == BGType.GameplayHard
+            && BackgroundAudioClipVariants != null
+            && BackgroundAudioClipVariants.TryGetValue(BGType.Gameplay, out var fallbackClips)
+            && fallbackClips != null
+            && fallbackClips.Length > 0)
+        {
+            int index = Random.Range(0, fallbackClips.Length);
+            return fallbackClips[index];
+        }
+
         Debug.LogWarning($"BGType {bgType} not found in AudioConfig. Returning null.");
         return null;
     }

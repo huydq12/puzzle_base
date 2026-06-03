@@ -272,6 +272,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         MaxLevel = Mathf.Max(MaxLevel, level);
         RefreshSelectLevelInput(level);
         SaveData();
+        AudioManager audioManager = FindFirstObjectByType<AudioManager>();
+        if (audioManager != null)
+        {
+            audioManager.PlayBGForLevel(_contentLevelInPlay);
+        }
 
         TrackLevelStarted(level);
 

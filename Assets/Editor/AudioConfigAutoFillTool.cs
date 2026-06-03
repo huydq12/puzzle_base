@@ -25,6 +25,7 @@ public static class AudioConfigAutoFillTool
         { SFXType.BoosterDropper, "Booster_Dropper" },
         { SFXType.UIClick, "UI_Click" },
         { SFXType.UIClickMenuPause, "UI_Click_Menu_Pause" },
+        { SFXType.CoinCollect, "Coin_Collect" },
     };
 
     [MenuItem("Tools/Audio/Auto Fill Audio Config From Assets/SFX")]
@@ -54,10 +55,26 @@ public static class AudioConfigAutoFillTool
 
     private static void AssignBackground(AudioConfig config)
     {
-        AudioClip[] clips = LoadClips(Path.Combine(SfxRoot, "Gameplay_BGM"));
-        if (clips.Length <= 0) return;
+        AudioClip[] gameplayClips = LoadClips(Path.Combine(SfxRoot, "Gameplay_BGM"));
+        if (gameplayClips.Length > 0)
+        {
+            config.BackgroundAudioClipVariants[BGType.Gameplay] = gameplayClips;
+        }
 
-        config.BackgroundAudioClipVariants[BGType.Gameplay] = clips;
+        AudioClip[] hardClips = LoadClips(Path.Combine(SfxRoot, "Gameplay_Hard_BGM"));
+        if (hardClips.Length <= 0)
+        {
+            hardClips = LoadClips(Path.Combine(SfxRoot, "GameplayHard_BGM"));
+        }
+
+        if (hardClips.Length > 0)
+        {
+            config.BackgroundAudioClipVariants[BGType.GameplayHard] = hardClips;
+        }
+        else if (gameplayClips.Length > 0)
+        {
+            config.BackgroundAudioClipVariants[BGType.GameplayHard] = gameplayClips;
+        }
     }
 
     private static void AssignSfx(AudioConfig config)

@@ -164,12 +164,17 @@ public class ButtonBehavior : MonoBehaviour, IPointerDownHandler
         if (!_activeAnimate)
         {
             AudioManager.Instance.PlaySFX(_soundClick);
+            VibrateManager.Instance.PlayHaptic(HapticType.UIClick);
             return;
         }
 
         _clickSequence = DOTween.Sequence();
         _clickSequence.Append(_rectTransform.DOScale(_bounceScale, _bounceDuration / 2).SetEase(Ease.OutQuad));
-        _clickSequence.AppendCallback(() => { AudioManager.Instance.PlaySFX(_soundClick); });
+        _clickSequence.AppendCallback(() =>
+        {
+            AudioManager.Instance.PlaySFX(_soundClick);
+            VibrateManager.Instance.PlayHaptic(HapticType.UIClick);
+        });
         _clickSequence.Append(_rectTransform.DOScale(_defaultScale, _bounceDuration / 2).SetEase(Ease.InQuad));
         _clickSequence.OnComplete(() => _clickSequence = null);
     }

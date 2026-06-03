@@ -674,6 +674,7 @@ public class Gate : MonoBehaviour
 
         Board.Instance?.NotifyShooterDisappeared(prevCurrent, "CollectCurrentShooter");
         AudioManager.Instance.PlaySFX(SFXType.BlockCollectedHoleIn);
+        VibrateManager.Instance.PlayHaptic(HapticType.BlockCollectedHoleIn);
         _collectEffect.Stop();
         _collectEffect.Play();
 

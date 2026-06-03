@@ -29,6 +29,9 @@ public class UIDailyReward : UIPopup
     [SerializeField] private Text userCoinTxt;
 
     private readonly List<GameObject> activeFx = new List<GameObject>();
+    private float lastCoinCollectSfxTime = -1f;
+
+    private const float CoinCollectSfxMinInterval = 0.08f;
 
     private void Start()
     {
@@ -159,11 +162,19 @@ public class UIDailyReward : UIPopup
                 .OnComplete(() =>
                 {
                     if (go == null) return;
+                    PlayCoinCollectSfx();
                     DOTween.Kill(go.transform, false);
                     activeFx.Remove(go);
                     Destroy(go);
                 });
         });
+    }
+
+    private void PlayCoinCollectSfx()
+    {
+        if (Time.unscaledTime - lastCoinCollectSfxTime < CoinCollectSfxMinInterval) return;
+        lastCoinCollectSfxTime = Time.unscaledTime;
+        AudioManager.Instance.PlaySFX(SFXType.CoinCollect);
     }
 
     public override void BeforeHide()

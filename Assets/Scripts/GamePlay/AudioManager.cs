@@ -2,7 +2,8 @@ using UnityEngine;
 
 public enum BGType
 {
-	Gameplay
+	Gameplay,
+	GameplayHard
 }
 public enum SFXType
 {
@@ -21,6 +22,8 @@ public enum SFXType
 	BoosterDropper,
 	UIClick,
 	UIClickMenuPause,
+
+	CoinCollect,
 }
 public class AudioManager : Singleton<AudioManager>
 {
@@ -29,6 +32,7 @@ public class AudioManager : Singleton<AudioManager>
 	[SerializeField] private AudioSource _sfxAudioSource;
 	private bool _bgEnabled = true;
 	private bool _sfxEnabled = true;
+	private BGType? _currentBGType;
 	private new void Awake()
 	{
 		base.Awake();
@@ -72,11 +76,22 @@ public class AudioManager : Singleton<AudioManager>
 	}
 	public bool IsBGEnabled() => _bgEnabled;
 	public bool IsSFXEnabled() => _sfxEnabled;
+	public void PlayBGForLevel(int level)
+	{
+		PlayBG(IsHardLevel(level) ? BGType.GameplayHard : BGType.Gameplay);
+	}
+
 	public void PlayBG(BGType bgType)
 	{
+		if (_currentBGType == bgType && _bgAudioSource.clip != null && _bgAudioSource.isPlaying)
+		{
+			return;
+		}
+
 		var clip = _audioConfig.GetBGClipSettings(bgType);
 		if (clip != null)
 		{
+			_currentBGType = bgType;
 			_bgAudioSource.clip = clip;
 			_bgAudioSource.loop = true;
 			_bgAudioSource.Play();
@@ -89,5 +104,13 @@ public class AudioManager : Singleton<AudioManager>
 		{
 			_sfxAudioSource.PlayOneShot(clip);
 		}
+	}
+
+	private static bool IsHardLevel(int level)
+	{
+		if (level == 10) return true;
+		if (level < 18) return false;
+		int lastDigit = Mathf.Abs(level) % 10;
+		return lastDigit == 3 || lastDigit == 8;
 	}
 }

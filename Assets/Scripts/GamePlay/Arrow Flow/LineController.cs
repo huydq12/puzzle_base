@@ -129,6 +129,7 @@ public class LineController : Singleton<LineController>
                         return;
                     }
 
+                    VibrateManager.Instance.PlayHaptic(HapticType.BoosterWand);
                     Board.Instance.CurrentBooster = BoosterType.None;
                     Board.Instance.ResetBooster();
                     var bottomUi = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
@@ -180,6 +181,7 @@ public class LineController : Singleton<LineController>
                             var hammer = Instantiate(_hammerPrefab);
                             StartCoroutine(hammer.Hit(cube, onHit: () =>
                             {
+                                VibrateManager.Instance.PlayHaptic(HapticType.BoosterHammer);
                                 cube.Line.DestroyLine();
                                 Board.Instance.ResetBooster();
                             }));
@@ -193,6 +195,7 @@ public class LineController : Singleton<LineController>
                             {
                                 Board.Instance.CurrentBooster = BoosterType.None;
                                 var destroyedByColor = ConveyorController.Instance.DestroyConsecutiveCubes(consecutiveCubes);
+                                VibrateManager.Instance.PlayHaptic(HapticType.BoosterDropper);
                                 foreach (var kvp in destroyedByColor)
                                 {
                                     ShooterController.Instance.ReduceShooterTotalByColor(kvp.Key, kvp.Value);

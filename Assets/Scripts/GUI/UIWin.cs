@@ -47,11 +47,14 @@ public class UIWin : UIPopup
     private bool shouldGrantReward;
     private bool rewardClaimStarted;
     private bool closeAfterClaimAnimation;
+    private float lastCoinCollectSfxTime = -1f;
+
+    private const float CoinCollectSfxMinInterval = 0.08f;
 
     public override void BeforeShow()
     {
         base.BeforeShow();
-        VibrateManager.Instance.MediumVibrate();
+        VibrateManager.Instance.PlayHaptic(HapticType.LevelClearConfetti);
         AudioManager.Instance.PlaySFX(SFXType.LevelClearConfetti);
 
         ApplyPendingReward();
@@ -446,11 +449,19 @@ public class UIWin : UIPopup
             go.transform.DOMove(target.position, 0.5f).OnComplete(() =>
 	            {
 	                if (go == null) return;
+                    PlayCoinCollectSfx();
 	                activeFx.Remove(go);
 	                Destroy(go);
 	            });
 	        });
 	    }
+
+    private void PlayCoinCollectSfx()
+    {
+        if (Time.unscaledTime - lastCoinCollectSfxTime < CoinCollectSfxMinInterval) return;
+        lastCoinCollectSfxTime = Time.unscaledTime;
+        AudioManager.Instance.PlaySFX(SFXType.CoinCollect);
+    }
 
     private void NextGame()
     {

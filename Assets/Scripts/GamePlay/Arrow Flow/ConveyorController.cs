@@ -82,6 +82,7 @@ public class ConveyorController : Singleton<ConveyorController>
         GameManagerInGame.Instance.SetState(GameStateInGame.Result);
         GameManagerInGame.Instance.SetLose();
         AudioManager.Instance.PlaySFX(SFXType.LevelFailed);
+        VibrateManager.Instance.PlayHaptic(HapticType.LevelFailed);
         if (_loseShowTween != null) _loseShowTween.Kill();
         _loseShowTween = DOVirtual.DelayedCall(1f, () => UIManager.Instance.ShowUI<UIPauseLose>());
     }

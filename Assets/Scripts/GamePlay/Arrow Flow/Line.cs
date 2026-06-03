@@ -262,6 +262,7 @@ public class Line : MonoBehaviour
             if (!_willDefinitelyRevert)
             {
                 AudioManager.Instance.PlaySFX(SFXType.BlockTapSelect);
+                VibrateManager.Instance.PlayHaptic(HapticType.BlockTapSelect);
             }
         }
         _isMoving = true;
@@ -319,6 +320,7 @@ public class Line : MonoBehaviour
         }
         SyncElementTypesFromCubes();
         AudioManager.Instance.PlaySFX(SFXType.BlockCollisionError);
+        VibrateManager.Instance.PlayHaptic(HapticType.BlockCollisionError);
     }
 
     private void SyncElementTypesFromCubes()
@@ -1188,6 +1190,7 @@ public class Line : MonoBehaviour
     private void StartRevert()
     {
         AudioManager.Instance.PlaySFX(SFXType.BlockCollisionError);
+        VibrateManager.Instance.PlayHaptic(HapticType.BlockCollisionError);
         if (_history.Count == 0)
         {
             OnLineReverted();
