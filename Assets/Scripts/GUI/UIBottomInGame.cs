@@ -769,7 +769,8 @@ public class UIBottomInGame : BaseScreen
         bool unlocked = IsBoosterUnlocked(inventoryBoosterType);
         int count = GetBoosterCount(inventoryBoosterType);
         int unlockLevel = BoosterUnlockService.GetUnlockLevel(inventoryBoosterType);
-        trayButton.Configure(iconSprite, unlocked, count, unlockLevel, onPressed);
+        int price = GetBoosterPrice(inventoryBoosterType);
+        trayButton.Configure(iconSprite, unlocked, count, unlockLevel, price, onPressed);
     }
 
     private int GetBoosterCount(int inventoryBoosterType)
@@ -782,6 +783,18 @@ public class UIBottomInGame : BaseScreen
             2 => InventoryManager.Instance.GetBoosterType2(),
             3 => InventoryManager.Instance.GetBoosterType3(),
             4 => InventoryManager.Instance.GetBoosterType4(),
+            _ => 0
+        };
+    }
+
+    private static int GetBoosterPrice(int inventoryBoosterType)
+    {
+        return inventoryBoosterType switch
+        {
+            1 => 100,
+            2 => 150,
+            3 => 200,
+            4 => 250,
             _ => 0
         };
     }

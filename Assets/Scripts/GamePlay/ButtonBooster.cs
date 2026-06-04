@@ -27,6 +27,7 @@ public class ButtonBooster : MonoBehaviour
     private GameObject _freeGroup;
     private Image _boosterIcon;
     private TextMeshProUGUI _quantityText;
+    private TextMeshProUGUI _priceText;
     private TextMeshProUGUI _lockedLevelText;
     private Animation _lockedAnimation;
     private Animation _unlockedAnimation;
@@ -89,7 +90,7 @@ public class ButtonBooster : MonoBehaviour
     }
 #endif
 
-    public void Configure(Sprite iconSprite, bool unlocked, int count, int unlockLevel, Action onPressed)
+    public void Configure(Sprite iconSprite, bool unlocked, int count, int unlockLevel, int price, Action onPressed)
     {
         CacheRefs();
 
@@ -127,6 +128,12 @@ public class ButtonBooster : MonoBehaviour
         {
             _quantityText.gameObject.SetActive(unlocked && hasAny);
             _quantityText.text = unlocked ? $"x{Mathf.Max(0, count)}" : string.Empty;
+        }
+
+        if (_priceText != null)
+        {
+            _priceText.gameObject.SetActive(unlocked && !hasAny);
+            _priceText.text = Mathf.Max(0, price).ToString();
         }
 
         if (!unlocked || !hasAny)
@@ -202,6 +209,12 @@ public class ButtonBooster : MonoBehaviour
         if (quantityRoot != null)
         {
             _quantityText = quantityRoot.GetComponentInChildren<TextMeshProUGUI>(true);
+        }
+
+        Transform priceRoot = FindDeepChild("TextBoostersPrice");
+        if (priceRoot != null)
+        {
+            _priceText = priceRoot.GetComponent<TextMeshProUGUI>();
         }
 
         Transform lockedLevelRoot = FindDeepChild("LockedLevelText");
