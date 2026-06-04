@@ -16,12 +16,11 @@ public class UILose : UIPopup
     [SerializeField] private ButtonBehavior btn_refill;
     [SerializeField] private ButtonBehavior btn_unlimited;
     [SerializeField] private TextMeshProUGUI txt_unlimitedTimer;
-    [SerializeField] private TextMeshProUGUI txt_refillPrice;
     [SerializeField] private GameObject obj_unlimitedLives;
     [SerializeField] private RectTransform panel_description;
 
     [Header("Lives Config")]
-    [SerializeField] private int refillCoinPrice = 5;
+    [SerializeField] private int refillCoinPrice = 300;
     [SerializeField] private float unlimitedLivesMinutes = 15f;
     [SerializeField] private string notEnoughCoinToast = "Not enough coin";
     [SerializeField] private string fullLivesToast = "Lives are already full";
@@ -34,13 +33,13 @@ public class UILose : UIPopup
     private ButtonBehavior _closeButton;
     private ButtonBehavior _refillButton;
 
-    [SerializeField] private GameObject _obj_first_refill;
+    [SerializeField] private GameObject _obj_first_refill_free;
     [SerializeField] private GameObject _obj_first_refill_coin;
 
     private ButtonBehavior _unlimitedButton;
     private TextMeshProUGUI _coinValueText;
     private TextMeshProUGUI _timerText;
-    private TextMeshProUGUI _refillPriceText;
+    [SerializeField] private TextMeshProUGUI txt_refillPrice;
     private GameObject _unlimitedLivesBanner;
     private RectTransform _descriptionPanel;
     private readonly List<LiveContainerView> _liveContainers = new();
@@ -99,7 +98,8 @@ public class UILose : UIPopup
 
         _coinValueText = txt_coin != null ? txt_coin : FindTextByName("CoinValue");
         _timerText = txt_unlimitedTimer != null ? txt_unlimitedTimer : FindTextByName("UnlimitedLivesTimerText");
-        _refillPriceText = txt_refillPrice != null ? txt_refillPrice : FindTextByName("RefillText");
+        // _refillPriceText = txt_refillPrice;
+        
         _unlimitedLivesBanner = obj_unlimitedLives != null ? obj_unlimitedLives : FindDeepChild("UnlimitedLives")?.gameObject;
         _descriptionPanel = panel_description != null ? panel_description : FindDeepChild("DescriptionPanel") as RectTransform;
 
@@ -173,8 +173,12 @@ public class UILose : UIPopup
             : (userData != null ? Mathf.Clamp(userData.playerHeat, 0, HeatManager.MAX_HEAT_DAY) : 0);
 
         if (_coinValueText != null) _coinValueText.text = currentCoin.ToString();
-        if (_refillPriceText != null) _refillPriceText.text = refillCoinPrice.ToString();
+        if (txt_refillPrice != null) txt_refillPrice.text = refillCoinPrice.ToString();
+        
         if (_unlimitedLivesBanner != null) _unlimitedLivesBanner.SetActive(hasUnlimited);
+        bool hasUsedFreeRefill = HasUsedFreeRefill(userData);
+        if (_obj_first_refill_free != null) _obj_first_refill_free.SetActive(!hasUsedFreeRefill);
+        if (_obj_first_refill_coin != null) _obj_first_refill_coin.SetActive(hasUsedFreeRefill);
 
         UpdateLiveContainers(currentHeat, hasUnlimited, heatManager);
         UpdateCountdown();
@@ -393,22 +397,43 @@ public class UILose : UIPopup
 
     private bool TrySpendRefillCoin()
     {
-        if (refillCoinPrice <= 0) return true;
+        UserData userData = GetUserData();
+        if (userData == null) return false;
+
+        if (!HasUsedFreeRefill(userData))
+        {
+            userData.hasClaimedFreeLoseRefill = true;
+            userData.Save();
+            return true;
+        }
+
+        int currentRefillCoinPrice = GetCurrentRefillCoinPrice(userData);
+        if (currentRefillCoinPrice <= 0) return true;
 
         if (InventoryManager.Instance != null)
         {
-            return InventoryManager.Instance.SpendCoin(refillCoinPrice);
+            return InventoryManager.Instance.SpendCoin(currentRefillCoinPrice);
         }
 
-        UserData userData = GetUserData();
-        if (userData == null || userData.playerCash < refillCoinPrice)
+        if (userData.playerCash < currentRefillCoinPrice)
         {
             return false;
         }
 
-        userData.playerCash -= refillCoinPrice;
+        userData.playerCash -= currentRefillCoinPrice;
         userData.Save();
         return true;
+    }
+
+    private int GetCurrentRefillCoinPrice(UserData userData = null)
+    {
+        userData ??= GetUserData();
+        return HasUsedFreeRefill(userData) ? refillCoinPrice : 0;
+    }
+
+    private static bool HasUsedFreeRefill(UserData userData)
+    {
+        return userData != null && userData.hasClaimedFreeLoseRefill;
     }
 
     private void OnUnlimitedPressed()
@@ -567,7 +592,10 @@ public class UILose : UIPopup
 
         if (_refillButton != null)
         {
-            ShowToast(string.Format(refillPromptToastFormat, refillCoinPrice));
+            int currentRefillCoinPrice = GetCurrentRefillCoinPrice();
+            ShowToast(currentRefillCoinPrice > 0
+                ? string.Format(refillPromptToastFormat, currentRefillCoinPrice)
+                : "First refill is free");
         }
     }
 

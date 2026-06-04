@@ -19,6 +19,7 @@ public class UserData : SavePlayerPrefs
     public string unlimitedHeatExpireTime = string.Empty;
     
     public int playerHealth = 0;
+    public bool hasClaimedFreeLoseRefill = false;
     public int boosterType1 = 0;
     public int boosterType2 = 0;
     public int boosterType3 = 0;
@@ -84,6 +85,7 @@ public class UserData : SavePlayerPrefs
         hasUnlimitedHeat = false;
         unlimitedHeatExpireTime = string.Empty;
         playerHealth = 0;
+        hasClaimedFreeLoseRefill = false;
         boosterType1 = 0;
         boosterType2 = 0;
         boosterType3 = 0;

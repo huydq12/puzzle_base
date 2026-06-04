@@ -77,6 +77,7 @@ MonoBehaviour:
   animType: 2
   currentAnimType: 0
   txt_coin: {fileID: 8126340201160852685}
+  btn_close: {fileID: 3441988165644180916}
   btn_buy: {fileID: 271954532469644898}
   txt_title: {fileID: 7328238739142829423}
   txt_price: {fileID: 8870158782407262623}
@@ -323,7 +324,7 @@ MonoBehaviour:
   m_Padding:
     m_Left: 40
     m_Right: 40
-    m_Top: 0
+    m_Top: 20
     m_Bottom: 40
   m_ChildAlignment: 4
   m_Spacing: 90
@@ -4656,7 +4657,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -4671,7 +4672,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 5762845684788391193}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
@@ -4687,10 +4688,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _frame: {fileID: 0}
-  _clickSprite: {fileID: 0}
-  _defaultSprite: {fileID: 0}
-  _disabledSprite: {fileID: 0}
+  _frame: {fileID: 6171631640762881623}
+  _clickSprite: {fileID: 21300000, guid: e51243c797f81a048bf1b6a4df93b504, type: 2}
+  _defaultSprite: {fileID: 21300000, guid: e51243c797f81a048bf1b6a4df93b504, type: 2}
+  _disabledSprite: {fileID: 21300000, guid: 3dea1975f3ac5ea468ca1f9fdc2d9c9a, type: 3}
   _soundClick: 13
   _text: {fileID: 0}
   _activeTextScale: 0

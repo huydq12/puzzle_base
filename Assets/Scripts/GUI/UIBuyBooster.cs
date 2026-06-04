@@ -7,6 +7,7 @@ public class UIBuyBooster : UIPopup
     public int RequestedBoosterType { get; private set; }
 
     [SerializeField] private TextMeshProUGUI txt_coin;
+    [SerializeField] private ButtonBehavior btn_close;
 
     [SerializeField] private ButtonBehavior btn_buy;
     [SerializeField] private TextMeshProUGUI txt_title;
@@ -35,6 +36,11 @@ public class UIBuyBooster : UIPopup
     protected override void Start()
     {
         base.Start();
+        if (btn_close != null)
+        {
+            btn_close.OnClick.AddListener(OnCloseClicked);
+        }
+
         if (btn_buy != null)
         {
             btn_buy.OnClick.AddListener(OnBuyClicked);
@@ -77,7 +83,7 @@ public class UIBuyBooster : UIPopup
         if (btn_buy != null)
         {
             bool canBuy = InventoryManager.Instance != null && InventoryManager.Instance.HasEnoughCoin(price);
-            btn_buy.SetInteractable(canBuy);
+            // btn_buy.SetInteractable(canBuy);
         }
 
         if (img_booster != null)
@@ -165,6 +171,11 @@ public class UIBuyBooster : UIPopup
 
         RefreshView();
 
+        UIManager.Instance.HideUI<UIBuyBooster>();
+    }
+
+    private void OnCloseClicked()
+    {
         UIManager.Instance.HideUI<UIBuyBooster>();
     }
 }
