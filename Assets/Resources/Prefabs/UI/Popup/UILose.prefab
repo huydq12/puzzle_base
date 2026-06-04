@@ -8004,6 +8004,7 @@ GameObject:
   - component: {fileID: 5748708680420831785}
   - component: {fileID: 4064059911817991580}
   - component: {fileID: 5589603866951291849}
+  - component: {fileID: 7455928849451770024}
   m_Layer: 5
   m_Name: ButtonClose
   m_TagString: Untagged
@@ -8114,6 +8115,34 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7455928849451770024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 670457927283659389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &690138792530321555
 GameObject:
   m_ObjectHideFlags: 0
@@ -8179,7 +8208,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 90
+  m_text: 300
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 8edcdc678da88db41ad77ea6b288d5d9, type: 2}
@@ -8207,7 +8236,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 47.9
+  m_fontSize: 37.9
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -19848,9 +19877,9 @@ RectTransform:
   - {fileID: 4207542300506512824}
   m_Father: {fileID: 677674256862420182}
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 30, y: -30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3728889616194621456
@@ -34474,6 +34503,7 @@ GameObject:
   - component: {fileID: 1394401132207225370}
   - component: {fileID: 4247099589471168759}
   - component: {fileID: 5252481817048460942}
+  - component: {fileID: 302933429297091684}
   m_Layer: 5
   m_Name: ButtonPopupUnlimitedAD
   m_TagString: Untagged
@@ -34578,6 +34608,34 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &302933429297091684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3157519429243511043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &3161721222089309486
 GameObject:
   m_ObjectHideFlags: 0
@@ -48206,9 +48264,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 677674256862420182}
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -82}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 160, y: 64}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &2056974787939536441
@@ -56805,7 +56863,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 999
+  m_text: 300
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 8edcdc678da88db41ad77ea6b288d5d9, type: 2}
@@ -71494,6 +71552,7 @@ GameObject:
   - component: {fileID: 5252192854863335398}
   - component: {fileID: 4640580308330544017}
   - component: {fileID: 5281964440747294236}
+  - component: {fileID: 3454949925389364813}
   m_Layer: 5
   m_Name: LivesRefillButton
   m_TagString: Untagged
@@ -71610,6 +71669,34 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &3454949925389364813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7610475777551704072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &7685883054480882299
 GameObject:
   m_ObjectHideFlags: 0
@@ -80505,7 +80592,7 @@ MonoBehaviour:
     color: {r: 0, g: 0, b: 0, a: 1}
     alpha: 0.9
     raycast: 1
-  animType: 5
+  animType: 2
   currentAnimType: 0
   btn_next: {fileID: 0}
   btn_close_hide: {fileID: 4064059911817991580}

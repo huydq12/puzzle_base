@@ -50,6 +50,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _pendingAutoHideLoading;
     private bool _initialLoadingCompleted;
     private float _pendingAutoHideSeconds;
+    private bool _hasPendingLose;
+    private bool _hasCommittedPendingLose;
+    private int _pendingLoseLevel;
 
     private const int LoopStartLevel = 30;
     private const int LoopEndLevel = 292;
@@ -185,18 +188,33 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     }
     public void SetLose()
     {
+        int failedLevel = Mathf.Max(1, _levelInPlay);
+        _pendingLoseLevel = failedLevel;
+        _hasPendingLose = true;
+        _hasCommittedPendingLose = false;
+        SetState(GameStateInGame.Result);
+    }
+
+    public void CommitPendingLose()
+    {
+        if (!_hasPendingLose || _hasCommittedPendingLose) return;
+
         HeatManager.TryGetInstance(out HeatManager heatManager);
         heatManager?.ConsumeHeat();
 
-        int failedLevel = Mathf.Max(1, _levelInPlay);
+        int failedLevel = Mathf.Max(1, _pendingLoseLevel);
         LastCompletedLevel = failedLevel;
         LastResultWasWin = false;
         _queuedNextLevel = failedLevel;
         TrackLevelFinished(false, failedLevel);
-        SetState(GameStateInGame.Result);
+        _hasCommittedPendingLose = true;
+    }
 
-        // if (Board.Instance != null)
-        //     Board.Instance.SpawnLoseRainbowShooter();
+    public void CancelPendingLose()
+    {
+        _hasPendingLose = false;
+        _hasCommittedPendingLose = false;
+        _pendingLoseLevel = 0;
     }
 
     private void TrackLevelStarted(int level)

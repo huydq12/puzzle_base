@@ -212,7 +212,7 @@ public class UIBottomInGame : BaseScreen
         EnsureBoosterTraySetup();
         if (_boosterTrayButtons.TryGetValue(boosterType, out var trayButton) && trayButton != null)
         {
-            return trayButton.ClickTargetRect;
+            return trayButton.IconTargetRect;
         }
 
         Button btn = boosterType switch

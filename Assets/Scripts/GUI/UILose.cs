@@ -10,11 +10,11 @@ public class UILose : UIPopup
     private const string LifeRecoverClip = "ANI_life_recover";
 
     [Header("Legacy Optional Refs")]
-    [SerializeField] private Button btn_next;
-    [SerializeField] private Button btn_close_hide;
+    [SerializeField] private ButtonBehavior btn_next;
+    [SerializeField] private ButtonBehavior btn_close_hide;
     [SerializeField] private TextMeshProUGUI txt_coin;
-    [SerializeField] private Button btn_refill;
-    [SerializeField] private Button btn_unlimited;
+    [SerializeField] private ButtonBehavior btn_refill;
+    [SerializeField] private ButtonBehavior btn_unlimited;
     [SerializeField] private TextMeshProUGUI txt_unlimitedTimer;
     [SerializeField] private TextMeshProUGUI txt_refillPrice;
     [SerializeField] private GameObject obj_unlimitedLives;
@@ -31,9 +31,13 @@ public class UILose : UIPopup
     [SerializeField] private float loseHeartFadeDelay = 0.2f;
     [SerializeField] private float loseHeartFadeDuration = 0.35f;
 
-    private Button _closeButton;
-    private Button _refillButton;
-    private Button _unlimitedButton;
+    private ButtonBehavior _closeButton;
+    private ButtonBehavior _refillButton;
+
+    [SerializeField] private GameObject _obj_first_refill;
+    [SerializeField] private GameObject _obj_first_refill_coin;
+
+    private ButtonBehavior _unlimitedButton;
     private TextMeshProUGUI _coinValueText;
     private TextMeshProUGUI _timerText;
     private TextMeshProUGUI _refillPriceText;
@@ -49,6 +53,7 @@ public class UILose : UIPopup
     public override void BeforeShow()
     {
         base.BeforeShow();
+        GameManagerInGame.Instance?.CommitPendingLose();
         BindIfNeeded();
         SubscribeEvents();
         PlayLoseHeartFadeIfNeeded();
@@ -98,9 +103,9 @@ public class UILose : UIPopup
         _unlimitedLivesBanner = obj_unlimitedLives != null ? obj_unlimitedLives : FindDeepChild("UnlimitedLives")?.gameObject;
         _descriptionPanel = panel_description != null ? panel_description : FindDeepChild("DescriptionPanel") as RectTransform;
 
-        if (_closeButton != null) _closeButton.onClick.AddListener(OnClosePressed);
-        if (_refillButton != null) _refillButton.onClick.AddListener(OnRefillPressed);
-        if (_unlimitedButton != null) _unlimitedButton.onClick.AddListener(OnUnlimitedPressed);
+        if (_closeButton != null) _closeButton.OnClick.AddListener(OnClosePressed);
+        if (_refillButton != null) _refillButton.OnClick.AddListener(OnRefillPressed);
+        if (_unlimitedButton != null) _unlimitedButton.OnClick.AddListener(OnUnlimitedPressed);
         if (btn_next != null) btn_next.gameObject.SetActive(false);
 
         CacheLiveContainers();
@@ -177,12 +182,12 @@ public class UILose : UIPopup
         if (_refillButton != null)
         {
             bool canRefill = !hasUnlimited && currentHeat < HeatManager.MAX_HEAT_DAY;
-            _refillButton.interactable = canRefill;
+            _refillButton.SetInteractable(canRefill);
         }
 
         if (_unlimitedButton != null)
         {
-            _unlimitedButton.interactable = true;
+            _unlimitedButton.SetInteractable(true);
         }
     }
 
@@ -449,10 +454,10 @@ public class UILose : UIPopup
         return Game.Data.Load<UserData>();
     }
 
-    private Button FindButtonByName(string name)
+    private ButtonBehavior FindButtonByName(string name)
     {
         Transform target = FindDeepChild(name);
-        return target != null ? target.GetComponent<Button>() : null;
+        return target != null ? target.GetComponent<ButtonBehavior>() : null;
     }
 
     private TextMeshProUGUI FindTextByName(string name)

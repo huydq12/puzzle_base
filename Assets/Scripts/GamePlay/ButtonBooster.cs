@@ -57,6 +57,15 @@ public class ButtonBooster : MonoBehaviour
         }
     }
 
+    public RectTransform IconTargetRect
+    {
+        get
+        {
+            CacheRefs();
+            return _boosterIcon != null ? _boosterIcon.rectTransform : ClickTargetRect;
+        }
+    }
+
     public Sprite IconSprite
     {
         get

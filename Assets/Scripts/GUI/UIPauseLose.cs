@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
@@ -101,8 +102,6 @@ public class UIPauseLose : BasePopup
         KillTweensInHierarchy(false);
         _step1Tween?.Kill();
         _step2Tween?.Kill();
-
-        UIManager.Instance.ShowUI<UILose>();
     }
 
     private void Start()
@@ -111,7 +110,7 @@ public class UIPauseLose : BasePopup
         EnsureLevelStartCallbackRegistered();
 
         if (btnClose != null)
-            btnClose.OnClick.AddListener(Hide);
+            btnClose.OnClick.AddListener(SetLose);
 
         if (btnUseRainbow != null)
             btnUseRainbow.OnClick.AddListener(UseRainbow);
@@ -120,8 +119,24 @@ public class UIPauseLose : BasePopup
             btnUseRainbowBuyCoin.OnClick.AddListener(UseRainbowBuyCoin);
     }
 
+    public void SetLose()
+    {
+        SetLoseAsync().Forget();
+    }
+
+    private async UniTaskVoid SetLoseAsync()
+    {
+        await HideAsync();
+        UIManager.Instance.ShowUI<UILose>();
+    }
+
     private void UseRainbow()
     {
+        if (GameManagerInGame.intance != null)
+        {
+            GameManagerInGame.intance.CancelPendingLose();
+        }
+
         if (Board.Instance != null)
         {
             Board.Instance.SpawnLoseRainbowShooter();
@@ -136,8 +151,8 @@ public class UIPauseLose : BasePopup
         _step1Tween?.Kill();
         _step2Tween?.Kill();
 
-        // Hide this UI without chaining to the standard lose popup.
-        base.Hide();
+        // Hide through UIManager so overlay state is updated correctly.
+        HidePopup();
     }
 
     private void UseRainbowBuyCoin()
@@ -170,6 +185,17 @@ public class UIPauseLose : BasePopup
             coin = GameManagerInGame.intance.userData.playerCash;
 
         txt_coin.text = coin.ToString();
+    }
+
+    private void HidePopup()
+    {
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.HideUI<UIPauseLose>();
+            return;
+        }
+
+        Hide();
     }
 
     private void UpdateUseRainbowCoinPriceOnLose()
