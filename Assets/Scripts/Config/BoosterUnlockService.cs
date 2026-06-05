@@ -121,6 +121,42 @@ public static class BoosterUnlockService
         }
     }
 
+    public static bool HasFreeUseAvailable(int boosterType, int currentLevel)
+    {
+        var cfg = Config;
+        if (cfg == null) return false;
+
+        var entry = cfg.GetEntry(boosterType);
+        if (entry == null) return false;
+        if (Mathf.Max(1, entry.unlockLevel) != Mathf.Max(1, currentLevel)) return false;
+
+        var ud = GetUserData();
+        if (ud == null) return false;
+
+        string key = GetFreeUseKey(boosterType, entry.unlockLevel);
+        return ud.boosterUnlockFreeUsedKeys == null || !ud.boosterUnlockFreeUsedKeys.Contains(key);
+    }
+
+    public static void ConsumeFreeUse(int boosterType, int currentLevel)
+    {
+        var cfg = Config;
+        if (cfg == null) return;
+
+        var entry = cfg.GetEntry(boosterType);
+        if (entry == null) return;
+        if (Mathf.Max(1, entry.unlockLevel) != Mathf.Max(1, currentLevel)) return;
+
+        var ud = GetUserData();
+        if (ud == null) return;
+
+        string key = GetFreeUseKey(boosterType, entry.unlockLevel);
+        ud.boosterUnlockFreeUsedKeys ??= new System.Collections.Generic.List<string>();
+        if (ud.boosterUnlockFreeUsedKeys.Contains(key)) return;
+
+        ud.boosterUnlockFreeUsedKeys.Add(key);
+        ud.Save();
+    }
+
     private static void GrantBooster(int boosterType, int amount)
     {
         if (InventoryManager.Instance != null)
@@ -188,5 +224,10 @@ public static class BoosterUnlockService
     private static string GetTutorialShownKey(int boosterType, int unlockLevel)
     {
         return $"booster_unlock_tutorial_{boosterType}_{unlockLevel}";
+    }
+
+    private static string GetFreeUseKey(int boosterType, int unlockLevel)
+    {
+        return $"booster_unlock_free_use_{boosterType}_{unlockLevel}";
     }
 }

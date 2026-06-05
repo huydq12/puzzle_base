@@ -435,6 +435,9 @@ public class UIBottomInGame : BaseScreen
             return;
         }
 
+        int currentLevel = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
+        bool hasFreeUse = BoosterUnlockService.HasFreeUseAvailable(inventoryBoosterType, currentLevel);
+
         if (!board.CanActivateBooster(booster))
         {
             ShowCannotUseBoosterToast(booster);
@@ -444,10 +447,15 @@ public class UIBottomInGame : BaseScreen
         if (booster == BoosterType.Shuffle)
         {
             int count = InventoryManager.Instance.GetBoosterType2();
-            if (count <= 0)
+            if (!hasFreeUse && count <= 0)
             {
                 UIManager.Instance.Get<UIBuyBooster>().ShowForBooster(inventoryBoosterType);
                 return;
+            }
+
+            if (hasFreeUse)
+            {
+                BoosterUnlockService.ConsumeFreeUse(inventoryBoosterType, currentLevel);
             }
 
             board.UseShuffle();
@@ -456,14 +464,23 @@ public class UIBottomInGame : BaseScreen
             return;
         }
 
-        bool used = inventoryBoosterType switch
+        bool used;
+        if (hasFreeUse)
         {
-            1 => InventoryManager.Instance.UseBoosterType1(),
-            2 => InventoryManager.Instance.UseBoosterType2(),
-            3 => InventoryManager.Instance.UseBoosterType3(),
-            4 => InventoryManager.Instance.UseBoosterType4(),
-            _ => false
-        };
+            BoosterUnlockService.ConsumeFreeUse(inventoryBoosterType, currentLevel);
+            used = true;
+        }
+        else
+        {
+            used = inventoryBoosterType switch
+            {
+                1 => InventoryManager.Instance.UseBoosterType1(),
+                2 => InventoryManager.Instance.UseBoosterType2(),
+                3 => InventoryManager.Instance.UseBoosterType3(),
+                4 => InventoryManager.Instance.UseBoosterType4(),
+                _ => false
+            };
+        }
 
         if (!used)
         {
@@ -770,7 +787,9 @@ public class UIBottomInGame : BaseScreen
         int count = GetBoosterCount(inventoryBoosterType);
         int unlockLevel = BoosterUnlockService.GetUnlockLevel(inventoryBoosterType);
         int price = GetBoosterPrice(inventoryBoosterType);
-        trayButton.Configure(iconSprite, unlocked, count, unlockLevel, price, onPressed);
+        int currentLevel = GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1;
+        bool isFreeAvailable = BoosterUnlockService.HasFreeUseAvailable(inventoryBoosterType, currentLevel);
+        trayButton.Configure(iconSprite, unlocked, count, unlockLevel, price, isFreeAvailable, onPressed);
     }
 
     private int GetBoosterCount(int inventoryBoosterType)

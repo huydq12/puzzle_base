@@ -90,7 +90,7 @@ public class ButtonBooster : MonoBehaviour
     }
 #endif
 
-    public void Configure(Sprite iconSprite, bool unlocked, int count, int unlockLevel, int price, Action onPressed)
+    public void Configure(Sprite iconSprite, bool unlocked, int count, int unlockLevel, int price, bool isFreeAvailable, Action onPressed)
     {
         CacheRefs();
 
@@ -107,7 +107,7 @@ public class ButtonBooster : MonoBehaviour
 
         if (_lockedGroup != null) _lockedGroup.SetActive(!unlocked);
         if (_unlockedGroup != null) _unlockedGroup.SetActive(unlocked);
-        if (_freeGroup != null) _freeGroup.SetActive(false);
+        if (_freeGroup != null) _freeGroup.SetActive(unlocked && isFreeAvailable);
 
         if (_lockedLevelText != null)
         {
@@ -116,34 +116,39 @@ public class ButtonBooster : MonoBehaviour
         }
 
         bool hasAny = count > 0;
-        bool stateChanged = _lastUnlocked != unlocked || _lastHasAny != hasAny;
+        bool hasUsableCharge = hasAny || isFreeAvailable;
+        bool stateChanged = _lastUnlocked != unlocked || _lastHasAny != hasUsableCharge;
 
-        if (_coinGroupCount != null) _coinGroupCount.SetActive(unlocked && hasAny);
-        if (_coinGroupPrice != null) _coinGroupPrice.SetActive(unlocked && !hasAny);
-        if (_purchaseButton != null) _purchaseButton.SetActive(unlocked && !hasAny);
+        if (_coinGroupCount != null) _coinGroupCount.SetActive(unlocked && hasAny && !isFreeAvailable);
+        if (_coinGroupPrice != null) _coinGroupPrice.SetActive(unlocked && !hasUsableCharge);
+        if (_purchaseButton != null) _purchaseButton.SetActive(unlocked && !hasUsableCharge);
 
-        if (_addIcon != null) _addIcon.SetActive(unlocked && !hasAny);
+        if (_addIcon != null) _addIcon.SetActive(unlocked && !hasUsableCharge);
 
         if (_quantityText != null)
         {
-            _quantityText.gameObject.SetActive(unlocked && hasAny);
+            _quantityText.gameObject.SetActive(unlocked && hasAny && !isFreeAvailable);
             _quantityText.text = unlocked ? $"x{Mathf.Max(0, count)}" : string.Empty;
         }
 
         if (_priceText != null)
         {
-            _priceText.gameObject.SetActive(unlocked && !hasAny);
+            _priceText.gameObject.SetActive(unlocked && !hasUsableCharge);
             _priceText.text = Mathf.Max(0, price).ToString();
         }
 
-        if (!unlocked || !hasAny)
+        if (!unlocked || !hasUsableCharge)
         {
             HideTimedHighlight();
         }
+        else if (isFreeAvailable)
+        {
+            ShowTimedHighlight(persistent: true);
+        }
 
-        PlayStateAnimation(unlocked, hasAny, stateChanged);
+        PlayStateAnimation(unlocked, hasUsableCharge, stateChanged);
         _lastUnlocked = unlocked;
-        _lastHasAny = hasAny;
+        _lastHasAny = hasUsableCharge;
     }
 
     private void BindButtons()
@@ -165,12 +170,15 @@ public class ButtonBooster : MonoBehaviour
     {
         bool isUnlocked = _unlockedGroup != null && _unlockedGroup.activeSelf;
         bool hasAny = _coinGroupCount != null && _coinGroupCount.activeSelf;
+        bool hasFree = _freeGroup != null && _freeGroup.activeSelf;
+
+        HideTimedHighlight();
 
         if (!isUnlocked)
         {
             PlayAnimationIfExists(_lockedAnimation, LockedShowClip, restart: true);
         }
-        else if (hasAny)
+        else if (hasAny || hasFree)
         {
             PlayAnimationIfExists(_unlockedAnimation, UnlockedActivatingClip, restart: true);
         }
@@ -245,21 +253,33 @@ public class ButtonBooster : MonoBehaviour
 
         if ((_lastHasAny == false || _lastUnlocked == false) && hasAny)
         {
-            PlayTimedHighlight();
+            ShowTimedHighlight(persistent: false);
         }
     }
 
     public void PlayTimedHighlight()
     {
-        if (_timedHighlights == null || _timedHighlightsAnimation == null) return;
-        if (!PlayAnimationIfExists(_timedHighlightsAnimation, HighlightClip, restart: true)) return;
+        ShowTimedHighlight(persistent: false);
+    }
+
+    private void ShowTimedHighlight(bool persistent)
+    {
+        if (_timedHighlights == null) return;
 
         _timedHighlights.SetActive(true);
+
+        if (_timedHighlightsAnimation != null)
+        {
+            PlayAnimationIfExists(_timedHighlightsAnimation, HighlightClip, restart: true);
+        }
 
         if (_timedHighlightRoutine != null)
         {
             StopCoroutine(_timedHighlightRoutine);
+            _timedHighlightRoutine = null;
         }
+
+        if (persistent) return;
 
         _timedHighlightRoutine = StartCoroutine(HideTimedHighlightAfterDelay(GetClipLength(_timedHighlightsAnimation, HighlightClip)));
     }
