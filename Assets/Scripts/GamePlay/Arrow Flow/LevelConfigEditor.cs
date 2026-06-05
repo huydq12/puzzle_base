@@ -57,6 +57,7 @@ public class LevelConfigEditor : OdinEditor
     private bool _showLineOverlay = true;
     private bool _showElementTypeColors = true;
     private bool _showConveyorMeta = true;
+    private int _activeConveyorLineIndex = 0;
     private int _elementTypeBrush = 0;
     private int _conveyorTypeBrush = 0;
     private int _conveyorCounterBrush = 0;
@@ -324,6 +325,13 @@ public class LevelConfigEditor : OdinEditor
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
+            int maxConveyorIndex = Mathf.Max(0, GetEditableConveyorLines().Count);
+            _activeConveyorLineIndex = EditorGUILayout.IntSlider("Active Conveyor", Mathf.Clamp(_activeConveyorLineIndex, 0, maxConveyorIndex), 0, maxConveyorIndex, GUILayout.Width(320));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
             _conveyorTypeBrush = EditorGUILayout.IntField("Conveyor Type", _conveyorTypeBrush, GUILayout.Width(240));
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
@@ -375,6 +383,7 @@ public class LevelConfigEditor : OdinEditor
         EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, 0.35f));
         GUI.Label(new Rect(rect.x + 2f, rect.y, rect.width, rect.height), content, ElementTypeLabelStyle);
     }
+
     private void LoadColors()
     {
         _outlineHexColor = EditorPrefs.GetString(ColorType.Outline.ToString(), GetDefaultHex(ColorType.Outline));
@@ -460,7 +469,7 @@ public class LevelConfigEditor : OdinEditor
             if (EditorUtility.DisplayDialog("Confirm Reset", "Are you sure you want to reset board?", "Yes", "No"))
             {
                 _levelconfig.ColorLines.Clear();
-                _levelconfig.ConveyorLine.Cells.Clear();
+                _levelconfig.SetConveyorLines(new List<ConveyorLine>());
                 _levelconfig.Cells = new GridCellData[_levelconfig.Columns, _levelconfig.Rows];
                 for (int x = 0; x < _levelconfig.Columns; x++)
                 {
@@ -826,43 +835,21 @@ public class LevelConfigEditor : OdinEditor
                             Vector2Int targetPos = new Vector2Int(x, y);
                             cell.CellType = GridCellType.Conveyor;
 
-                            if (_levelconfig.ConveyorLine == null)
-                                _levelconfig.ConveyorLine = new ConveyorLine();
-                            if (_levelconfig.ConveyorLine.Cells == null)
-                                _levelconfig.ConveyorLine.Cells = new List<Vector2Int>();
-                            if (_levelconfig.ConveyorLine.Types == null)
-                                _levelconfig.ConveyorLine.Types = new List<int>();
-                            if (_levelconfig.ConveyorLine.Counters == null)
-                                _levelconfig.ConveyorLine.Counters = new List<int>();
-                            if (_levelconfig.ConveyorLine.IsHoles == null)
-                                _levelconfig.ConveyorLine.IsHoles = new List<bool>();
-
-                            if (!_levelconfig.ConveyorLine.Cells.Contains(targetPos))
+                            RemoveConveyorCellFromAllLines(targetPos);
+                            ConveyorLine activeConveyor = GetOrCreateActiveConveyorLine();
+                            if (!activeConveyor.Cells.Contains(targetPos))
                             {
-                                _levelconfig.ConveyorLine.Cells.Add(targetPos);
-                                _levelconfig.ConveyorLine.Types.Add(_conveyorTypeBrush);
-                                _levelconfig.ConveyorLine.Counters.Add(_conveyorCounterBrush);
-                                _levelconfig.ConveyorLine.IsHoles.Add(_conveyorIsHoleBrush);
+                                activeConveyor.Cells.Add(targetPos);
+                                activeConveyor.Types.Add(_conveyorTypeBrush);
+                                activeConveyor.Counters.Add(_conveyorCounterBrush);
+                                activeConveyor.IsHoles.Add(_conveyorIsHoleBrush);
                             }
                             RemoveCellAndTailFromLine(targetPos);
                         }
                         else if (e.button == 1)
                         {
                             Vector2Int targetPos = new Vector2Int(x, y);
-                            if (_levelconfig.ConveyorLine != null && _levelconfig.ConveyorLine.Cells != null)
-                            {
-                                int idx = _levelconfig.ConveyorLine.Cells.IndexOf(targetPos);
-                                if (idx >= 0)
-                                {
-                                    _levelconfig.ConveyorLine.Cells.RemoveAt(idx);
-                                    if (_levelconfig.ConveyorLine.Types != null && idx < _levelconfig.ConveyorLine.Types.Count)
-                                        _levelconfig.ConveyorLine.Types.RemoveAt(idx);
-                                    if (_levelconfig.ConveyorLine.Counters != null && idx < _levelconfig.ConveyorLine.Counters.Count)
-                                        _levelconfig.ConveyorLine.Counters.RemoveAt(idx);
-                                    if (_levelconfig.ConveyorLine.IsHoles != null && idx < _levelconfig.ConveyorLine.IsHoles.Count)
-                                        _levelconfig.ConveyorLine.IsHoles.RemoveAt(idx);
-                                }
-                            }
+                            RemoveConveyorCellFromAllLines(targetPos);
                             cell.CellType = GridCellType.Normal;
                         }
                         EditorUtility.SetDirty(_levelconfig);
@@ -872,20 +859,27 @@ public class LevelConfigEditor : OdinEditor
             }
         }
 
-        if (_showConveyorMeta && _levelconfig.ConveyorLine != null && _levelconfig.ConveyorLine.Cells != null)
+        if (_showConveyorMeta)
         {
-            for (int i = 0; i < _levelconfig.ConveyorLine.Cells.Count; i++)
+            List<ConveyorLine> conveyorLines = GetEditableConveyorLines();
+            for (int conveyorIndex = 0; conveyorIndex < conveyorLines.Count; conveyorIndex++)
             {
-                Vector2Int pos = _levelconfig.ConveyorLine.Cells[i];
-                if (pos.x < 0 || pos.x >= columns || pos.y < 0 || pos.y >= rows) continue;
-                Rect metaRect = GetCellRect(GetCellCenter(gridRect, pos.x, pos.y, rows));
+                ConveyorLine conveyor = conveyorLines[conveyorIndex];
+                if (conveyor == null || conveyor.Cells == null) continue;
 
-                int type = (_levelconfig.ConveyorLine.Types != null && i < _levelconfig.ConveyorLine.Types.Count) ? _levelconfig.ConveyorLine.Types[i] : 0;
-                int counter = (_levelconfig.ConveyorLine.Counters != null && i < _levelconfig.ConveyorLine.Counters.Count) ? _levelconfig.ConveyorLine.Counters[i] : 0;
-                bool isHole = (_levelconfig.ConveyorLine.IsHoles != null && i < _levelconfig.ConveyorLine.IsHoles.Count) && _levelconfig.ConveyorLine.IsHoles[i];
+                for (int i = 0; i < conveyor.Cells.Count; i++)
+                {
+                    Vector2Int pos = conveyor.Cells[i];
+                    if (pos.x < 0 || pos.x >= columns || pos.y < 0 || pos.y >= rows) continue;
+                    Rect metaRect = GetCellRect(GetCellCenter(gridRect, pos.x, pos.y, rows));
 
-                if (isHole || type != 0 || counter != 0)
-                    DrawConveyorMetaLabel(metaRect, type, counter, isHole);
+                    int type = (conveyor.Types != null && i < conveyor.Types.Count) ? conveyor.Types[i] : 0;
+                    int counter = (conveyor.Counters != null && i < conveyor.Counters.Count) ? conveyor.Counters[i] : 0;
+                    bool isHole = (conveyor.IsHoles != null && i < conveyor.IsHoles.Count) && conveyor.IsHoles[i];
+
+                    if (isHole || type != 0 || counter != 0)
+                        DrawConveyorMetaLabel(metaRect, type, counter, isHole);
+                }
             }
         }
 
@@ -1004,16 +998,27 @@ public class LevelConfigEditor : OdinEditor
             RemoveCellAndTailFromLine(cell);
         }
 
-        for (int i = _levelconfig.ConveyorLine.Cells.Count - 1; i >= 0; i--)
+        List<ConveyorLine> conveyorLines = GetEditableConveyorLines();
+        for (int conveyorIndex = 0; conveyorIndex < conveyorLines.Count; conveyorIndex++)
         {
-            var cell = _levelconfig.ConveyorLine.Cells[i];
-            if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows)
+            ConveyorLine conveyor = conveyorLines[conveyorIndex];
+            if (conveyor == null || conveyor.Cells == null) continue;
+
+            for (int i = conveyor.Cells.Count - 1; i >= 0; i--)
             {
-                _levelconfig.ConveyorLine.Cells.RemoveAt(i);
-                if (cell.x >= 0 && cell.x < _levelconfig.Cells.GetLength(0) &&
-                    cell.y >= 0 && cell.y < _levelconfig.Cells.GetLength(1))
+                var cell = conveyor.Cells[i];
+                if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows)
                 {
-                    _levelconfig.Cells[cell.x, cell.y].CellType = GridCellType.Normal;
+                    conveyor.Cells.RemoveAt(i);
+                    if (conveyor.Types != null && i < conveyor.Types.Count) conveyor.Types.RemoveAt(i);
+                    if (conveyor.Counters != null && i < conveyor.Counters.Count) conveyor.Counters.RemoveAt(i);
+                    if (conveyor.IsHoles != null && i < conveyor.IsHoles.Count) conveyor.IsHoles.RemoveAt(i);
+
+                    if (cell.x >= 0 && cell.x < _levelconfig.Cells.GetLength(0) &&
+                        cell.y >= 0 && cell.y < _levelconfig.Cells.GetLength(1))
+                    {
+                        _levelconfig.Cells[cell.x, cell.y].CellType = GridCellType.Normal;
+                    }
                 }
             }
         }
@@ -1066,6 +1071,63 @@ public class LevelConfigEditor : OdinEditor
         } while (current != start);
 
         return result;
+    }
+
+    private List<ConveyorLine> GetEditableConveyorLines()
+    {
+        if (_levelconfig.ConveyorLines == null)
+            _levelconfig.ConveyorLines = new List<ConveyorLine>();
+
+        if (_levelconfig.ConveyorLines.Count == 0 && _levelconfig.ConveyorLine != null)
+            _levelconfig.ConveyorLines.Add(_levelconfig.ConveyorLine);
+
+        _levelconfig.SetConveyorLines(_levelconfig.ConveyorLines);
+        return _levelconfig.ConveyorLines;
+    }
+
+    private ConveyorLine GetOrCreateActiveConveyorLine()
+    {
+        List<ConveyorLine> conveyors = GetEditableConveyorLines();
+        _activeConveyorLineIndex = Mathf.Max(0, _activeConveyorLineIndex);
+
+        while (conveyors.Count <= _activeConveyorLineIndex)
+        {
+            conveyors.Add(new ConveyorLine
+            {
+                Cells = new List<Vector2Int>(),
+                Types = new List<int>(),
+                Counters = new List<int>(),
+                IsHoles = new List<bool>()
+            });
+        }
+
+        ConveyorLine conveyor = conveyors[_activeConveyorLineIndex];
+        if (conveyor.Cells == null) conveyor.Cells = new List<Vector2Int>();
+        if (conveyor.Types == null) conveyor.Types = new List<int>();
+        if (conveyor.Counters == null) conveyor.Counters = new List<int>();
+        if (conveyor.IsHoles == null) conveyor.IsHoles = new List<bool>();
+        _levelconfig.SetConveyorLines(conveyors);
+        return conveyor;
+    }
+
+    private void RemoveConveyorCellFromAllLines(Vector2Int targetPos)
+    {
+        List<ConveyorLine> conveyors = GetEditableConveyorLines();
+        for (int conveyorIndex = 0; conveyorIndex < conveyors.Count; conveyorIndex++)
+        {
+            ConveyorLine conveyor = conveyors[conveyorIndex];
+            if (conveyor == null || conveyor.Cells == null) continue;
+
+            int idx = conveyor.Cells.IndexOf(targetPos);
+            if (idx < 0) continue;
+
+            conveyor.Cells.RemoveAt(idx);
+            if (conveyor.Types != null && idx < conveyor.Types.Count) conveyor.Types.RemoveAt(idx);
+            if (conveyor.Counters != null && idx < conveyor.Counters.Count) conveyor.Counters.RemoveAt(idx);
+            if (conveyor.IsHoles != null && idx < conveyor.IsHoles.Count) conveyor.IsHoles.RemoveAt(idx);
+        }
+
+        _levelconfig.SetConveyorLines(conveyors);
     }
     private void RemoveCellAndTailFromLine(Vector2Int cellPos)
     {
