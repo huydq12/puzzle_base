@@ -809,6 +809,18 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             line.IsHoles?.Insert(i + 1, false);
             i++;
         }
+
+        if (line.Cells.Count < 3) return;
+
+        Vector2Int last = line.Cells[^1];
+        Vector2Int first = line.Cells[0];
+        if (!TryGetBridgeCellForConveyor(line.Cells, line.Cells.Count - 1, last, first, out Vector2Int loopBridge))
+            return;
+
+        line.Cells.Add(loopBridge);
+        line.Types?.Add(0);
+        line.Counters?.Add(0);
+        line.IsHoles?.Add(false);
     }
 
     private static Vector2Int ChooseBestBridgeCell(List<Vector2Int> cells, int index, Vector2Int candidateA, Vector2Int candidateB)
@@ -821,17 +833,74 @@ public class LevelJsonBatchConverterWindow : EditorWindow
     private static int ScoreBridgeCandidate(List<Vector2Int> cells, int index, Vector2Int candidate)
     {
         int score = 0;
+        int count = cells.Count;
+        if (count == 0) return score;
 
-        if (index - 1 >= 0 && AreNeighborish(cells[index - 1], candidate))
-            score++;
-        if (AreNeighborish(cells[index], candidate))
-            score++;
-        if (index + 1 < cells.Count && AreNeighborish(candidate, cells[index + 1]))
-            score++;
-        if (index + 2 < cells.Count && AreNeighborish(candidate, cells[index + 2]))
-            score++;
+        int aIndex = ((index % count) + count) % count;
+        int bIndex = (aIndex + 1) % count;
+        Vector2Int a = cells[aIndex];
+        Vector2Int b = cells[bIndex];
+
+        if (count >= 3)
+        {
+            int prevIndex = aIndex - 1;
+            if (prevIndex < 0) prevIndex = count - 1;
+            Vector2Int prev = cells[prevIndex];
+            Vector2Int incoming = a - prev;
+            Vector2Int candidateIncoming = candidate - a;
+            if (incoming == candidateIncoming)
+                score += 4;
+            else if (AreNeighborish(prev, candidate))
+                score += 1;
+        }
+
+        if (count >= 3)
+        {
+            int nextIndex = (bIndex + 1) % count;
+            Vector2Int next = cells[nextIndex];
+            Vector2Int outgoing = next - b;
+            Vector2Int candidateOutgoing = b - candidate;
+            if (outgoing == candidateOutgoing)
+                score += 4;
+            else if (AreNeighborish(candidate, next))
+                score += 1;
+        }
+
+        if (AreNeighborish(a, candidate))
+            score += 2;
+        if (AreNeighborish(candidate, b))
+            score += 2;
 
         return score;
+    }
+
+    private static bool TryGetBridgeCellForConveyor(List<Vector2Int> cells, int index, Vector2Int a, Vector2Int b, out Vector2Int bridge)
+    {
+        bridge = default;
+        int dx = b.x - a.x;
+        int dy = b.y - a.y;
+
+        if (dx == 0 && Mathf.Abs(dy) == 2)
+        {
+            bridge = new Vector2Int(a.x, a.y + (dy > 0 ? 1 : -1));
+            return true;
+        }
+
+        if (dy == 0 && Mathf.Abs(dx) == 2)
+        {
+            bridge = new Vector2Int(a.x + (dx > 0 ? 1 : -1), a.y);
+            return true;
+        }
+
+        if (Mathf.Abs(dx) == 1 && Mathf.Abs(dy) == 1)
+        {
+            Vector2Int candidateA = new Vector2Int(b.x, a.y);
+            Vector2Int candidateB = new Vector2Int(a.x, b.y);
+            bridge = ChooseBestBridgeCell(cells, index, candidateA, candidateB);
+            return true;
+        }
+
+        return false;
     }
 
     private static bool AreNeighborish(Vector2Int a, Vector2Int b)

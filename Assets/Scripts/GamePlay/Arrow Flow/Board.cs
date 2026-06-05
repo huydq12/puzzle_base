@@ -1437,18 +1437,13 @@ public class Board : Singleton<Board>
                 Vector3 curr = currCell.transform.position;
                 Vector3 next = nextCell.transform.position;
 
-                if (IsRightAngle(prev, curr, next))
+                if (TryGetConveyorCurvePoints(prev, curr, next, cornerOffset, out Vector3 curveIn, out Vector3 curveOut))
                 {
-                    Vector3 dirIn = (curr - prev).normalized;
-                    Vector3 dirOut = (next - curr).normalized;
-
-                    allPositions.Add(curr - dirIn * cornerOffset);
-                    allPositions.Add(curr + dirOut * cornerOffset);
+                    allPositions.Add(curveIn);
+                    allPositions.Add(curveOut);
                 }
                 else
-                {
                     allPositions.Add(curr);
-                }
             }
 
             if (invalidPath || allPositions.Count < 2)
@@ -1598,6 +1593,14 @@ public class Board : Singleton<Board>
             normalized.Add(b);
         }
 
+        if (normalized.Count >= 3)
+        {
+            Vector2Int last = normalized[^1];
+            Vector2Int first = normalized[0];
+            if (TryGetConveyorBridgeCell(normalized, normalized.Count - 1, last, first, out Vector2Int loopBridge))
+                normalized.Add(loopBridge);
+        }
+
         return normalized;
     }
 
@@ -1611,15 +1614,43 @@ public class Board : Singleton<Board>
     private static int ScoreConveyorBridgeCandidate(List<Vector2Int> cells, int index, Vector2Int candidate)
     {
         int score = 0;
+        int count = cells.Count;
+        if (count == 0) return score;
 
-        if (index - 1 >= 0 && AreConveyorNeighbors(cells[index - 1], candidate))
-            score++;
-        if (AreConveyorNeighbors(cells[index], candidate))
-            score++;
-        if (index + 1 < cells.Count && AreConveyorNeighbors(candidate, cells[index + 1]))
-            score++;
-        if (index + 2 < cells.Count && AreConveyorNeighbors(candidate, cells[index + 2]))
-            score++;
+        int aIndex = ((index % count) + count) % count;
+        int bIndex = (aIndex + 1) % count;
+        Vector2Int a = cells[aIndex];
+        Vector2Int b = cells[bIndex];
+
+        if (count >= 3)
+        {
+            int prevIndex = aIndex - 1;
+            if (prevIndex < 0) prevIndex = count - 1;
+            Vector2Int prev = cells[prevIndex];
+            Vector2Int incoming = a - prev;
+            Vector2Int candidateIncoming = candidate - a;
+            if (incoming == candidateIncoming)
+                score += 4;
+            else if (AreConveyorNeighbors(prev, candidate))
+                score += 1;
+        }
+
+        if (count >= 3)
+        {
+            int nextIndex = (bIndex + 1) % count;
+            Vector2Int next = cells[nextIndex];
+            Vector2Int outgoing = next - b;
+            Vector2Int candidateOutgoing = b - candidate;
+            if (outgoing == candidateOutgoing)
+                score += 4;
+            else if (AreConveyorNeighbors(candidate, next))
+                score += 1;
+        }
+
+        if (AreConveyorNeighbors(a, candidate))
+            score += 2;
+        if (AreConveyorNeighbors(candidate, b))
+            score += 2;
 
         return score;
     }
@@ -1628,6 +1659,35 @@ public class Board : Singleton<Board>
     {
         Vector2Int d = b - a;
         return Mathf.Max(Mathf.Abs(d.x), Mathf.Abs(d.y)) == 1;
+    }
+
+    private static bool TryGetConveyorBridgeCell(List<Vector2Int> cells, int index, Vector2Int a, Vector2Int b, out Vector2Int bridge)
+    {
+        bridge = default;
+        int dx = b.x - a.x;
+        int dy = b.y - a.y;
+
+        if (dx == 0 && Mathf.Abs(dy) == 2)
+        {
+            bridge = new Vector2Int(a.x, a.y + (dy > 0 ? 1 : -1));
+            return true;
+        }
+
+        if (dy == 0 && Mathf.Abs(dx) == 2)
+        {
+            bridge = new Vector2Int(a.x + (dx > 0 ? 1 : -1), a.y);
+            return true;
+        }
+
+        if (Mathf.Abs(dx) == 1 && Mathf.Abs(dy) == 1)
+        {
+            Vector2Int candidateA = new Vector2Int(b.x, a.y);
+            Vector2Int candidateB = new Vector2Int(a.x, b.y);
+            bridge = ChooseBestConveyorBridge(cells, index, candidateA, candidateB);
+            return true;
+        }
+
+        return false;
     }
 
     private void SpawnConveyorTunels(List<Vector2Int> orderedCells, Dictionary<Vector2Int, ConveyorMeta> metaByCell, float cornerOffset)
@@ -1773,21 +1833,45 @@ public class Board : Singleton<Board>
             Vector3 prev = prevCell.transform.position;
             Vector3 next = nextCell.transform.position;
 
-            if (IsRightAngle(prev, curr, next))
+            if (TryGetConveyorCurvePoints(prev, curr, next, cornerOffset, out Vector3 curveIn, out Vector3 curveOut))
             {
-                Vector3 dirIn = (curr - prev).normalized;
-                Vector3 dirOut = (next - curr).normalized;
-
-                allPositions.Add(curr - dirIn * cornerOffset);
-                allPositions.Add(curr + dirOut * cornerOffset);
+                allPositions.Add(curveIn);
+                allPositions.Add(curveOut);
             }
             else
-            {
                 allPositions.Add(curr);
-            }
         }
 
         return allPositions;
+    }
+
+    private static bool TryGetConveyorCurvePoints(Vector3 prev, Vector3 curr, Vector3 next, float cornerOffset, out Vector3 curveIn, out Vector3 curveOut)
+    {
+        curveIn = curr;
+        curveOut = curr;
+
+        Vector3 inVec = curr - prev;
+        Vector3 outVec = next - curr;
+        inVec.y = 0f;
+        outVec.y = 0f;
+
+        float inLen = inVec.magnitude;
+        float outLen = outVec.magnitude;
+        if (inLen <= 0.0001f || outLen <= 0.0001f)
+            return false;
+
+        Vector3 dirIn = inVec / inLen;
+        Vector3 dirOut = outVec / outLen;
+
+        // Keep straight segments untouched; curve every actual direction change, including diagonal joins.
+        if (Vector3.Dot(dirIn, dirOut) > 0.999f)
+            return false;
+
+        float inOffset = Mathf.Min(cornerOffset, inLen * 0.35f);
+        float outOffset = Mathf.Min(cornerOffset, outLen * 0.35f);
+        curveIn = curr - dirIn * inOffset;
+        curveOut = curr + dirOut * outOffset;
+        return true;
     }
 
     private static List<Vector2Int> FilterInBoundsDistinct(List<Vector2Int> cells, int columns, int rows)
