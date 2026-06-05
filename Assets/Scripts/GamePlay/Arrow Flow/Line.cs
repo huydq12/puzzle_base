@@ -44,6 +44,7 @@ public class Line : MonoBehaviour
 
     private bool _waitingForConveyorEnter;
     private Coroutine _waitConveyorRoutine;
+    private bool _conveyorWaitInterruptedByLose;
 
     private CubeLine _blockingCube;
     private Tween _blockingCubeTiltTween;
@@ -67,6 +68,7 @@ public class Line : MonoBehaviour
         _waitingForConveyorEnter = false;
         _reuseGridDirNextMove = false;
         _hasNotifiedConveyorEnter = false;
+        _conveyorWaitInterruptedByLose = false;
 
         CancelConveyorWait();
 
@@ -593,7 +595,21 @@ public class Line : MonoBehaviour
         _targetConveyorCell = null;
         _waitingForConveyorEnter = false;
         _blockingCube = null;
+        _conveyorWaitInterruptedByLose = false;
         CancelConveyorWait();
+    }
+
+    public bool ResumeConveyorWaitAfterContinue()
+    {
+        if (!_conveyorWaitInterruptedByLose)
+            return false;
+
+        _conveyorWaitInterruptedByLose = false;
+
+        if (_isReverting)
+            return false;
+
+        return TryStartWaitingForConveyorEnter();
     }
 
     private void CancelConveyorWait()
@@ -1088,6 +1104,7 @@ public class Line : MonoBehaviour
             if (GameManagerInGame.Instance != null &&
                 GameManagerInGame.Instance.CurrentGameStateInGame != GameStateInGame.Playing)
             {
+                _conveyorWaitInterruptedByLose = true;
                 _waitingForConveyorEnter = false;
                 _isMoving = false;
                 yield break;
@@ -1129,6 +1146,7 @@ public class Line : MonoBehaviour
         if (head != null && !_pendingDetach.Contains(head))
             _pendingDetach.Add(head);
         _waitingForConveyorEnter = false;
+        _conveyorWaitInterruptedByLose = false;
 
         FlushPendingDetach();
 

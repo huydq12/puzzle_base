@@ -335,6 +335,17 @@ public class Board : Singleton<Board>
         ShooterController.Instance?.ConsumeShooterIceStep(1);
     }
 
+    public void ResumeInterruptedConveyorEntryWaits()
+    {
+        Line[] lines = GetComponentsInChildren<Line>(true);
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Line line = lines[i];
+            if (line == null) continue;
+            line.ResumeConveyorWaitAfterContinue();
+        }
+    }
+
     void SetupCamera(float paddingCamera, float minOrthoSize)
     {
         EnsureCameras();
@@ -2425,5 +2436,7 @@ public class Board : Singleton<Board>
             ConveyorController.Instance.SetAllCubesBringToTop(false);
             ConveyorController.Instance.StartConveyor();
         }
+
+        ResumeInterruptedConveyorEntryWaits();
     }
 }
