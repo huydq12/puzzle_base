@@ -463,21 +463,43 @@ public class ConveyorController : Singleton<ConveyorController>
     public bool RemoveCubeFromPath(CubeLine cube)
     {
         if (cube == null) return false;
+        bool removed = RemoveCubeFromEnterQueue(cube);
 
         for (int i = 0; i < _lstPaths.Count; i++)
         {
             if (_lstPaths[i].CubeSlot == cube)
             {
                 _lstPaths[i].CubeSlot = null;
-                _totalPathSlotTaken--;
+                _totalPathSlotTaken = Mathf.Max(0, _totalPathSlotTaken - 1);
 
                 cube.transform.DOKill();
                 UpdatePercent();
-                return true;
+                removed = true;
             }
         }
 
-        return false;
+        return removed;
+    }
+
+    private bool RemoveCubeFromEnterQueue(CubeLine cube)
+    {
+        if (cube == null || _waitingToEnterQueue.Count == 0) return false;
+
+        bool removed = false;
+        int count = _waitingToEnterQueue.Count;
+        for (int i = 0; i < count; i++)
+        {
+            EnterRequest request = _waitingToEnterQueue.Dequeue();
+            if (request.Cube == cube)
+            {
+                removed = true;
+                continue;
+            }
+
+            _waitingToEnterQueue.Enqueue(request);
+        }
+
+        return removed;
     }
 
 
@@ -494,6 +516,8 @@ public class ConveyorController : Singleton<ConveyorController>
         for (int i = 0; i < countInQueue; i++)
         {
             var request = _waitingToEnterQueue.Dequeue();
+            if (request.Cube == null || request.Cube.IsBeingAbsorbedByHole)
+                continue;
 
             int idx = NormalizeInsertIndex(request.PreferredIndex);
 
@@ -577,6 +601,9 @@ public class ConveyorController : Singleton<ConveyorController>
                     {
                         if (_lstPaths[curIndex].CubeSlot == null)
                         {
+                            if (enteringRequest.Cube == null || enteringRequest.Cube.IsBeingAbsorbedByHole)
+                                continue;
+
                             _lstPaths[curIndex].CubeSlot = enteringRequest.Cube;
                             var cube = _lstPaths[curIndex].CubeSlot;
 
@@ -584,6 +611,11 @@ public class ConveyorController : Singleton<ConveyorController>
                             {
                                 enteringRequest.Line?.NotifyEnteredConveyor();
                                 enteringRequest.OnInserted?.Invoke();
+                                if (cube.IsBeingAbsorbedByHole)
+                                {
+                                    _lstPaths[curIndex].CubeSlot = null;
+                                    continue;
+                                }
 
                                 var slot = _lstPaths[curIndex];
                                 Vector3 dir = slot.Forward;
@@ -677,6 +709,11 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         var slot = _lstPaths[idx];
         if (slot.CubeSlot == null) return;
+        if (slot.CubeSlot.IsBeingAbsorbedByHole)
+        {
+            RemoveCubeFromPath(slot.CubeSlot);
+            return;
+        }
 
         Vector3 dir = slot.Forward;
         if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;

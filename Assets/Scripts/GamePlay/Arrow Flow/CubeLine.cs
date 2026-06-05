@@ -38,6 +38,7 @@ public class CubeLine : SerializedMonoBehaviour
     [SerializeField] private Material _materialElementType2;
     [SerializeField] private Collider _collider;
     [SerializeField] private float _holeLandingYOffset = 0.22f;
+    [SerializeField] private float _holeEntryYOffset = -1f;
     private Quaternion _initRotation;
     private bool _elementType3Revealed;
     private ObjectColor _baseColor;
@@ -45,6 +46,7 @@ public class CubeLine : SerializedMonoBehaviour
     private bool _hasElementType3InnerColor;
     private ObjectColor _elementType3InnerColor;
     private bool _isHeadHighlighted;
+    private bool _isBeingAbsorbedByHole;
 
     public bool Cantouch
     {
@@ -62,6 +64,7 @@ public class CubeLine : SerializedMonoBehaviour
     }
     public bool IsElementType3Revealed => _elementType3Revealed;
     public ObjectColor OriginalColor => _originalColor;
+    public bool IsBeingAbsorbedByHole => _isBeingAbsorbedByHole;
 
     public void SetElementType3InnerColor(ObjectColor innerColor)
     {
@@ -108,6 +111,14 @@ public class CubeLine : SerializedMonoBehaviour
 
     public bool OnHitByHole(bool byRainbow, Vector3 peakPosition, Transform holeBottom, System.Action onArrived = null)
     {
+        return OnHitByHole(byRainbow, peakPosition, holeBottom, null, onArrived);
+    }
+
+    public bool OnHitByHole(bool byRainbow, Vector3 peakPosition, Transform holeBottom, Vector3? entryPoint, System.Action onArrived = null)
+    {
+        if (_isBeingAbsorbedByHole)
+            return false;
+
         if (ElementType == 2 && Line != null && Line.IsIceLine && Line.RemainingCounter > 0)
             return false;
 
@@ -117,7 +128,13 @@ public class CubeLine : SerializedMonoBehaviour
                 ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
 
             // First hole hit: peel the currently visible layer into the hole.
-            SpawnElementType3InnerLayerJumpToHole(peakPosition, holeBottom);
+            _isBeingAbsorbedByHole = true;
+            Cantouch = false;
+            SpawnElementType3InnerLayerJumpToHole(peakPosition, holeBottom, entryPoint, () =>
+            {
+                _isBeingAbsorbedByHole = false;
+                Cantouch = true;
+            });
             HideDoubleLayerVisuals();
 
             _elementType3Revealed = true;
@@ -132,21 +149,30 @@ public class CubeLine : SerializedMonoBehaviour
         }
 
         Cantouch = false;
+        _isBeingAbsorbedByHole = true;
         if (byRainbow)
             ShooterController.Instance.ReduceShooterTotalByColor(Color, 1);
 
         ConveyorController.Instance.RemoveCubeFromPath(this);
-        JumpToHole(peakPosition, holeBottom, onArrived);
+        JumpToHole(peakPosition, holeBottom, entryPoint, onArrived);
         return true;
     }
 
-    private void SpawnElementType3InnerLayerJumpToHole(Vector3 peakPosition, Transform holeBottom)
+    private void SpawnElementType3InnerLayerJumpToHole(Vector3 peakPosition, Transform holeBottom, Vector3? entryPoint, System.Action onComplete = null)
     {
         Transform source = GetElementType3InnerLayerVisualSource();
-        if (source == null) return;
+        if (source == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
 
         GameObject ghost = Instantiate(source.gameObject, source.position, source.rotation);
-        if (ghost == null) return;
+        if (ghost == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
 
         ghost.transform.SetParent(null, true);
         ghost.transform.localScale = source.lossyScale;
@@ -158,8 +184,10 @@ public class CubeLine : SerializedMonoBehaviour
             colliders[i].enabled = false;
 
         ghost.transform.DOKill();
+        ghost.transform.rotation = Quaternion.identity;
+        JumpingToHoleCount++;
 
-        Vector3 startPos = ghost.transform.position;
+        Vector3 startPos = ApplyHoleEntryOffset(entryPoint ?? ghost.transform.position);
         Vector3 endPos = holeBottom != null
             ? holeBottom.position + Vector3.up * _holeLandingYOffset
             : peakPosition;
@@ -176,6 +204,15 @@ public class CubeLine : SerializedMonoBehaviour
         float arcHeight = Mathf.Max(0.08f, apexY - baselineMidY);
 
         Sequence seq = DOTween.Sequence();
+        bool jumpCountActive = true;
+        void FinishGhostJump()
+        {
+            if (!jumpCountActive) return;
+            jumpCountActive = false;
+            JumpingToHoleCount--;
+            onComplete?.Invoke();
+        }
+
         seq.Append(
             DOVirtual.Float(0f, 1f, travelDuration, t =>
             {
@@ -183,7 +220,7 @@ public class CubeLine : SerializedMonoBehaviour
                 Vector3 pos = Vector3.Lerp(startPos, endPos, t);
                 pos.y = Mathf.Lerp(startPos.y, endPos.y, t) + arcHeight * 4f * t * (1f - t);
                 ghost.transform.position = pos;
-            }).SetEase(Ease.InQuad)
+            }).SetEase(Ease.Linear)
         );
         seq.Join(
             ghost.transform.DOScale(startScale * 0.25f, travelDuration * 0.55f)
@@ -193,9 +230,11 @@ public class CubeLine : SerializedMonoBehaviour
         seq.Append(ghost.transform.DOScale(0f, 0.06f).SetEase(Ease.OutQuad));
         seq.OnComplete(() =>
         {
+            FinishGhostJump();
             if (ghost != null)
                 Destroy(ghost);
         });
+        seq.OnKill(FinishGhostJump);
     }
 
     private Transform GetElementType3InnerLayerVisualSource()
@@ -267,13 +306,15 @@ public class CubeLine : SerializedMonoBehaviour
             _doubleHeadCube.gameObject.SetActive(false);
     }
 
-    private void JumpToHole(Vector3 peakPosition, Transform holeBottom, System.Action onArrived)
+    private void JumpToHole(Vector3 peakPosition, Transform holeBottom, Vector3? entryPoint, System.Action onArrived)
     {
         _isJumpingToHole = true;
         JumpingToHoleCount++;
         transform.DOKill();
+        transform.rotation = Quaternion.identity;
 
-        Vector3 startPos = transform.position;
+        Vector3 startPos = ApplyHoleEntryOffset(entryPoint ?? transform.position);
+        transform.position = startPos;
         Vector3 endPos = holeBottom != null
             ? holeBottom.position + Vector3.up * _holeLandingYOffset
             : peakPosition;
@@ -299,7 +340,7 @@ public class CubeLine : SerializedMonoBehaviour
                 Vector3 pos = Vector3.Lerp(startPos, endPos, t);
                 pos.y = Mathf.Lerp(startPos.y, endPos.y, t) + arcHeight * 4f * t * (1f - t);
                 transform.position = pos;
-            }).SetEase(Ease.InQuad)
+            }).SetEase(Ease.Linear)
         );
         seq.Append(transform.DOScale(startScale * 0.28f, 0.08f).SetEase(Ease.InQuad));
         seq.Append(transform.DOScale(0f, 0.07f).SetEase(Ease.OutQuad));
@@ -307,6 +348,7 @@ public class CubeLine : SerializedMonoBehaviour
         seq.OnComplete(() =>
         {
             _isJumpingToHole = false;
+            _isBeingAbsorbedByHole = false;
             JumpingToHoleCount--;
             onArrived?.Invoke();
             Destroy(gameObject);
@@ -346,6 +388,12 @@ public class CubeLine : SerializedMonoBehaviour
         SpawnHitEffect();
         transform.DOScale(0f, 0.1f).OnComplete(() => Destroy(gameObject));
         return true;
+    }
+
+    private Vector3 ApplyHoleEntryOffset(Vector3 position)
+    {
+        position.y += _holeEntryYOffset;
+        return position;
     }
 
     private void SpawnHitEffect()
@@ -607,6 +655,7 @@ public class CubeLine : SerializedMonoBehaviour
         Color = ObjectColor.Green;
         ElementType = 0;
         _elementType3Revealed = false;
+        _isBeingAbsorbedByHole = false;
         _baseColor = ObjectColor.Green;
         _originalColor = ObjectColor.Green;
         _hasElementType3InnerColor = false;

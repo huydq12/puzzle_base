@@ -438,6 +438,9 @@ public class Shooter : MonoBehaviour
 
             if (hit.transform.TryGetComponent(out CubeLine cube))
             {
+                if (cube.IsBeingAbsorbedByHole)
+                    continue;
+
                 // Ignore cubes already placed on grid cells (these are not shoot targets and should not block).
                 if (cube.Cell != null)
                     continue;
@@ -463,13 +466,17 @@ public class Shooter : MonoBehaviour
 
     private void AbsorbCube(CubeLine cube)
     {
+        if (cube == null || cube.IsBeingAbsorbedByHole)
+            return;
+
         _nextFireTime = Time.time + _fireCooldown;
         _lastActivityTime = Time.time;
 
         // Cube jumps up above the hole entrance, then falls down into _holeBottom.
-        Vector3 peakPosition = transform.position + Vector3.up * 2.5f;
+        Vector3 peakPosition = transform.position + Vector3.up * 2f;
+        Vector3 entryPoint = _hit.collider != null ? _hit.point : cube.transform.position;
         ObjectColor hitColor = cube.Color;
-        bool destroyed = cube.OnHitByHole(IsRainbow, peakPosition, _holeBottom, () =>
+        bool destroyed = cube.OnHitByHole(IsRainbow, peakPosition, _holeBottom, entryPoint, () =>
         {
             // Called when the cube reaches the bottom of the hole.
             AudioManager.Instance.PlaySFX(SFXType.Shoot);
