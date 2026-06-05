@@ -101,22 +101,28 @@ public class LineController : Singleton<LineController>
                     return;
                 }
 
-                if (InventoryManager.Instance == null) return;
-                bool used = InventoryManager.Instance.UseBoosterType2();
-                if (!used)
+                bool isFreeUse = Board.Instance.CurrentBoosterUsesFreeCharge;
+                if (!isFreeUse)
                 {
-                    if (UIManager.Instance != null)
+                    if (InventoryManager.Instance == null) return;
+                    bool used = InventoryManager.Instance.UseBoosterType2();
+                    if (!used)
                     {
-                        var buy = UIManager.Instance.Get<UIBuyBooster>();
-                        if (buy != null) buy.ShowForBooster(2);
-                    }
+                        if (UIManager.Instance != null)
+                        {
+                            var buy = UIManager.Instance.Get<UIBuyBooster>();
+                            if (buy != null) buy.ShowForBooster(2);
+                        }
 
-                    Board.Instance.CurrentBooster = BoosterType.None;
-                    Board.Instance.ResetBooster();
-                    var ui = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
-                    if (ui != null) ui.RefreshBoosterUIImmediate();
-                    return;
+                        Board.Instance.CurrentBooster = BoosterType.None;
+                        Board.Instance.ResetBooster();
+                        var ui = UIManager.Instance != null ? UIManager.Instance.Get<UIBottomInGame>() : null;
+                        if (ui != null) ui.RefreshBoosterUIImmediate();
+                        return;
+                    }
                 }
+
+                TutorialManager.Instance?.CompleteBoosterUseTutorial(BoosterType.Shuffle);
 
                 var shuffle = Instantiate(_shufflePrefab);
 
@@ -129,6 +135,7 @@ public class LineController : Singleton<LineController>
                         return;
                     }
 
+                    AudioManager.Instance?.PlaySFX(SFXType.BoosterWand);
                     VibrateManager.Instance.PlayHaptic(HapticType.BoosterWand);
                     Board.Instance.CurrentBooster = BoosterType.None;
                     Board.Instance.ResetBooster();
@@ -177,10 +184,12 @@ public class LineController : Singleton<LineController>
                     case BoosterType.Hammer:
                         {
                              if(cube.Cell == null) return;
+                            TutorialManager.Instance?.CompleteBoosterUseTutorial(BoosterType.Hammer);
                             Board.Instance.CurrentBooster = BoosterType.None;
                             var hammer = Instantiate(_hammerPrefab);
                             StartCoroutine(hammer.Hit(cube, onHit: () =>
                             {
+                                AudioManager.Instance?.PlaySFX(SFXType.BoosterHammer);
                                 VibrateManager.Instance.PlayHaptic(HapticType.BoosterHammer);
                                 cube.Line.DestroyLine();
                                 Board.Instance.ResetBooster();
@@ -195,6 +204,7 @@ public class LineController : Singleton<LineController>
                             {
                                 Board.Instance.CurrentBooster = BoosterType.None;
                                 var destroyedByColor = ConveyorController.Instance.DestroyConsecutiveCubes(consecutiveCubes);
+                                AudioManager.Instance?.PlaySFX(SFXType.BoosterDropper);
                                 VibrateManager.Instance.PlayHaptic(HapticType.BoosterDropper);
                                 foreach (var kvp in destroyedByColor)
                                 {

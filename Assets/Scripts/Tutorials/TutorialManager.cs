@@ -49,6 +49,8 @@ public class TutorialManager : Singleton<TutorialManager>
 	private int _pendingBoosterDropType;
 	private int _pendingBoosterDropCount;
 	private int _pendingBoosterGiftLevel;
+	private BoosterType _activeBoosterUseTutorial = BoosterType.None;
+	private readonly HashSet<string> _dismissedBoosterUseTutorialKeys = new();
 
 	private int _currentLevel;
 
@@ -223,9 +225,107 @@ public class TutorialManager : Singleton<TutorialManager>
 		IsInTutorial = false;
 	}
 
+	public void TryShowBoosterUseTutorial(BoosterType boosterType, bool isFreeUse)
+	{
+		if (!isFreeUse) return;
+		if (boosterType != BoosterType.Hammer && boosterType != BoosterType.Shuffle) return;
+
+		int currentLevel = _gameManagerInGame != null ? _gameManagerInGame.CurrentLevel : (GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1);
+		string key = GetBoosterUseTutorialKey(boosterType, currentLevel);
+		if (_dismissedBoosterUseTutorialKeys.Contains(key)) return;
+
+		var controlTutorial = GetControlTutorial();
+		if (controlTutorial == null) return;
+
+		if (!TryGetBoosterGuideTargetWorldPosition(boosterType, out Vector3 worldPosition)) return;
+
+		controlTutorial.ShowBoosterGuide(worldPosition);
+		_activeBoosterUseTutorial = boosterType;
+	}
+
+	public void CompleteBoosterUseTutorial(BoosterType boosterType)
+	{
+		if (_activeBoosterUseTutorial != boosterType) return;
+		HideActiveBoosterUseTutorial();
+	}
+
+	public void DismissActiveBoosterUseTutorial()
+	{
+		if (_activeBoosterUseTutorial == BoosterType.None) return;
+
+		int currentLevel = _gameManagerInGame != null ? _gameManagerInGame.CurrentLevel : (GameManagerInGame.Instance != null ? GameManagerInGame.Instance.CurrentLevel : 1);
+		_dismissedBoosterUseTutorialKeys.Add(GetBoosterUseTutorialKey(_activeBoosterUseTutorial, currentLevel));
+		HideActiveBoosterUseTutorial();
+	}
+
 	private void EnsureUIRefs(UIManager gameUI)
 	{
 		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.Get<UIBottomInGame>();
+	}
+
+	private void HideActiveBoosterUseTutorial()
+	{
+		var controlTutorial = GetControlTutorial();
+		controlTutorial?.HideBoosterGuide();
+		_activeBoosterUseTutorial = BoosterType.None;
+	}
+
+	private TutorialControl GetControlTutorial()
+	{
+		if (_tutorialMap == null) return null;
+		if (!_tutorialMap.TryGetValue(TutorialType.Control, out var tutorial) || tutorial == null) return null;
+		return tutorial as TutorialControl;
+	}
+
+	private static string GetBoosterUseTutorialKey(BoosterType boosterType, int level)
+	{
+		return $"booster_use_tutorial_{(int)boosterType}_{Mathf.Max(1, level)}";
+	}
+
+	private bool TryGetBoosterGuideTargetWorldPosition(BoosterType boosterType, out Vector3 worldPosition)
+	{
+		worldPosition = Vector3.zero;
+
+		switch (boosterType)
+		{
+			case BoosterType.Hammer:
+				{
+					var board = Board.Instance;
+					if (board == null || board.Cells == null) return false;
+
+					int width = board.Cells.GetLength(0);
+					int height = board.Cells.GetLength(1);
+					for (int x = 0; x < width; x++)
+					{
+						for (int y = 0; y < height; y++)
+						{
+							var cell = board.Cells[x, y];
+							if (cell == null || !cell.IsOccupied || cell.CubeOnCell == null) continue;
+							worldPosition = cell.CubeOnCell.transform.position;
+							return true;
+						}
+					}
+
+					return false;
+				}
+			case BoosterType.Shuffle:
+				{
+					var shooterController = ShooterController.Instance;
+					if (shooterController == null || shooterController.Gates == null) return false;
+
+					for (int i = 0; i < shooterController.Gates.Count; i++)
+					{
+						var gate = shooterController.Gates[i];
+						if (gate == null || !shooterController.CanShuffleShootersOnGate(gate) || gate.RootTransform == null) continue;
+						worldPosition = gate.RootTransform.position;
+						return true;
+					}
+
+					return false;
+				}
+			default:
+				return false;
+		}
 	}
 
 	private bool AllowTutorialPopups()

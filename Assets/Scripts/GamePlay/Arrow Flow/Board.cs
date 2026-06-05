@@ -54,6 +54,7 @@ public class Board : Singleton<Board>
     private Coroutine _loseRainbowShooterRoutine;
     [SerializeField] private SpriteRenderer _overlay;
     [ReadOnly] public BoosterType CurrentBooster;
+    [ReadOnly] public bool CurrentBoosterUsesFreeCharge;
     [ReadOnly] public bool IsUsingBooster;
     public Vector2 Spacing => _spacing;
     public int InitLine => _currentConfig.ColorLines.Count;
@@ -434,6 +435,7 @@ public class Board : Singleton<Board>
     }
     public void ResetBooster()
     {
+        CurrentBoosterUsesFreeCharge = false;
         _overlay.DOFade(0f, 0.25f).OnComplete(() =>
         {
             _overlay.enabled = false;
@@ -445,6 +447,11 @@ public class Board : Singleton<Board>
             }
             IsUsingBooster = false;
         });
+    }
+
+    public void SetCurrentBoosterUsesFreeCharge(bool usesFreeCharge)
+    {
+        CurrentBoosterUsesFreeCharge = usesFreeCharge;
     }
     public void UseBooster(BoosterType type)
     {

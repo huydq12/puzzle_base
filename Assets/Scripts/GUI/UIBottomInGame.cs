@@ -383,11 +383,16 @@ public class UIBottomInGame : BaseScreen
     [Button]
     public void CancelBooster()
     {
+        var tutorialManager = TutorialManager.Instance;
+        bool usesFreeCharge = Board.Instance.CurrentBoosterUsesFreeCharge;
         switch (Board.Instance.CurrentBooster)
         {
             case BoosterType.Hammer:
                 Board.Instance.ResetBooster();
-                InventoryManager.Instance.AddBoosterType1(1);
+                if (!usesFreeCharge)
+                {
+                    InventoryManager.Instance.AddBoosterType1(1);
+                }
                 break;
 
             case BoosterType.Conveyor:
@@ -395,7 +400,10 @@ public class UIBottomInGame : BaseScreen
                 ConveyorController.Instance.BringToTop = false;
                 ConveyorController.Instance.SetAllCubesBringToTop(false);
                 ConveyorController.Instance.ResumeConveyor();
-                InventoryManager.Instance.AddBoosterType3(1);
+                if (!usesFreeCharge)
+                {
+                    InventoryManager.Instance.AddBoosterType3(1);
+                }
                 break;
 
             case BoosterType.Rainbow:
@@ -407,6 +415,7 @@ public class UIBottomInGame : BaseScreen
         }
 
         Board.Instance.CurrentBooster = BoosterType.None;
+        tutorialManager?.DismissActiveBoosterUseTutorial();
 
         RefreshBoosterQuantity();
         RefreshGroupBoosterUI(force: true);
@@ -453,12 +462,14 @@ public class UIBottomInGame : BaseScreen
                 return;
             }
 
+            board.SetCurrentBoosterUsesFreeCharge(hasFreeUse);
             if (hasFreeUse)
             {
                 BoosterUnlockService.ConsumeFreeUse(inventoryBoosterType, currentLevel);
             }
 
             board.UseShuffle();
+            TutorialManager.Instance?.TryShowBoosterUseTutorial(booster, hasFreeUse);
             RefreshBoosterQuantity();
             RefreshGroupBoosterUI(force: true);
             return;
@@ -488,6 +499,8 @@ public class UIBottomInGame : BaseScreen
             return;
         }
 
+        board.SetCurrentBoosterUsesFreeCharge(hasFreeUse);
+
         switch (booster)
         {
             case BoosterType.Hammer:
@@ -503,6 +516,8 @@ public class UIBottomInGame : BaseScreen
                 board.UseShuffle();
                 break;
         }
+
+        TutorialManager.Instance?.TryShowBoosterUseTutorial(booster, hasFreeUse);
 
         RefreshBoosterQuantity();
         RefreshGroupBoosterUI(force: true);
