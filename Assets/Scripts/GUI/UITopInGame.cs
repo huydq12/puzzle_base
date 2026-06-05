@@ -274,6 +274,16 @@ public class UITopInGame : BaseScreen
 
     private void ApplyDifficultyObjects(int level, LevelUiType levelType)
     {
+        if (GameManagerInGame.Instance != null &&
+            GameManagerInGame.Instance.CurrentGameStateInGame == GameStateInGame.Result)
+        {
+            StopHardObjectAutoHide();
+            StopSuperHardObjectAutoHide();
+            if (HardObject != null) HardObject.SetActive(false);
+            if (SuperHardObject != null) SuperHardObject.SetActive(false);
+            return;
+        }
+
         if (levelType == LevelUiType.Hard)
         {
             if (_lastHardAnimationLevel != level)

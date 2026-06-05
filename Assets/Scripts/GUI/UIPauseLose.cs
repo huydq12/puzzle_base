@@ -20,6 +20,9 @@ public class UIPauseLose : BasePopup
     [SerializeField] private ButtonBehavior btnUseRainbow;
 
     [SerializeField] private ButtonBehavior btnUseRainbowBuyCoin;
+    [SerializeField] private Button btnHoldToSee;
+
+    [SerializeField] private CanvasGroup CanvaHoldToSee;
 
     [Header("Use Rainbow (Buy with coin)")]
     [SerializeField] private int useRainbowCoinPrice = 200;
@@ -44,6 +47,19 @@ public class UIPauseLose : BasePopup
     private int _loseCountInCurrentLevel;
     private int _currentUseRainbowCoinPrice;
     private bool _registeredStartLevelCallback;
+
+    public void OnHoldStart()
+    {
+        CanvaHoldToSee.DOFade(0f, 0.2f);
+        UIManager.Instance.HideOverlay();
+    }
+
+    public void OnHoldEnd()
+    {
+        CanvaHoldToSee.DOFade(1f, 0.2f);
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetCustomOverlayPosition(transform, GetOverlayConfig());
+    }
 
     public override void BeforeShow()
     {

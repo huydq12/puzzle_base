@@ -603,6 +603,13 @@ public class UIManager : Singleton<UIManager>
         _overlayInstance?.Hide(duration);
     }
 
+    public void ShowOverlay(IUIController controller)
+    {
+        var next = controller.CurrentElement;
+        var config = next.GetOverlayConfig();
+        _overlayInstance.Show(config, next.transform);
+    }
+
     #endregion
 
     private IUIController GetNextPriorityController(Type type)

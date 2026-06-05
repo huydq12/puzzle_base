@@ -55,20 +55,20 @@ public class VibrateManager : Singleton<VibrateManager>
         switch (hapticType)
         {
             case HapticType.BlockTapSelect:
-                HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                StartCoroutine(PlayBlockTapSelect());
                 break;
 
             case HapticType.BlockCollisionError:
-                HapticPatterns.PlayPreset(HapticPatterns.PresetType.RigidImpact);
+                StartCoroutine(PlayBlockCollisionError());
                 break;
 
             case HapticType.TurretShoot:
                 if (!CanPlayThrottled(ref _lastTurretShootTime, TurretShootMinInterval)) return;
-                HapticPatterns.PlayEmphasis(0.22f, 0.55f);
+                HapticPatterns.PlayEmphasis(0.32f, 0.75f);
                 break;
 
             case HapticType.BlockCollectedHoleIn:
-                HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
+                StartCoroutine(PlayBlockCollectedHoleIn());
                 break;
 
             case HapticType.ComboPitchUp:
@@ -84,7 +84,7 @@ public class VibrateManager : Singleton<VibrateManager>
                 break;
 
             case HapticType.BoosterHammer:
-                HapticPatterns.PlayPreset(HapticPatterns.PresetType.HeavyImpact);
+                StartCoroutine(PlayBoosterHammer());
                 break;
 
             case HapticType.BoosterWand:
@@ -97,7 +97,7 @@ public class VibrateManager : Singleton<VibrateManager>
 
             case HapticType.UIClick:
                 if (!CanPlayThrottled(ref _lastUIClickTime, UIClickMinInterval)) return;
-                HapticPatterns.PlayPreset(HapticPatterns.PresetType.Selection);
+                HapticPatterns.PlayEmphasis(0.20f, 0.7f);
                 break;
         }
     }
@@ -121,13 +121,34 @@ public class VibrateManager : Singleton<VibrateManager>
         return true;
     }
 
+    private static IEnumerator PlayBlockTapSelect()
+    {
+        HapticPatterns.PlayEmphasis(0.24f, 0.72f);
+        yield return new WaitForSecondsRealtime(0.03f);
+        HapticPatterns.PlayEmphasis(0.12f, 0.82f);
+    }
+
+    private static IEnumerator PlayBlockCollisionError()
+    {
+        HapticPatterns.PlayEmphasis(0.42f, 0.35f);
+        yield return new WaitForSecondsRealtime(0.055f);
+        HapticPatterns.PlayEmphasis(0.28f, 0.2f);
+    }
+
+    private static IEnumerator PlayBlockCollectedHoleIn()
+    {
+        HapticPatterns.PlayEmphasis(0.32f, 0.68f);
+        yield return new WaitForSecondsRealtime(0.04f);
+        HapticPatterns.PlayEmphasis(0.18f, 0.9f);
+    }
+
     private static IEnumerator PlayComboPitchUp()
     {
-        HapticPatterns.PlayEmphasis(0.20f, 0.35f);
+        HapticPatterns.PlayEmphasis(0.26f, 0.45f);
         yield return new WaitForSecondsRealtime(0.055f);
-        HapticPatterns.PlayEmphasis(0.35f, 0.55f);
+        HapticPatterns.PlayEmphasis(0.42f, 0.62f);
         yield return new WaitForSecondsRealtime(0.055f);
-        HapticPatterns.PlayEmphasis(0.55f, 0.75f);
+        HapticPatterns.PlayEmphasis(0.62f, 0.8f);
     }
 
     private static IEnumerator PlayLevelClearConfetti()
@@ -148,21 +169,28 @@ public class VibrateManager : Singleton<VibrateManager>
         HapticPatterns.PlayPreset(HapticPatterns.PresetType.HeavyImpact);
     }
 
+    private static IEnumerator PlayBoosterHammer()
+    {
+        HapticPatterns.PlayPreset(HapticPatterns.PresetType.HeavyImpact);
+        yield return new WaitForSecondsRealtime(0.05f);
+        HapticPatterns.PlayEmphasis(0.4f, 0.3f);
+    }
+
     private static IEnumerator PlayLightRipple()
     {
-        HapticPatterns.PlayEmphasis(0.18f, 0.75f);
+        HapticPatterns.PlayEmphasis(0.26f, 0.78f);
         yield return new WaitForSecondsRealtime(0.045f);
-        HapticPatterns.PlayEmphasis(0.14f, 0.85f);
+        HapticPatterns.PlayEmphasis(0.2f, 0.88f);
         yield return new WaitForSecondsRealtime(0.045f);
-        HapticPatterns.PlayEmphasis(0.10f, 0.95f);
+        HapticPatterns.PlayEmphasis(0.15f, 0.96f);
     }
 
     private static IEnumerator PlaySoftTapFade()
     {
-        HapticPatterns.PlayPreset(HapticPatterns.PresetType.SoftImpact);
+        HapticPatterns.PlayEmphasis(0.22f, 0.58f);
         yield return new WaitForSecondsRealtime(0.07f);
-        HapticPatterns.PlayEmphasis(0.12f, 0.45f);
+        HapticPatterns.PlayEmphasis(0.16f, 0.5f);
         yield return new WaitForSecondsRealtime(0.07f);
-        HapticPatterns.PlayEmphasis(0.06f, 0.35f);
+        HapticPatterns.PlayEmphasis(0.1f, 0.4f);
     }
 }
