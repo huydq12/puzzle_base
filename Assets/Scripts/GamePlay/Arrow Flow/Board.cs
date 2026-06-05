@@ -2044,11 +2044,12 @@ public class Board : Singleton<Board>
                 if (i == last)
                 {
                     cube.SetType(CubeType.Head);
-
-                    Direction dir = DirFromDelta(curr - prev.Value);
-                    float yaw = GetYawFromDirection(dir);
-
-                    cube.transform.localRotation = Quaternion.Euler(0f, yaw + 180, 0f);
+                    if (prev.HasValue)
+                    {
+                        Direction dir = DirFromDelta(curr - prev.Value);
+                        float yaw = GetYawFromDirection(dir);
+                        cube.transform.localRotation = Quaternion.Euler(0f, yaw + 180, 0f);
+                    }
                 }
                 else if (prev.HasValue && next.HasValue && IsCorner(prev.Value, curr, next.Value))
                 {
