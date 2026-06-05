@@ -1377,7 +1377,7 @@ public class Board : Singleton<Board>
             ConveyorLine conveyorLine = conveyorLines[conveyorIndex];
             if (conveyorLine == null || conveyorLine.Cells.IsNullOrEmpty()) continue;
 
-            List<Vector2Int> conveyorCells = FilterInBoundsDistinct(conveyorLine.Cells, columns, rows);
+            List<Vector2Int> conveyorCells = NormalizeConveyorCells(FilterInBoundsDistinct(conveyorLine.Cells, columns, rows));
             if (conveyorCells.Count < 3)
             {
                 Debug.LogWarning($"ConveyorLine[{conveyorIndex}] has too few valid cells; skipping conveyor setup.");
@@ -1565,6 +1565,69 @@ public class Board : Singleton<Board>
         }
 
         return result;
+    }
+
+    private static List<Vector2Int> NormalizeConveyorCells(List<Vector2Int> cells)
+    {
+        if (cells == null) return new List<Vector2Int>();
+        if (cells.Count < 2) return cells;
+
+        List<Vector2Int> normalized = new List<Vector2Int> { cells[0] };
+        for (int i = 0; i < cells.Count - 1; i++)
+        {
+            Vector2Int a = cells[i];
+            Vector2Int b = cells[i + 1];
+            int dx = b.x - a.x;
+            int dy = b.y - a.y;
+
+            if (dx == 0 && Mathf.Abs(dy) == 2)
+            {
+                normalized.Add(new Vector2Int(a.x, a.y + (dy > 0 ? 1 : -1)));
+            }
+            else if (dy == 0 && Mathf.Abs(dx) == 2)
+            {
+                normalized.Add(new Vector2Int(a.x + (dx > 0 ? 1 : -1), a.y));
+            }
+            else if (Mathf.Abs(dx) == 1 && Mathf.Abs(dy) == 1)
+            {
+                Vector2Int candidateA = new Vector2Int(b.x, a.y);
+                Vector2Int candidateB = new Vector2Int(a.x, b.y);
+                normalized.Add(ChooseBestConveyorBridge(cells, i, candidateA, candidateB));
+            }
+
+            normalized.Add(b);
+        }
+
+        return normalized;
+    }
+
+    private static Vector2Int ChooseBestConveyorBridge(List<Vector2Int> cells, int index, Vector2Int candidateA, Vector2Int candidateB)
+    {
+        int scoreA = ScoreConveyorBridgeCandidate(cells, index, candidateA);
+        int scoreB = ScoreConveyorBridgeCandidate(cells, index, candidateB);
+        return scoreB > scoreA ? candidateB : candidateA;
+    }
+
+    private static int ScoreConveyorBridgeCandidate(List<Vector2Int> cells, int index, Vector2Int candidate)
+    {
+        int score = 0;
+
+        if (index - 1 >= 0 && AreConveyorNeighbors(cells[index - 1], candidate))
+            score++;
+        if (AreConveyorNeighbors(cells[index], candidate))
+            score++;
+        if (index + 1 < cells.Count && AreConveyorNeighbors(candidate, cells[index + 1]))
+            score++;
+        if (index + 2 < cells.Count && AreConveyorNeighbors(candidate, cells[index + 2]))
+            score++;
+
+        return score;
+    }
+
+    private static bool AreConveyorNeighbors(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int d = b - a;
+        return Mathf.Max(Mathf.Abs(d.x), Mathf.Abs(d.y)) == 1;
     }
 
     private void SpawnConveyorTunels(List<Vector2Int> orderedCells, Dictionary<Vector2Int, ConveyorMeta> metaByCell, float cornerOffset)

@@ -80,6 +80,11 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             {
                 ConvertAll();
             }
+
+            if (GUILayout.Button("Convert Selected JSON"))
+            {
+                ConvertSelectedJson();
+            }
         }
     }
 
@@ -205,6 +210,130 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log($"Convert done. Converted: {converted}, Failed: {failed}");
+    }
+
+    private void ConvertSelectedJson()
+    {
+        string soFolderPath = AssetDatabase.GetAssetPath(soFolder);
+        if (string.IsNullOrEmpty(soFolderPath))
+        {
+            Debug.LogError("Invalid SO folder selection");
+            return;
+        }
+
+        UnityEngine.Object[] selectedObjects = Selection.GetFiltered(typeof(TextAsset), SelectionMode.Assets);
+        if (selectedObjects == null || selectedObjects.Length == 0)
+        {
+            Debug.LogWarning("No JSON TextAsset selected. Select one or more Level_*.json assets in the Project window.");
+            return;
+        }
+
+        List<string> selectedLevelJsonPaths = new List<string>();
+        for (int i = 0; i < selectedObjects.Length; i++)
+        {
+            string path = AssetDatabase.GetAssetPath(selectedObjects[i]);
+            if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+
+            int level;
+            if (!TryParseLevelIndexFromJsonPath(path, out level)) continue;
+
+            selectedLevelJsonPaths.Add(path);
+        }
+
+        if (selectedLevelJsonPaths.Count == 0)
+        {
+            Debug.LogWarning("Selected assets do not include any Level_*.json files.");
+            return;
+        }
+
+        int converted = 0;
+        int failed = 0;
+
+        for (int i = 0; i < selectedLevelJsonPaths.Count; i++)
+        {
+            string path = selectedLevelJsonPaths[i];
+            if (ConvertJsonAtPath(path, soFolderPath))
+                converted++;
+            else
+                failed++;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"Convert selected done. Converted: {converted}, Failed: {failed}");
+    }
+
+    private bool ConvertJsonAtPath(string path, string soFolderPath)
+    {
+        TextAsset json = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+        if (json == null)
+        {
+            Debug.LogError($"Failed to load TextAsset at path: {path}");
+            return false;
+        }
+
+        int level;
+        if (!TryParseLevelIndexFromJsonPath(path, out level))
+        {
+            Debug.LogError($"Failed to parse level index from: {path}");
+            return false;
+        }
+
+        try
+        {
+            LevelJsonRoot root = JsonUtility.FromJson<LevelJsonRoot>(json.text);
+            if (root == null)
+            {
+                Debug.LogError($"JsonUtility returned null for: {path}");
+                return false;
+            }
+
+            int arrowsCount = root.arrows != null ? root.arrows.Count : 0;
+            int shootersCount = root.shooters != null ? root.shooters.Count : 0;
+            int conveyorsCount = root.conveyors != null ? root.conveyors.Count : 0;
+            Debug.Log($"Parsed: {path} | arrows={arrowsCount}, shooters={shootersCount}, conveyors={conveyorsCount}");
+
+            Bounds2Int bounds = inferGridSizeFromData ? ComputeBounds(root) : new Bounds2Int(Vector2Int.zero, new Vector2Int(defaultColumns, defaultRows));
+            Vector2Int originOffset = (inferGridSizeFromData && normalizeCoordinatesToZero) ? bounds.Min : Vector2Int.zero;
+            Vector2Int shooterOffset = normalizeShootersWithGrid ? originOffset : Vector2Int.zero;
+
+            Vector2Int size = inferGridSizeFromData
+                ? new Vector2Int(bounds.Size.x, bounds.Size.y)
+                : new Vector2Int(defaultColumns, defaultRows);
+
+            Debug.Log($"Grid: {path} | size={size.x}x{size.y}, originOffset=({originOffset.x},{originOffset.y}), shooterOffset=({shooterOffset.x},{shooterOffset.y}), shooterMode={shooterPositionMode}");
+
+            size.x = Mathf.Max(1, size.x);
+            size.y = Mathf.Max(1, size.y);
+
+            LevelConfig config = LoadOrCreateLevelConfig(soFolderPath, level);
+            if (config == null)
+            {
+                Debug.LogError($"Failed to load/create LevelConfig for level: {level}");
+                return false;
+            }
+
+            ApplyRootToConfig(config, level, size.x, size.y, root, originOffset, shooterOffset);
+            EditorUtility.SetDirty(config);
+            int outShooterCount = config.Gates != null ? config.Gates.Count : 0;
+            int outShooterDoubleCount = config.GatesDouble != null ? config.GatesDouble.Count : 0;
+            int outConveyorCount = 0;
+            List<ConveyorLine> outConveyors = config.GetConveyorLines();
+            for (int conveyorIndex = 0; conveyorIndex < outConveyors.Count; conveyorIndex++)
+            {
+                ConveyorLine conveyor = outConveyors[conveyorIndex];
+                if (conveyor?.Cells == null) continue;
+                outConveyorCount += conveyor.Cells.Count;
+            }
+
+            Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyors={outConveyors.Count}, outConveyorCells={outConveyorCount}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Convert failed: {path} - {e.Message}");
+            return false;
+        }
     }
 
     private void ApplyRootToConfig(LevelConfig config, int level, int columns, int rows, LevelJsonRoot root, Vector2Int originOffset, Vector2Int shooterOffset)
@@ -455,6 +584,7 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 }
 
                 if (line.Cells.Count == 0) continue;
+                NormalizeConveyorLine(line);
                 conveyorLines.Add(line);
             }
 
@@ -642,6 +772,72 @@ public class LevelJsonBatchConverterWindow : EditorWindow
         }
 
         return -1;
+    }
+
+    private static void NormalizeConveyorLine(ConveyorLine line)
+    {
+        if (line == null || line.Cells == null || line.Cells.Count < 2) return;
+
+        for (int i = 0; i < line.Cells.Count - 1; i++)
+        {
+            Vector2Int a = line.Cells[i];
+            Vector2Int b = line.Cells[i + 1];
+            int dx = b.x - a.x;
+            int dy = b.y - a.y;
+
+            Vector2Int? bridge = null;
+            if (dx == 0 && Mathf.Abs(dy) == 2)
+            {
+                bridge = new Vector2Int(a.x, a.y + (dy > 0 ? 1 : -1));
+            }
+            else if (dy == 0 && Mathf.Abs(dx) == 2)
+            {
+                bridge = new Vector2Int(a.x + (dx > 0 ? 1 : -1), a.y);
+            }
+            else if (Mathf.Abs(dx) == 1 && Mathf.Abs(dy) == 1)
+            {
+                Vector2Int candidateA = new Vector2Int(b.x, a.y);
+                Vector2Int candidateB = new Vector2Int(a.x, b.y);
+                bridge = ChooseBestBridgeCell(line.Cells, i, candidateA, candidateB);
+            }
+
+            if (!bridge.HasValue) continue;
+
+            line.Cells.Insert(i + 1, bridge.Value);
+            line.Types?.Insert(i + 1, 0);
+            line.Counters?.Insert(i + 1, 0);
+            line.IsHoles?.Insert(i + 1, false);
+            i++;
+        }
+    }
+
+    private static Vector2Int ChooseBestBridgeCell(List<Vector2Int> cells, int index, Vector2Int candidateA, Vector2Int candidateB)
+    {
+        int scoreA = ScoreBridgeCandidate(cells, index, candidateA);
+        int scoreB = ScoreBridgeCandidate(cells, index, candidateB);
+        return scoreB > scoreA ? candidateB : candidateA;
+    }
+
+    private static int ScoreBridgeCandidate(List<Vector2Int> cells, int index, Vector2Int candidate)
+    {
+        int score = 0;
+
+        if (index - 1 >= 0 && AreNeighborish(cells[index - 1], candidate))
+            score++;
+        if (AreNeighborish(cells[index], candidate))
+            score++;
+        if (index + 1 < cells.Count && AreNeighborish(candidate, cells[index + 1]))
+            score++;
+        if (index + 2 < cells.Count && AreNeighborish(candidate, cells[index + 2]))
+            score++;
+
+        return score;
+    }
+
+    private static bool AreNeighborish(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int d = b - a;
+        return Mathf.Max(Mathf.Abs(d.x), Mathf.Abs(d.y)) == 1;
     }
 
     private Vector3 GridToLocalPosition(float gridX, float gridY, int columns, int rows)
