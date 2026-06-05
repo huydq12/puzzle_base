@@ -173,6 +173,12 @@ public class ConveyorController : Singleton<ConveyorController>
     {
         Clear();
 
+        // A previous win/lose stops the conveyor loop. Starting a new level must
+        // restore the runtime state so queued inserts and slot movement resume.
+        _isRunning = true;
+        _isPaused = false;
+        _loseTriggered = false;
+
         if (trackSetups == null || trackSetups.Count == 0)
         {
             EnsureTrackObjects(0);

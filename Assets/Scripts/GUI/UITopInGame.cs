@@ -53,8 +53,15 @@ public class UITopInGame : BaseScreen
     private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
     private int _lastDisplayedCoin = int.MinValue;
     private int _lastDisplayedLevel = int.MinValue;
+    private int _lastHardAnimationLevel = int.MinValue;
+    private int _lastSuperHardAnimationLevel = int.MinValue;
     private LevelUiConfig _activeLevelUiConfig;
     private bool _settingButtonRegistered;
+    private Tween _hardObjectTween;
+    private Tween _superHardObjectTween;
+
+    [SerializeField] private GameObject HardObject;
+    [SerializeField] private GameObject SuperHardObject;
 
     private static LevelUiType GetLevelUiType(int level)
     {
@@ -82,8 +89,14 @@ public class UITopInGame : BaseScreen
     private void OnDisable()
     {
         SetConveyorWarning(false);
+        StopHardObjectAutoHide();
+        StopSuperHardObjectAutoHide();
+        if (HardObject != null) HardObject.SetActive(false);
+        if (SuperHardObject != null) SuperHardObject.SetActive(false);
         _lastDisplayedCoin = int.MinValue;
         _lastDisplayedLevel = int.MinValue;
+        _lastHardAnimationLevel = int.MinValue;
+        _lastSuperHardAnimationLevel = int.MinValue;
         _activeLevelUiConfig = null;
     }
 
@@ -197,13 +210,11 @@ public class UITopInGame : BaseScreen
 
         if (txt_level != null)
         {
-            string levelTypeText = "Level";
             Color levelColor = txt_level_type != null ? txt_level_type.color : txt_level.color;
 
             if (_activeLevelUiConfig != null)
             {
                 if (!string.IsNullOrEmpty(_activeLevelUiConfig.textLevelType))
-                    levelTypeText = _activeLevelUiConfig.textLevelType;
 
                 levelColor = _activeLevelUiConfig.colorLevel;
             }
@@ -211,7 +222,6 @@ public class UITopInGame : BaseScreen
             txt_level.text = level.ToString();
             if (txt_level_type != null)
             {
-                txt_level_type.text = levelTypeText;
                 txt_level_type.color = levelColor;
             }
         }
@@ -237,6 +247,7 @@ public class UITopInGame : BaseScreen
         _activeLevelUiConfig = GetLevelUiConfig(levelType);
 
         ApplyConfigVisibility(_activeLevelUiConfig);
+        ApplyDifficultyObjects(level, levelType);
 
         if (_activeLevelUiConfig == null) return;
 
@@ -266,6 +277,89 @@ public class UITopInGame : BaseScreen
         if (buttonSetting != null) buttonSetting.gameObject.SetActive(hasActiveConfig);
         if (imgLevel1 != null) imgLevel1.gameObject.SetActive(hasActiveConfig);
         if (imgLevel2 != null) imgLevel2.gameObject.SetActive(hasActiveConfig);
+    }
+
+    private void ApplyDifficultyObjects(int level, LevelUiType levelType)
+    {
+        if (levelType == LevelUiType.Hard)
+        {
+            if (_lastHardAnimationLevel != level)
+            {
+                _lastHardAnimationLevel = level;
+                ShowHardObjectOnce();
+            }
+        }
+        else
+        {
+            StopHardObjectAutoHide();
+            if (HardObject != null)
+                HardObject.SetActive(false);
+        }
+
+        if (levelType == LevelUiType.SuperHard)
+        {
+            if (_lastSuperHardAnimationLevel != level)
+            {
+                _lastSuperHardAnimationLevel = level;
+                ShowSuperHardObjectOnce();
+            }
+        }
+        else
+        {
+            StopSuperHardObjectAutoHide();
+            if (SuperHardObject != null)
+                SuperHardObject.SetActive(false);
+        }
+    }
+
+    private void ShowHardObjectOnce()
+    {
+        StopHardObjectAutoHide();
+        _hardObjectTween = PlayDifficultyObjectTween(HardObject, 1.12f);
+    }
+
+    private void StopHardObjectAutoHide()
+    {
+        _hardObjectTween?.Kill();
+        _hardObjectTween = null;
+    }
+
+    private void ShowSuperHardObjectOnce()
+    {
+        StopSuperHardObjectAutoHide();
+        _superHardObjectTween = PlayDifficultyObjectTween(SuperHardObject, 1.18f);
+    }
+
+    private void StopSuperHardObjectAutoHide()
+    {
+        _superHardObjectTween?.Kill();
+        _superHardObjectTween = null;
+    }
+
+    private Tween PlayDifficultyObjectTween(GameObject targetObject, float punchScale)
+    {
+        if (targetObject == null) return null;
+
+        Transform target = targetObject.transform;
+        targetObject.SetActive(true);
+
+        DOTween.Kill(target, false);
+        target.localScale = Vector3.zero;
+
+        Sequence seq = DOTween.Sequence().SetTarget(target);
+        seq.Append(target.DOScale(punchScale, 0.2f).SetEase(Ease.OutBack));
+        seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
+        seq.AppendInterval(0.4f);
+        seq.Append(target.DOScale(0f, 0.16f).SetEase(Ease.InBack));
+        seq.OnComplete(() =>
+        {
+            if (targetObject != null)
+            {
+                targetObject.SetActive(false);
+            }
+        });
+
+        return seq;
     }
 
     private void ApplyConfigSprites(LevelUiConfig activeConfig)

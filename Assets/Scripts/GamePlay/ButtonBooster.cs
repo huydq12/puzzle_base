@@ -82,6 +82,15 @@ public class ButtonBooster : MonoBehaviour
         BindButtons();
     }
 
+    private void OnDisable()
+    {
+        if (_timedHighlightRoutine != null)
+        {
+            StopCoroutine(_timedHighlightRoutine);
+            _timedHighlightRoutine = null;
+        }
+    }
+
 #if UNITY_EDITOR
     private void OnValidate()
     {
@@ -280,6 +289,7 @@ public class ButtonBooster : MonoBehaviour
         }
 
         if (persistent) return;
+        if (!isActiveAndEnabled) return;
 
         _timedHighlightRoutine = StartCoroutine(HideTimedHighlightAfterDelay(GetClipLength(_timedHighlightsAnimation, HighlightClip)));
     }
