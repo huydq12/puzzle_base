@@ -358,27 +358,45 @@ public static class LevelDatabase
             }
         }
 
-        if (dto.conveyorLine != null)
+        List<ConveyorLine> conveyorLines = new List<ConveyorLine>();
+
+        void AddConveyorLine(ConveyorLineDto lineDto)
         {
             var cl = new ConveyorLine
             {
                 Cells = new List<Vector2Int>(),
-                Types = dto.conveyorLine.types != null ? new List<int>(dto.conveyorLine.types) : new List<int>(),
-                Counters = dto.conveyorLine.counters != null ? new List<int>(dto.conveyorLine.counters) : new List<int>(),
-                IsHoles = dto.conveyorLine.isHoles != null ? new List<bool>(dto.conveyorLine.isHoles) : new List<bool>()
+                Types = lineDto.types != null ? new List<int>(lineDto.types) : new List<int>(),
+                Counters = lineDto.counters != null ? new List<int>(lineDto.counters) : new List<int>(),
+                IsHoles = lineDto.isHoles != null ? new List<bool>(lineDto.isHoles) : new List<bool>()
             };
 
-            if (dto.conveyorLine.cells != null)
+            if (lineDto.cells != null)
             {
-                for (int i = 0; i < dto.conveyorLine.cells.Count; i++)
+                for (int i = 0; i < lineDto.cells.Count; i++)
                 {
-                    var cell = dto.conveyorLine.cells[i];
+                    var cell = lineDto.cells[i];
                     cl.Cells.Add(new Vector2Int(cell.x, cell.y));
                 }
             }
 
-            cfg.ConveyorLine = cl;
+            conveyorLines.Add(cl);
         }
+
+        if (dto.conveyorLines != null && dto.conveyorLines.Count > 0)
+        {
+            for (int i = 0; i < dto.conveyorLines.Count; i++)
+            {
+                ConveyorLineDto lineDto = dto.conveyorLines[i];
+                if (lineDto == null) continue;
+                AddConveyorLine(lineDto);
+            }
+        }
+        else if (dto.conveyorLine != null)
+        {
+            AddConveyorLine(dto.conveyorLine);
+        }
+
+        cfg.SetConveyorLines(conveyorLines);
 
         if (dto.camera != null)
         {

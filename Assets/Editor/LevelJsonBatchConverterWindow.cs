@@ -183,8 +183,16 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                 EditorUtility.SetDirty(config);
                 int outShooterCount = config.Gates != null ? config.Gates.Count : 0;
                 int outShooterDoubleCount = config.GatesDouble != null ? config.GatesDouble.Count : 0;
-                int outConveyorCount = (config.ConveyorLine != null && config.ConveyorLine.Cells != null) ? config.ConveyorLine.Cells.Count : 0;
-                Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyorCells={outConveyorCount}");
+                int outConveyorCount = 0;
+                List<ConveyorLine> outConveyors = config.GetConveyorLines();
+                for (int conveyorIndex = 0; conveyorIndex < outConveyors.Count; conveyorIndex++)
+                {
+                    ConveyorLine conveyor = outConveyors[conveyorIndex];
+                    if (conveyor?.Cells == null) continue;
+                    outConveyorCount += conveyor.Cells.Count;
+                }
+
+                Debug.Log($"Converted: {path} -> {AssetDatabase.GetAssetPath(config)} | outGates={outShooterCount}, outGatesDouble={outShooterDoubleCount}, outConveyors={outConveyors.Count}, outConveyorCells={outConveyorCount}");
                 converted++;
             }
             catch (Exception e)
@@ -411,22 +419,22 @@ public class LevelJsonBatchConverterWindow : EditorWindow
             }
         }
 
-        if (root.conveyors != null && root.conveyors.Count > 0 && root.conveyors[0] != null)
+        if (root.conveyors != null && root.conveyors.Count > 0)
         {
-            if (config.ConveyorLine == null) config.ConveyorLine = new ConveyorLine();
-            if (config.ConveyorLine.Cells == null) config.ConveyorLine.Cells = new List<Vector2Int>();
-            config.ConveyorLine.Cells.Clear();
-            if (config.ConveyorLine.Types == null) config.ConveyorLine.Types = new List<int>();
-            if (config.ConveyorLine.Counters == null) config.ConveyorLine.Counters = new List<int>();
-            if (config.ConveyorLine.IsHoles == null) config.ConveyorLine.IsHoles = new List<bool>();
-            config.ConveyorLine.Types.Clear();
-            config.ConveyorLine.Counters.Clear();
-            config.ConveyorLine.IsHoles.Clear();
+            List<ConveyorLine> conveyorLines = new List<ConveyorLine>();
 
             for (int c = 0; c < root.conveyors.Count; c++)
             {
                 LevelJsonConveyor conveyor = root.conveyors[c];
                 if (conveyor == null || conveyor.conveyorNodes == null) continue;
+
+                ConveyorLine line = new ConveyorLine
+                {
+                    Cells = new List<Vector2Int>(),
+                    Types = new List<int>(),
+                    Counters = new List<int>(),
+                    IsHoles = new List<bool>()
+                };
 
                 for (int n = 0; n < conveyor.conveyorNodes.Count; n++)
                 {
@@ -435,37 +443,38 @@ public class LevelJsonBatchConverterWindow : EditorWindow
                     int x = Mathf.RoundToInt(node.position.x) - originOffset.x;
                     int y = Mathf.RoundToInt(node.position.z) - originOffset.y;
                     Vector2Int cell = new Vector2Int(x, y);
-                    config.ConveyorLine.Cells.Add(cell);
-                    config.ConveyorLine.IsHoles.Add(node.isHole);
-                    config.ConveyorLine.Counters.Add(node.counter);
-                    config.ConveyorLine.Types.Add(node.type);
+                    line.Cells.Add(cell);
+                    line.IsHoles.Add(node.isHole);
+                    line.Counters.Add(node.counter);
+                    line.Types.Add(node.type);
 
                     if (x >= 0 && x < columns && y >= 0 && y < rows)
                     {
                         config.Cells[x, y].CellType = GridCellType.Conveyor;
                     }
                 }
+
+                if (line.Cells.Count == 0) continue;
+                conveyorLines.Add(line);
             }
 
-            if (config.ConveyorLine.Cells.Count == 0)
+            for (int conveyorIndex = 0; conveyorIndex < conveyorLines.Count; conveyorIndex++)
             {
-                config.ConveyorLine = null;
+                ConveyorLine line = conveyorLines[conveyorIndex];
+                int count = line.Cells.Count;
+                while (line.IsHoles.Count < count) line.IsHoles.Add(false);
+                while (line.Counters.Count < count) line.Counters.Add(0);
+                while (line.Types.Count < count) line.Types.Add(0);
+                if (line.IsHoles.Count > count) line.IsHoles.RemoveRange(count, line.IsHoles.Count - count);
+                if (line.Counters.Count > count) line.Counters.RemoveRange(count, line.Counters.Count - count);
+                if (line.Types.Count > count) line.Types.RemoveRange(count, line.Types.Count - count);
             }
-            else
-            {
-                // Keep metadata lists aligned with Cells.
-                int count = config.ConveyorLine.Cells.Count;
-                while (config.ConveyorLine.IsHoles.Count < count) config.ConveyorLine.IsHoles.Add(false);
-                while (config.ConveyorLine.Counters.Count < count) config.ConveyorLine.Counters.Add(0);
-                while (config.ConveyorLine.Types.Count < count) config.ConveyorLine.Types.Add(0);
-                if (config.ConveyorLine.IsHoles.Count > count) config.ConveyorLine.IsHoles.RemoveRange(count, config.ConveyorLine.IsHoles.Count - count);
-                if (config.ConveyorLine.Counters.Count > count) config.ConveyorLine.Counters.RemoveRange(count, config.ConveyorLine.Counters.Count - count);
-                if (config.ConveyorLine.Types.Count > count) config.ConveyorLine.Types.RemoveRange(count, config.ConveyorLine.Types.Count - count);
-            }
+
+            config.SetConveyorLines(conveyorLines);
         }
         else
         {
-            config.ConveyorLine = null;
+            config.SetConveyorLines(null);
         }
 
         if (root.shooters != null)

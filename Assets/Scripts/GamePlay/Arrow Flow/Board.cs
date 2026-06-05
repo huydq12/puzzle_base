@@ -1352,51 +1352,13 @@ public class Board : Singleton<Board>
     {
         _conveyorTunnelBlockCounts.Clear();
         _activeTunnels.Clear();
-        if (_currentConfig.ConveyorLine == null || _currentConfig.ConveyorLine.Cells.IsNullOrEmpty()) return;
+
+        List<ConveyorLine> conveyorLines = _currentConfig.GetConveyorLines();
+        if (conveyorLines == null || conveyorLines.Count == 0) return;
+
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
-        var conveyorCells = FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows);
-        if (conveyorCells.Count < 3)
-        {
-            Debug.LogWarning("ConveyorLine has too few valid cells; skipping conveyor setup.");
-            return;
-        }
 
-        bool isClosedLoop = IsClosedNeighborLoop(conveyorCells);
-        bool isOpenChain = IsNeighborChain(conveyorCells);
-
-        if (!isClosedLoop && !isOpenChain)
-        {
-            Debug.LogWarning("ConveyorLine cells are not connected in serialized order; skipping conveyor setup instead of auto-connecting them.");
-            return;
-        }
-
-        var orderedCells = conveyorCells;
-        if (orderedCells == null || orderedCells.Count < 3)
-        {
-            Debug.LogWarning("ConveyorLine cannot be used as a valid path; skipping conveyor setup.");
-            return;
-        }
-
-        // Ensure runtime grid cells are marked as Conveyor even if the serialized Cells[,] is out of sync.
-        for (int i = 0; i < orderedCells.Count; i++)
-        {
-            GridCell cell = GetCellAt(orderedCells[i]);
-            if (cell != null)
-                cell.CellType = GridCellType.Conveyor;
-        }
-
-        Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(_currentConfig.ConveyorLine);
-
-        List<Vector2> conveyorPolygon = new();
-        foreach (var c in orderedCells)
-        {
-            GridCell cell = GetCellAt(c);
-            if (cell == null) continue;
-
-            Vector3 p = cell.transform.position;
-            conveyorPolygon.Add(new Vector2(p.x, p.z));
-        }
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < columns; col++)
@@ -1407,105 +1369,136 @@ public class Board : Singleton<Board>
             }
         }
 
-        List<Vector3> allPositions = new();
         float cornerOffset = _cellSize * 0.45f;
+        List<ConveyorController.TrackSplineSetup> trackSetups = new();
 
-        for (int i = 0; i < orderedCells.Count; i++)
+        for (int conveyorIndex = 0; conveyorIndex < conveyorLines.Count; conveyorIndex++)
         {
-            bool openEndpoint = !isClosedLoop && (i == 0 || i == orderedCells.Count - 1);
-            if (openEndpoint)
+            ConveyorLine conveyorLine = conveyorLines[conveyorIndex];
+            if (conveyorLine == null || conveyorLine.Cells.IsNullOrEmpty()) continue;
+
+            List<Vector2Int> conveyorCells = FilterInBoundsDistinct(conveyorLine.Cells, columns, rows);
+            if (conveyorCells.Count < 3)
             {
-                GridCell endpointCell = GetCellAt(orderedCells[i]);
-                if (endpointCell == null)
+                Debug.LogWarning($"ConveyorLine[{conveyorIndex}] has too few valid cells; skipping conveyor setup.");
+                continue;
+            }
+
+            bool isClosedLoop = IsClosedNeighborLoop(conveyorCells);
+            bool isOpenChain = IsNeighborChain(conveyorCells);
+
+            if (!isClosedLoop && !isOpenChain)
+            {
+                Debug.LogWarning($"ConveyorLine[{conveyorIndex}] cells are not connected in serialized order; skipping conveyor setup instead of auto-connecting them.");
+                continue;
+            }
+
+            List<Vector2Int> orderedCells = conveyorCells;
+            for (int i = 0; i < orderedCells.Count; i++)
+            {
+                GridCell cell = GetCellAt(orderedCells[i]);
+                if (cell != null)
+                    cell.CellType = GridCellType.Conveyor;
+            }
+
+            Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(conveyorLine);
+            List<Vector3> allPositions = new();
+            bool invalidPath = false;
+
+            for (int i = 0; i < orderedCells.Count; i++)
+            {
+                bool openEndpoint = !isClosedLoop && (i == 0 || i == orderedCells.Count - 1);
+                if (openEndpoint)
                 {
-                    Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
-                    return;
+                    GridCell endpointCell = GetCellAt(orderedCells[i]);
+                    if (endpointCell == null)
+                    {
+                        invalidPath = true;
+                        break;
+                    }
+
+                    allPositions.Add(endpointCell.transform.position);
+                    continue;
                 }
 
-                allPositions.Add(endpointCell.transform.position);
+                int prevIndex = isClosedLoop ? (i - 1 + orderedCells.Count) % orderedCells.Count : i - 1;
+                int nextIndex = isClosedLoop ? (i + 1) % orderedCells.Count : i + 1;
+                GridCell prevCell = GetCellAt(orderedCells[prevIndex]);
+                GridCell currCell = GetCellAt(orderedCells[i]);
+                GridCell nextCell = GetCellAt(orderedCells[nextIndex]);
+
+                if (prevCell == null || currCell == null || nextCell == null)
+                {
+                    invalidPath = true;
+                    break;
+                }
+
+                Vector3 prev = prevCell.transform.position;
+                Vector3 curr = currCell.transform.position;
+                Vector3 next = nextCell.transform.position;
+
+                if (IsRightAngle(prev, curr, next))
+                {
+                    Vector3 dirIn = (curr - prev).normalized;
+                    Vector3 dirOut = (next - curr).normalized;
+
+                    allPositions.Add(curr - dirIn * cornerOffset);
+                    allPositions.Add(curr + dirOut * cornerOffset);
+                }
+                else
+                {
+                    allPositions.Add(curr);
+                }
+            }
+
+            if (invalidPath || allPositions.Count < 2)
+            {
+                Debug.LogWarning($"ConveyorLine[{conveyorIndex}] contains invalid cell references; skipping conveyor setup.");
                 continue;
             }
 
-            int prevIndex = isClosedLoop ? (i - 1 + orderedCells.Count) % orderedCells.Count : i - 1;
-            int nextIndex = isClosedLoop ? (i + 1) % orderedCells.Count : i + 1;
-            GridCell prevCell = GetCellAt(orderedCells[prevIndex]);
-            GridCell currCell = GetCellAt(orderedCells[i]);
-            GridCell nextCell = GetCellAt(orderedCells[nextIndex]);
-
-            if (prevCell == null || currCell == null || nextCell == null)
+            float totalDistance = 0f;
+            int segmentCount = isClosedLoop ? allPositions.Count : allPositions.Count - 1;
+            for (int i = 0; i < segmentCount; i++)
             {
-                Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
-                return;
+                int nextIdx = (i + 1) % allPositions.Count;
+                totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
             }
 
-            Vector3 prev = prevCell.transform.position;
-            Vector3 curr = currCell.transform.position;
-            Vector3 next = nextCell.transform.position;
+            float avgSegmentLength = totalDistance / allPositions.Count;
+            List<SplinePoint> points = new();
 
-            if (IsRightAngle(prev, curr, next))
+            for (int i = 0; i < allPositions.Count; i++)
             {
-                Vector3 dirIn = (curr - prev).normalized;
-                Vector3 dirOut = (next - curr).normalized;
+                Vector3 curr = allPositions[i];
+                points.Add(CreatePoint(curr));
 
-                allPositions.Add(curr - dirIn * cornerOffset);
-                allPositions.Add(curr + dirOut * cornerOffset);
+                if (!isClosedLoop && i == allPositions.Count - 1)
+                    continue;
+
+                Vector3 next = allPositions[(i + 1) % allPositions.Count];
+                float distance = Vector3.Distance(curr, next);
+                int numMidPoints = Mathf.RoundToInt(distance / avgSegmentLength) - 1;
+
+                for (int j = 1; j <= numMidPoints; j++)
+                {
+                    float t = (float)j / (numMidPoints + 1);
+                    points.Add(CreatePoint(Vector3.Lerp(curr, next, t)));
+                }
             }
-            else
-            {
-                allPositions.Add(curr);
-            }
+
+            trackSetups.Add(new ConveyorController.TrackSplineSetup(points.ToArray(), isClosedLoop));
+
+            if (!isClosedLoop)
+                SpawnOpenConveyorEndpoints(orderedCells);
+
+            SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
         }
 
-        float totalDistance = 0f;
-        int segmentCount = isClosedLoop ? allPositions.Count : allPositions.Count - 1;
-        for (int i = 0; i < segmentCount; i++)
-        {
-            int nextIdx = (i + 1) % allPositions.Count;
-            totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
-        }
-        if (allPositions.Count < 2)
-        {
-            Debug.LogWarning("ConveyorLine produced too few spline points; skipping conveyor setup.");
+        if (ConveyorController.Instance == null)
             return;
-        }
 
-        float avgSegmentLength = totalDistance / allPositions.Count;
-
-        List<SplinePoint> points = new();
-
-        for (int i = 0; i < allPositions.Count; i++)
-        {
-            Vector3 curr = allPositions[i];
-
-            points.Add(CreatePoint(curr));
-
-            if (!isClosedLoop && i == allPositions.Count - 1)
-                continue;
-
-            Vector3 next = allPositions[(i + 1) % allPositions.Count];
-
-            float distance = Vector3.Distance(curr, next);
-            int numMidPoints = Mathf.RoundToInt(distance / avgSegmentLength) - 1;
-
-            for (int j = 1; j <= numMidPoints; j++)
-            {
-                float t = (float)j / (numMidPoints + 1);
-                points.Add(CreatePoint(Vector3.Lerp(curr, next, t)));
-            }
-        }
-
-        ConveyorController.Instance.SplineComputer.SetPoints(points.ToArray());
-        if (isClosedLoop)
-            ConveyorController.Instance.SplineComputer.Close();
-        else
-            ConveyorController.Instance.SplineComputer.Break();
-        ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
-        ConveyorController.Instance.SetupFromSpline();
-
-        if (!isClosedLoop)
-            SpawnOpenConveyorEndpoints(orderedCells);
-
-        SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
+        ConveyorController.Instance.SetupTracks(trackSetups);
     }
 
     private void SpawnOpenConveyorEndpoints(List<Vector2Int> orderedCells)

@@ -23,6 +23,7 @@ public class LevelConfigDto
     public List<ElevatorDataDto> elevators = new();
     public List<LineDoorDataDto> lineDoors = new();
     public ConveyorLineDto conveyorLine;
+    public List<ConveyorLineDto> conveyorLines = new();
     public CameraSetupDto camera;
 }
 

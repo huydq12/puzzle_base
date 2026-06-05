@@ -260,7 +260,7 @@ public static class LevelConfigShiftRowTool
         ShiftColorLines(config.ColorLines);
         ShiftElevators(config.Elevators);
         ShiftLineDoors(config.LineDoors);
-        ShiftConveyor(config.ConveyorLine);
+        ForEachConveyor(config, ShiftConveyor);
 
         return true;
     }
@@ -280,7 +280,7 @@ public static class LevelConfigShiftRowTool
         ShiftColorLinesRight(config.ColorLines);
         ShiftElevatorsRight(config.Elevators);
         ShiftLineDoorsRight(config.LineDoors);
-        ShiftConveyorRight(config.ConveyorLine);
+        ForEachConveyor(config, ShiftConveyorRight);
 
         return true;
     }
@@ -330,7 +330,7 @@ public static class LevelConfigShiftRowTool
         InsertEmptyRowIntoColorLines(config.ColorLines, insertAtY);
         InsertEmptyRowIntoElevators(config.Elevators, insertAtY);
         InsertEmptyRowIntoLineDoors(config.LineDoors, insertAtY);
-        InsertEmptyRowIntoConveyor(config.ConveyorLine, insertAtY);
+        ForEachConveyor(config, conveyor => InsertEmptyRowIntoConveyor(conveyor, insertAtY));
 
         return true;
     }
@@ -380,7 +380,7 @@ public static class LevelConfigShiftRowTool
         InsertEmptyColumnIntoColorLines(config.ColorLines, insertAtX);
         InsertEmptyColumnIntoElevators(config.Elevators, insertAtX);
         InsertEmptyColumnIntoLineDoors(config.LineDoors, insertAtX);
-        InsertEmptyColumnIntoConveyor(config.ConveyorLine, insertAtX);
+        ForEachConveyor(config, conveyor => InsertEmptyColumnIntoConveyor(conveyor, insertAtX));
 
         return true;
     }
@@ -443,7 +443,7 @@ public static class LevelConfigShiftRowTool
         RemoveRowFromColorLines(config.ColorLines, removeAtY);
         RemoveRowFromElevators(config.Elevators, removeAtY);
         RemoveRowFromLineDoors(config.LineDoors, removeAtY);
-        RemoveRowFromConveyor(config.ConveyorLine, removeAtY);
+        ForEachConveyor(config, conveyor => RemoveRowFromConveyor(conveyor, removeAtY));
 
         return true;
     }
@@ -492,7 +492,7 @@ public static class LevelConfigShiftRowTool
         RemoveColumnFromColorLines(config.ColorLines, removeAtX);
         RemoveColumnFromElevators(config.Elevators, removeAtX);
         RemoveColumnFromLineDoors(config.LineDoors, removeAtX);
-        RemoveColumnFromConveyor(config.ConveyorLine, removeAtX);
+        ForEachConveyor(config, conveyor => RemoveColumnFromConveyor(conveyor, removeAtX));
 
         return true;
     }
@@ -525,24 +525,29 @@ public static class LevelConfigShiftRowTool
             }
         }
 
-        if (config.ConveyorLine == null || config.ConveyorLine.Cells == null) return changed;
-
-        for (int i = 0; i < config.ConveyorLine.Cells.Count; i++)
+        List<ConveyorLine> conveyors = config.GetConveyorLines();
+        for (int conveyorIndex = 0; conveyorIndex < conveyors.Count; conveyorIndex++)
         {
-            Vector2Int p = config.ConveyorLine.Cells[i];
-            if (p.x < 0 || p.x >= config.Columns || p.y < 0 || p.y >= config.Rows) continue;
-            GridCellData cell = config.Cells[p.x, p.y];
-            if (cell == null)
-            {
-                config.Cells[p.x, p.y] = new GridCellData { CellType = GridCellType.Conveyor };
-                changed = true;
-                continue;
-            }
+            ConveyorLine conveyor = conveyors[conveyorIndex];
+            if (conveyor == null || conveyor.Cells == null) continue;
 
-            if (cell.CellType != GridCellType.Conveyor)
+            for (int i = 0; i < conveyor.Cells.Count; i++)
             {
-                cell.CellType = GridCellType.Conveyor;
-                changed = true;
+                Vector2Int p = conveyor.Cells[i];
+                if (p.x < 0 || p.x >= config.Columns || p.y < 0 || p.y >= config.Rows) continue;
+                GridCellData cell = config.Cells[p.x, p.y];
+                if (cell == null)
+                {
+                    config.Cells[p.x, p.y] = new GridCellData { CellType = GridCellType.Conveyor };
+                    changed = true;
+                    continue;
+                }
+
+                if (cell.CellType != GridCellType.Conveyor)
+                {
+                    cell.CellType = GridCellType.Conveyor;
+                    changed = true;
+                }
             }
         }
 
@@ -590,9 +595,11 @@ public static class LevelConfigShiftRowTool
             }
         }
 
-        if (config.ConveyorLine != null && config.ConveyorLine.Cells != null && config.ConveyorLine.Cells.Count >= 2)
+        List<ConveyorLine> conveyors = config.GetConveyorLines();
+        for (int conveyorIndex = 0; conveyorIndex < conveyors.Count; conveyorIndex++)
         {
-            ConveyorLine conveyor = config.ConveyorLine;
+            ConveyorLine conveyor = conveyors[conveyorIndex];
+            if (conveyor == null || conveyor.Cells == null || conveyor.Cells.Count < 2) continue;
 
             bool syncTypes = conveyor.Types != null && conveyor.Types.Count == conveyor.Cells.Count;
             bool syncCounters = conveyor.Counters != null && conveyor.Counters.Count == conveyor.Cells.Count;
@@ -1344,6 +1351,19 @@ public static class LevelConfigShiftRowTool
             Vector2Int p = conveyor.Cells[i];
             p.x += 1;
             conveyor.Cells[i] = p;
+        }
+    }
+
+    private static void ForEachConveyor(LevelConfig config, System.Action<ConveyorLine> action)
+    {
+        if (config == null || action == null) return;
+
+        List<ConveyorLine> conveyors = config.GetConveyorLines();
+        for (int i = 0; i < conveyors.Count; i++)
+        {
+            ConveyorLine conveyor = conveyors[i];
+            if (conveyor == null) continue;
+            action(conveyor);
         }
     }
 }

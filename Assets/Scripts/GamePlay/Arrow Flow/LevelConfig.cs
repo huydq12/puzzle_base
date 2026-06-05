@@ -38,7 +38,30 @@ public class LevelConfig : SerializedScriptableObject
     public List<LineDoorData> LineDoors = new List<LineDoorData>();
     [InlineProperty]
     public ConveyorLine ConveyorLine;
+    [InlineProperty]
+    public List<ConveyorLine> ConveyorLines = new List<ConveyorLine>();
     public CameraSetupData Camera;
+
+    public List<ConveyorLine> GetConveyorLines()
+    {
+        if (ConveyorLines != null && ConveyorLines.Count > 0)
+            return ConveyorLines;
+
+        if (ConveyorLine != null)
+            return new List<ConveyorLine> { ConveyorLine };
+
+        return new List<ConveyorLine>();
+    }
+
+    public void SetConveyorLines(List<ConveyorLine> lines, bool syncLegacyPrimary = true)
+    {
+        ConveyorLines = lines ?? new List<ConveyorLine>();
+
+        if (!syncLegacyPrimary)
+            return;
+
+        ConveyorLine = ConveyorLines.Count > 0 ? ConveyorLines[0] : null;
+    }
 
 #if UNITY_EDITOR
     private void ResizeGridCells()

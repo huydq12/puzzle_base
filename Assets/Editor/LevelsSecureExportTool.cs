@@ -155,6 +155,7 @@ public static class LevelsSecureExportTool
             elevators = new List<ElevatorDataDto>(),
             lineDoors = new List<LineDoorDataDto>(),
             conveyorLine = null,
+            conveyorLines = new List<ConveyorLineDto>(),
             camera = new CameraSetupDto
             {
                 enabled = config.Camera.Enabled,
@@ -386,9 +387,12 @@ public static class LevelsSecureExportTool
             }
         }
 
-        if (config.ConveyorLine != null && config.ConveyorLine.Cells != null && config.ConveyorLine.Cells.Count > 0)
+        List<ConveyorLine> conveyorLines = config.GetConveyorLines();
+        for (int conveyorIndex = 0; conveyorIndex < conveyorLines.Count; conveyorIndex++)
         {
-            var cl = config.ConveyorLine;
+            var cl = conveyorLines[conveyorIndex];
+            if (cl == null || cl.Cells == null || cl.Cells.Count == 0) continue;
+
             var clDto = new ConveyorLineDto
             {
                 cells = new List<Vec2IntDto>(),
@@ -403,8 +407,11 @@ public static class LevelsSecureExportTool
                 clDto.cells.Add(new Vec2IntDto { x = cell.x, y = cell.y });
             }
 
-            dto.conveyorLine = clDto;
+            dto.conveyorLines.Add(clDto);
         }
+
+        if (dto.conveyorLines.Count > 0)
+            dto.conveyorLine = dto.conveyorLines[0];
 
         return dto;
     }
