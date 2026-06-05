@@ -61,15 +61,21 @@ public class UITopInGame : BaseScreen
     private Tween _superHardObjectTween;
 
     [SerializeField] private GameObject HardObject;
+    [SerializeField] private Animator ani_hard;
     [SerializeField] private GameObject SuperHardObject;
+    [SerializeField] private Animator ani_super_hard;
+    [SerializeField] private float difficultyPopupHoldDuration = 0.2f;
+
+    private const string PopupOpenStateName = "Open";
+    private const string PopupCloseStateName = "Close";
 
     private static LevelUiType GetLevelUiType(int level)
     {
-        if (level > 0 && level % 10 == 0) return LevelUiType.SuperHard;
-        if (level == 10) return LevelUiType.SuperHard;
-        if (level < 18) return LevelUiType.Normal;
         int lastDigit = Mathf.Abs(level) % 10;
-        return (lastDigit == 3 || lastDigit == 8) ? LevelUiType.Hard : LevelUiType.Normal;
+        if (level >= 18 && lastDigit == 8) return LevelUiType.SuperHard;
+        if (level > 0 && level % 10 == 0) return LevelUiType.Hard;
+        if (level >= 18 && lastDigit == 3) return LevelUiType.Hard;
+        return LevelUiType.Normal;
     }
 
     private void Start()
@@ -210,20 +216,7 @@ public class UITopInGame : BaseScreen
 
         if (txt_level != null)
         {
-            Color levelColor = txt_level_type != null ? txt_level_type.color : txt_level.color;
-
-            if (_activeLevelUiConfig != null)
-            {
-                if (!string.IsNullOrEmpty(_activeLevelUiConfig.textLevelType))
-
-                levelColor = _activeLevelUiConfig.colorLevel;
-            }
-
             txt_level.text = level.ToString();
-            if (txt_level_type != null)
-            {
-                txt_level_type.color = levelColor;
-            }
         }
     }
 
@@ -315,7 +308,7 @@ public class UITopInGame : BaseScreen
     private void ShowHardObjectOnce()
     {
         StopHardObjectAutoHide();
-        _hardObjectTween = PlayDifficultyObjectTween(HardObject, 1.12f);
+        _hardObjectTween = PlayDifficultyObjectAnimation(HardObject, ani_hard);
     }
 
     private void StopHardObjectAutoHide()
@@ -327,7 +320,7 @@ public class UITopInGame : BaseScreen
     private void ShowSuperHardObjectOnce()
     {
         StopSuperHardObjectAutoHide();
-        _superHardObjectTween = PlayDifficultyObjectTween(SuperHardObject, 1.18f);
+        _superHardObjectTween = PlayDifficultyObjectAnimation(SuperHardObject, ani_super_hard);
     }
 
     private void StopSuperHardObjectAutoHide()
@@ -336,30 +329,52 @@ public class UITopInGame : BaseScreen
         _superHardObjectTween = null;
     }
 
-    private Tween PlayDifficultyObjectTween(GameObject targetObject, float punchScale)
+    private Tween PlayDifficultyObjectAnimation(GameObject targetObject, Animator animator)
     {
         if (targetObject == null) return null;
-
-        Transform target = targetObject.transform;
         targetObject.SetActive(true);
 
-        DOTween.Kill(target, false);
-        target.localScale = Vector3.zero;
+        if (animator == null)
+            return null;
 
-        Sequence seq = DOTween.Sequence().SetTarget(target);
-        seq.Append(target.DOScale(punchScale, 0.2f).SetEase(Ease.OutBack));
-        seq.Append(target.DOScale(1f, 0.12f).SetEase(Ease.InOutQuad));
-        seq.AppendInterval(0.4f);
-        seq.Append(target.DOScale(0f, 0.16f).SetEase(Ease.InBack));
+        float openDuration = GetAnimatorClipLength(animator, PopupOpenStateName);
+        float closeDuration = GetAnimatorClipLength(animator, PopupCloseStateName);
+
+        animator.Rebind();
+        animator.Update(0f);
+        animator.Play(PopupOpenStateName, 0, 0f);
+
+        Sequence seq = DOTween.Sequence().SetTarget(targetObject);
+        seq.AppendInterval(Mathf.Max(0f, openDuration) + difficultyPopupHoldDuration);
+        seq.AppendCallback(() =>
+        {
+            if (animator != null && targetObject.activeInHierarchy)
+                animator.Play(PopupCloseStateName, 0, 0f);
+        });
+        seq.AppendInterval(Mathf.Max(0f, closeDuration));
         seq.OnComplete(() =>
         {
             if (targetObject != null)
-            {
                 targetObject.SetActive(false);
-            }
         });
 
         return seq;
+    }
+
+    private static float GetAnimatorClipLength(Animator animator, string clipName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null || string.IsNullOrEmpty(clipName))
+            return 0f;
+
+        var clips = animator.runtimeAnimatorController.animationClips;
+        for (int i = 0; i < clips.Length; i++)
+        {
+            AnimationClip clip = clips[i];
+            if (clip != null && clip.name == clipName)
+                return clip.length;
+        }
+
+        return 0f;
     }
 
     private void ApplyConfigSprites(LevelUiConfig activeConfig)

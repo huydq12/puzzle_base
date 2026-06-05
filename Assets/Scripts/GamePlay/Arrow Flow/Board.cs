@@ -1402,15 +1402,16 @@ public class Board : Singleton<Board>
             }
 
             Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(conveyorLine);
+            List<Vector2Int> splineCells = SimplifyConveyorSplineCells(orderedCells, isClosedLoop);
             List<Vector3> allPositions = new();
             bool invalidPath = false;
 
-            for (int i = 0; i < orderedCells.Count; i++)
+            for (int i = 0; i < splineCells.Count; i++)
             {
-                bool openEndpoint = !isClosedLoop && (i == 0 || i == orderedCells.Count - 1);
+                bool openEndpoint = !isClosedLoop && (i == 0 || i == splineCells.Count - 1);
                 if (openEndpoint)
                 {
-                    GridCell endpointCell = GetCellAt(orderedCells[i]);
+                    GridCell endpointCell = GetCellAt(splineCells[i]);
                     if (endpointCell == null)
                     {
                         invalidPath = true;
@@ -1421,11 +1422,11 @@ public class Board : Singleton<Board>
                     continue;
                 }
 
-                int prevIndex = isClosedLoop ? (i - 1 + orderedCells.Count) % orderedCells.Count : i - 1;
-                int nextIndex = isClosedLoop ? (i + 1) % orderedCells.Count : i + 1;
-                GridCell prevCell = GetCellAt(orderedCells[prevIndex]);
-                GridCell currCell = GetCellAt(orderedCells[i]);
-                GridCell nextCell = GetCellAt(orderedCells[nextIndex]);
+                int prevIndex = isClosedLoop ? (i - 1 + splineCells.Count) % splineCells.Count : i - 1;
+                int nextIndex = isClosedLoop ? (i + 1) % splineCells.Count : i + 1;
+                GridCell prevCell = GetCellAt(splineCells[prevIndex]);
+                GridCell currCell = GetCellAt(splineCells[i]);
+                GridCell nextCell = GetCellAt(splineCells[nextIndex]);
 
                 if (prevCell == null || currCell == null || nextCell == null)
                 {
@@ -1808,22 +1809,23 @@ public class Board : Singleton<Board>
     {
         List<Vector3> allPositions = new();
         if (cells == null || cells.Count < 2) return allPositions;
+        List<Vector2Int> splineCells = SimplifyConveyorSplineCells(cells, false);
 
-        for (int i = 0; i < cells.Count; i++)
+        for (int i = 0; i < splineCells.Count; i++)
         {
-            GridCell currCell = GetCellAt(cells[i]);
+            GridCell currCell = GetCellAt(splineCells[i]);
             if (currCell == null) continue;
 
             Vector3 curr = currCell.transform.position;
 
-            if (i == 0 || i == cells.Count - 1)
+            if (i == 0 || i == splineCells.Count - 1)
             {
                 allPositions.Add(curr);
                 continue;
             }
 
-            GridCell prevCell = GetCellAt(cells[i - 1]);
-            GridCell nextCell = GetCellAt(cells[i + 1]);
+            GridCell prevCell = GetCellAt(splineCells[i - 1]);
+            GridCell nextCell = GetCellAt(splineCells[i + 1]);
             if (prevCell == null || nextCell == null)
             {
                 allPositions.Add(curr);
@@ -1843,6 +1845,51 @@ public class Board : Singleton<Board>
         }
 
         return allPositions;
+    }
+
+    private static List<Vector2Int> SimplifyConveyorSplineCells(List<Vector2Int> cells, bool isClosedLoop)
+    {
+        if (cells == null || cells.Count < 3)
+            return cells ?? new List<Vector2Int>();
+
+        List<Vector2Int> simplified = new(cells);
+        bool changed;
+        do
+        {
+            changed = false;
+            int startIndex = isClosedLoop ? 0 : 1;
+            int endIndex = isClosedLoop ? simplified.Count : simplified.Count - 1;
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                int prevIndex = (i - 1 + simplified.Count) % simplified.Count;
+                int nextIndex = (i + 1) % simplified.Count;
+                Vector2Int prev = simplified[prevIndex];
+                Vector2Int curr = simplified[i];
+                Vector2Int next = simplified[nextIndex];
+
+                Vector2Int stepA = curr - prev;
+                Vector2Int stepB = next - curr;
+                bool stepAIsAxis = Mathf.Abs(stepA.x) + Mathf.Abs(stepA.y) == 1;
+                bool stepBIsAxis = Mathf.Abs(stepB.x) + Mathf.Abs(stepB.y) == 1;
+                if (!stepAIsAxis || !stepBIsAxis)
+                    continue;
+
+                bool orthogonalTurn = stepA.x != stepB.x && stepA.y != stepB.y;
+                if (!orthogonalTurn)
+                    continue;
+
+                Vector2Int diagonal = next - prev;
+                if (Mathf.Abs(diagonal.x) == 1 && Mathf.Abs(diagonal.y) == 1)
+                {
+                    simplified.RemoveAt(i);
+                    changed = true;
+                    break;
+                }
+            }
+        } while (changed && simplified.Count >= 3);
+
+        return simplified;
     }
 
     private static bool TryGetConveyorCurvePoints(Vector3 prev, Vector3 curr, Vector3 next, float cornerOffset, out Vector3 curveIn, out Vector3 curveOut)
