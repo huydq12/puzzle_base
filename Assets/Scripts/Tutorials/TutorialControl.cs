@@ -8,7 +8,7 @@ public class TutorialControl : TutorialBase
     [SerializeField] private RectTransform _canvasRectTransform;
     [SerializeField] private RectTransform _titleRectTransform;
     [SerializeField] private SkeletonGraphic hand;
-    [SerializeField] private Vector2 _handOffset = new Vector2(-70f, -70f);
+    [SerializeField] private Vector2 _handOffset;
 
     private Vector3 _titleDefaultScale;
 
