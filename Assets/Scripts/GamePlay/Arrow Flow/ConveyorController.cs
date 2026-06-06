@@ -10,6 +10,7 @@ public class ConveyorController : Singleton<ConveyorController>
 {
     private const int TrackIndexShift = 20;
     private const int TrackSlotMask = (1 << TrackIndexShift) - 1;
+    private const float SplineYOffset = -0.2f;
 
     [SerializeField] private Color _warningColor;
     [SerializeField] private MeshRenderer _renderer;
@@ -195,7 +196,7 @@ public class ConveyorController : Singleton<ConveyorController>
             if (spline == null || setup.Points == null || setup.Points.Length < 2)
                 continue;
 
-            spline.SetPoints(setup.Points);
+            spline.SetPoints(GetOffsetSplinePoints(setup.Points));
             if (setup.IsClosedLoop)
                 spline.Close();
             else
@@ -228,6 +229,20 @@ public class ConveyorController : Singleton<ConveyorController>
         SplinePoint[] points = _splineComputer.GetPoints();
         bool isClosedLoop = _splineComputer.isClosed;
         SetupTracks(new[] { new TrackSplineSetup(points, isClosedLoop) });
+    }
+
+    private static SplinePoint[] GetOffsetSplinePoints(SplinePoint[] sourcePoints)
+    {
+        SplinePoint[] points = new SplinePoint[sourcePoints.Length];
+        for (int i = 0; i < sourcePoints.Length; i++)
+        {
+            points[i] = sourcePoints[i];
+            points[i].position.y += SplineYOffset;
+            points[i].tangent.y += SplineYOffset;
+            points[i].tangent2.y += SplineYOffset;
+        }
+
+        return points;
     }
 
     public void StopConveyor()

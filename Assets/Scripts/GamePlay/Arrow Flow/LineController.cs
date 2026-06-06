@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.EventSystems;
 
 public class LineController : Singleton<LineController>
 {
@@ -26,6 +27,11 @@ public class LineController : Singleton<LineController>
 
     private void HandleDefaultTouch()
     {
+        if (IsGameplayTouchBlocked())
+        {
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             OnTouchBegan();
@@ -38,6 +44,16 @@ public class LineController : Singleton<LineController>
         {
             OnTouchEnded();
         }
+    }
+
+    private bool IsGameplayTouchBlocked()
+    {
+        if (UIManager.Instance != null && UIManager.Instance.HasActivePopup)
+        {
+            return true;
+        }
+
+        return EventSystem.current != null && Common.IsPointerOverUI();
     }
     private void OnTouchBegan()
     {

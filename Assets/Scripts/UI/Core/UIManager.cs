@@ -655,6 +655,25 @@ public class UIManager : Singleton<UIManager>
     public BaseNotify CurNotify => _baseControllerMap[typeof(BaseNotify)].CurrentElement as BaseNotify;
     public BaseOverlay CurOverlap => _baseControllerMap[typeof(BaseOverlay)].CurrentElement as BaseOverlay;
 
+    public bool HasActivePopup
+    {
+        get
+        {
+            if (CurPopup != null && !CurPopup.IsHide)
+            {
+                return true;
+            }
+
+            if (_onSceneControllerMap.TryGetValue(typeof(BasePopup), out IUIController popupController))
+            {
+                BaseUIElement currentPopup = popupController.CurrentElement;
+                return currentPopup != null && !currentPopup.IsHide;
+            }
+
+            return false;
+        }
+    }
+
     #endregion
 }
 

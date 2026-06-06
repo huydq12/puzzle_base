@@ -399,7 +399,7 @@ public class UIBottomInGame : BaseScreen
                 Board.Instance.ResetBooster();
                 ConveyorController.Instance.BringToTop = false;
                 ConveyorController.Instance.SetAllCubesBringToTop(false);
-                ConveyorController.Instance.ResumeConveyor();
+                ConveyorController.Instance.StartConveyor();
                 if (!usesFreeCharge)
                 {
                     InventoryManager.Instance.AddBoosterType3(1);

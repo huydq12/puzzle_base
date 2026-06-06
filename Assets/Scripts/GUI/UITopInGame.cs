@@ -33,6 +33,11 @@ public class UITopInGame : BaseScreen
     [SerializeField] private TextMeshProUGUI txt_level;
     [SerializeField] private TextMeshProUGUI txt_level_type;
     [SerializeField] private TextMeshProUGUI txt_coin;
+    [SerializeField] private TextMeshProUGUI txt_playerHeat;
+    [SerializeField] private TextMeshProUGUI txt_heatCountdown;
+    [SerializeField] private TextMeshProUGUI txt_unlimitedHeatCountdown;
+    [SerializeField] private GameObject normalHeatGroup;
+    [SerializeField] private GameObject unlimitedHeatGroup;
     [SerializeField] private ButtonBehavior buttonSetting;
     [SerializeField] private Image imgSettingButton;
     [SerializeField] private Image imgLevel1;
@@ -42,8 +47,6 @@ public class UITopInGame : BaseScreen
     [SerializeField] private CanvasGroup trayNotificationGroup;
     [SerializeField] private TextMeshProUGUI textDeps;
 
-    [SerializeField] private RectTransform infoSelectButon;
-   
     [SerializeField] private List<Image> warningNotice;
     [SerializeField] private Color warningNoticeColor = Color.red;
     [SerializeField] private float warningNoticeBlinkDuration = 0.3f;
@@ -53,6 +56,8 @@ public class UITopInGame : BaseScreen
     private readonly List<Color> _warningNoticeDefaultColors = new List<Color>();
     private int _lastDisplayedCoin = int.MinValue;
     private int _lastDisplayedLevel = int.MinValue;
+    private int _lastDisplayedHeat = int.MinValue;
+    private bool _lastDisplayedUnlimitedHeat;
     private int _lastHardAnimationLevel = int.MinValue;
     private int _lastSuperHardAnimationLevel = int.MinValue;
     private LevelUiConfig _activeLevelUiConfig;
@@ -69,6 +74,8 @@ public class UITopInGame : BaseScreen
     private const string PopupOpenStateName = "Open";
     private const string PopupCloseStateName = "Close";
 
+    
+
     private static LevelUiType GetLevelUiType(int level)
     {
         int lastDigit = Mathf.Abs(level) % 10;
@@ -81,6 +88,13 @@ public class UITopInGame : BaseScreen
     private void Start()
     {
         RegisterSettingButtonListener();
+
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager != null)
+        {
+            heatManager.OnHeatChanged += UpdateHeatDisplay;
+            heatManager.OnUnlimitedHeatChanged += UpdateHeatDisplay;
+        }
         
         _warningNoticeDefaultColors.Clear();
         if (warningNotice == null) return;
@@ -101,9 +115,25 @@ public class UITopInGame : BaseScreen
         if (SuperHardObject != null) SuperHardObject.SetActive(false);
         _lastDisplayedCoin = int.MinValue;
         _lastDisplayedLevel = int.MinValue;
+        _lastDisplayedHeat = int.MinValue;
+        _lastDisplayedUnlimitedHeat = false;
         _lastHardAnimationLevel = int.MinValue;
         _lastSuperHardAnimationLevel = int.MinValue;
         _activeLevelUiConfig = null;
+        Game.Update.RemoveTask(UpdateHeatCountdown);
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        Game.Update.RemoveTask(UpdateHeatCountdown);
+
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager != null)
+        {
+            heatManager.OnHeatChanged -= UpdateHeatDisplay;
+            heatManager.OnUnlimitedHeatChanged -= UpdateHeatDisplay;
+        }
     }
 
     private void SetWarningNoticeVisible(bool visible)
@@ -162,16 +192,6 @@ public class UITopInGame : BaseScreen
         }
     }
 
-    public void ShowInfoButton(string message)
-    {
-        if (infoSelectButon == null) return;
-        if (message == null || message.Length == 0){
-            infoSelectButon.gameObject.SetActive(false);
-            return;
-        }
-        infoSelectButon.gameObject.SetActive(true);
-    }
-
     public override void BeforeShow()
     {
         base.BeforeShow();
@@ -179,12 +199,21 @@ public class UITopInGame : BaseScreen
         SetConveyorWarning(false);
         RefreshCoin();
         RefreshLevel();
+        UpdateHeatDisplay();
+        Game.Update.AddTask(UpdateHeatCountdown);
+    }
+
+    public override void BeforeHide()
+    {
+        base.BeforeHide();
+        Game.Update.RemoveTask(UpdateHeatCountdown);
     }
 
     private void Update()
     {
         RefreshCoin();
         RefreshLevel();
+        UpdateHeatCountdown();
     }
 
     private void RefreshCoin()
@@ -201,6 +230,81 @@ public class UITopInGame : BaseScreen
 
         _lastDisplayedCoin = coin;
         txt_coin.text = coin.ToString();
+    }
+
+    public void UpdateHeatDisplay()
+    {
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager == null) return;
+
+        bool hasUnlimited = heatManager.HasUnlimitedHeat();
+        int currentHeat = heatManager.GetCurrentHeat();
+
+        if (_lastDisplayedHeat != currentHeat || _lastDisplayedUnlimitedHeat != hasUnlimited)
+        {
+            _lastDisplayedHeat = currentHeat;
+            _lastDisplayedUnlimitedHeat = hasUnlimited;
+
+            if (txt_playerHeat != null)
+                txt_playerHeat.text = hasUnlimited ? "∞" : currentHeat.ToString();
+
+            if (normalHeatGroup != null)
+                normalHeatGroup.SetActive(!hasUnlimited);
+
+            if (unlimitedHeatGroup != null)
+                unlimitedHeatGroup.SetActive(hasUnlimited);
+        }
+
+        UpdateHeatCountdown();
+    }
+
+    private void UpdateHeatCountdown()
+    {
+        if (txt_heatCountdown == null) return;
+
+        var heatManager = HeatManager.TryGetInstance();
+        if (heatManager == null) return;
+
+        if (heatManager.HasUnlimitedHeat())
+        {
+            TimeSpan remaining = heatManager.GetUnlimitedHeatTimeRemaining();
+            if (remaining.TotalSeconds > 0)
+            {
+                string remainingText = remaining.TotalHours >= 24
+                    ? $"{(int)remaining.TotalDays}d {remaining.Hours}h"
+                    : $"{remaining.Hours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+                SetText(txt_heatCountdown, remainingText);
+                SetText(txt_unlimitedHeatCountdown, remainingText);
+            }
+            else
+            {
+                SetText(txt_heatCountdown, "Unlimited");
+                SetText(txt_unlimitedHeatCountdown, "Unlimited");
+            }
+
+            return;
+        }
+
+        int currentHeat = heatManager.GetCurrentHeat();
+        if (currentHeat >= HeatManager.MAX_HEAT_DAY)
+        {
+            SetText(txt_heatCountdown, "Full!");
+            SetText(txt_unlimitedHeatCountdown, string.Empty);
+            return;
+        }
+
+        TimeSpan timeUntilNext = heatManager.GetTimeUntilNextHeat();
+        string nextHeatText = timeUntilNext.TotalSeconds > 0
+            ? $"{timeUntilNext.Hours:D2}:{timeUntilNext.Minutes:D2}:{timeUntilNext.Seconds:D2}"
+            : "Ready!";
+        SetText(txt_heatCountdown, nextHeatText);
+        SetText(txt_unlimitedHeatCountdown, string.Empty);
+    }
+
+    private static void SetText(TextMeshProUGUI text, string value)
+    {
+        if (text != null)
+            text.text = value;
     }
 
     private void RefreshLevel()
