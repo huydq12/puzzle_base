@@ -24,6 +24,7 @@ public enum GameStateInGame
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
     public static GameManagerInGame intance => Instance;
+    public DailyRewardConfigSO dailyRewardConfigSO;
     public int MaxLevel = 1;
     public int CurrentLevel = 1;
     public int LastCompletedLevel { get; private set; }
@@ -78,6 +79,10 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             Game.Launch();
 
         userData = Game.Data.Load<UserData>();
+        if (userData != null)
+        {
+            userData.EnsureDailyRewardHandler();
+        }
         if (userData != null && !userData.isDefaultData)
         {
             userData.SetDefaultData();

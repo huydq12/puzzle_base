@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Utils.Pattern;
 
 [Serializable]
 public class UserData : SavePlayerPrefs
@@ -51,6 +52,7 @@ public class UserData : SavePlayerPrefs
     public bool isFirstClaimDailyReward;
     public bool isShowDailyReward;
     public DailyBonus dailyBonus = new();
+    public DailyRewardHandler dailyRewardHandler = new();
 
     // Profile Data
     public int currentAvatarIndex = 0;
@@ -73,6 +75,16 @@ public class UserData : SavePlayerPrefs
     public MapData mapData
     {
         get => listMap[currentMap - 1];
+    }
+
+    public void EnsureDailyRewardHandler()
+    {
+        if (dailyRewardHandler == null)
+        {
+            dailyRewardHandler = new DailyRewardHandler();
+        }
+
+        dailyRewardHandler.UpdateCurrentDay();
     }
 
     public void SetDefaultData()
@@ -112,6 +124,8 @@ public class UserData : SavePlayerPrefs
         isFirstClaimDailyReward = false;
         isShowDailyReward = false;
         dailyBonus = new DailyBonus();
+        dailyRewardHandler = new DailyRewardHandler();
+        dailyRewardHandler.UpdateCurrentDay();
         currentAvatarIndex = 0;
         currentFrameIndex = 0;
         unlockedAvatars = new List<int> {0,1};
@@ -123,6 +137,57 @@ public class UserData : SavePlayerPrefs
         dateLeaderBoard = string.Empty;
     }
 
+    public void ApplyShopItem(Item item)
+    {
+        if (item == null) return;
+
+        switch (item.ItemType)
+        {
+            case ItemType.Gold:
+                playerCash += item.Quantity;
+                break;
+            case ItemType.Booster_Type1:
+                boosterType1 += item.Quantity;
+                break;
+            case ItemType.Booster_Type2:
+                boosterType2 += item.Quantity;
+                break;
+            case ItemType.Booster_Type3:
+                boosterType3 += item.Quantity;
+                break;
+            case ItemType.InfiniteHealth:
+                ApplyUnlimitedHeatHours(item.Quantity);
+                break;
+            case ItemType.NoAds:
+                removeAds = true;
+                break;
+        }
+
+        if (GameManagerInGame.Instance != null)
+        {
+            GameManagerInGame.Instance.UpdateValueData();
+        }
+    }
+
+    private void ApplyUnlimitedHeatHours(int hours)
+    {
+        if (hours <= 0) return;
+
+        DateTime now = DateTime.Now;
+        DateTime currentExpire;
+        DateTime baseTime = now;
+
+        if (hasUnlimitedHeat &&
+            DateTime.TryParse(unlimitedHeatExpireTime, out currentExpire) &&
+            currentExpire > now)
+        {
+            baseTime = currentExpire;
+        }
+
+        hasUnlimitedHeat = true;
+        unlimitedHeatExpireTime = baseTime.AddHours(hours).ToString();
+    }
+
     
 }
 
@@ -132,6 +197,169 @@ public class DailyBonus
 {
     public string dateTracking = DateTime.Now.ToString();
     public int currentIndex = -1;
+}
+
+[Serializable]
+public class DailyRewardHandler
+{
+    public int currentDay;
+    public int currentStreak;
+    public int highestStreak;
+    public int lastClaimedDay;
+    public int totalClaims;
+
+    public bool isMissedStreak;
+    public int totalLostStreak;
+    public int lastLoginDay;
+
+    public List<int> claimedWeeklyMilestones = new();
+
+    public void UpdateCurrentDay()
+    {
+        int today = GetTodayEpochDay();
+
+        if (lastLoginDay <= 0)
+        {
+            lastLoginDay = today;
+            currentDay = 1;
+            return;
+        }
+
+        int delta = today - lastLoginDay;
+        if (delta <= 0) return;
+
+        currentDay = delta == 1 ? currentDay + 1 : 1;
+        lastLoginDay = today;
+    }
+
+    public int CheckRewardState()
+    {
+        if (isMissedStreak) return 2;
+
+        int todayEpoch = GetTodayEpochDay();
+        if (lastClaimedDay == todayEpoch) return 1;
+        if (lastClaimedDay == todayEpoch - 1 || lastClaimedDay <= 0) return 0;
+
+        isMissedStreak = true;
+        return 2;
+    }
+
+    public int ClaimReward()
+    {
+        if (CheckRewardState() != 0) return currentStreak;
+
+        int claimedDayIndex = currentStreak;
+
+        lastClaimedDay = GetTodayEpochDay();
+        totalClaims++;
+        currentStreak++;
+
+        if (currentDay <= 0) currentDay = 1;
+        if (currentStreak > highestStreak) highestStreak = currentStreak;
+
+        return claimedDayIndex;
+    }
+
+    public void ReviveStreak()
+    {
+        isMissedStreak = false;
+        lastClaimedDay = GetTodayEpochDay() - 1;
+        totalLostStreak++;
+    }
+
+    public void GiveUpStreak()
+    {
+        isMissedStreak = false;
+        currentStreak = 0;
+        currentDay = 1;
+        lastClaimedDay = GetTodayEpochDay() - 1;
+        ResetWeeklyClaimedMilestones();
+
+        if (Observer.Instance != null && GameManagerInGame.Instance != null)
+        {
+            Observer.Instance.Notify(ObserverTopic.UPDATE_DATA.ToString(), GameManagerInGame.Instance.userData);
+        }
+    }
+
+    public int GetRollingConfigIndex(int slotIndex, int maxConfigCount)
+    {
+        if (maxConfigCount <= 0) return 0;
+        int currentCycleStart = (totalClaims == 0 ? 0 : (totalClaims - 1) / 7) * 7;
+        return (currentCycleStart + slotIndex) % maxConfigCount;
+    }
+
+    public bool IsWeeklyRewardClaimed(int unlockDay)
+    {
+        return claimedWeeklyMilestones.Contains(unlockDay);
+    }
+
+    public void ClaimWeeklyReward(int unlockDay)
+    {
+        if (!claimedWeeklyMilestones.Contains(unlockDay))
+        {
+            claimedWeeklyMilestones.Add(unlockDay);
+        }
+    }
+
+    public void ResetWeeklyClaimedMilestones()
+    {
+        claimedWeeklyMilestones.Clear();
+    }
+
+    public int GetTotalWeeklyCycleDays(List<WeeklyRewardData> weeklyConfigs)
+    {
+        if (weeklyConfigs == null || weeklyConfigs.Count == 0) return 28;
+        return weeklyConfigs[weeklyConfigs.Count - 1].unlockDay;
+    }
+
+    public int GetCurrentWeeklyCycle(List<WeeklyRewardData> weeklyConfigs)
+    {
+        int totalCycleDays = GetTotalWeeklyCycleDays(weeklyConfigs);
+        if (totalCycleDays <= 0 || totalClaims == 0) return 0;
+
+        int offset = currentDay > currentStreak ? 0 : 1;
+        return (totalClaims - offset) / totalCycleDays;
+    }
+
+    public int GetWeeklyConfigIndex(int slotIndex, int maxConfigCount)
+    {
+        if (maxConfigCount <= 0) return 0;
+
+        int currentCycleStart = (totalClaims == 0 ? 0 : (totalClaims - 1) / 28) * 4;
+        return (currentCycleStart + slotIndex) % maxConfigCount;
+    }
+
+    public List<WeeklyRewardData> CheckAndAutoClaimWeeklyRewards(DailyRewardConfigSO configSO)
+    {
+        List<WeeklyRewardData> newlyClaimedBundles = new();
+        if (configSO == null || configSO.weeklyRewardDatas == null || configSO.weeklyRewardDatas.Count == 0)
+            return newlyClaimedBundles;
+
+        List<WeeklyRewardData> weeklyConfigs = configSO.weeklyRewardDatas;
+        int totalCycleDays = GetTotalWeeklyCycleDays(weeklyConfigs);
+        int currentCycle = GetCurrentWeeklyCycle(weeklyConfigs);
+
+        for (int i = 0; i < 4; i++)
+        {
+            int configIndex = GetWeeklyConfigIndex(i, weeklyConfigs.Count);
+            WeeklyRewardData originalData = weeklyConfigs[configIndex];
+            int virtualUnlockDay = originalData.unlockDay + currentCycle * totalCycleDays;
+
+            if (totalClaims >= virtualUnlockDay && !IsWeeklyRewardClaimed(virtualUnlockDay))
+            {
+                ClaimWeeklyReward(virtualUnlockDay);
+                newlyClaimedBundles.Add(originalData);
+            }
+        }
+
+        return newlyClaimedBundles;
+    }
+
+    private int GetTodayEpochDay()
+    {
+        TimeSpan timeSinceEpoch = DateTime.Today - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        return (int)timeSinceEpoch.TotalDays;
+    }
 }
 
 
