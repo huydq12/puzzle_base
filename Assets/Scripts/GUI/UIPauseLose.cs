@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine.UI;
 using TMPro;
 
-public class UIPauseLose : UIElement
+public class UIPauseLose : BasePopup
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;

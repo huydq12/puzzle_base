@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
-public class UITutorial : UIElement
+public class UITutorial : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;

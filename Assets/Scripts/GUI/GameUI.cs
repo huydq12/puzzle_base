@@ -9,8 +9,8 @@ using UnityEngine.EventSystems;
 
 public class GameUI : Singleton<GameUI>
 {
-    private List<UIElement> ActiveElements;
-    private Dictionary<Type, UIElement> Elements;
+    private List<BaseUIElement> ActiveElements;
+    private Dictionary<Type, BaseUIElement> Elements;
     private RectTransform FrontPanel, BehindPanel;
     private readonly string FolderPath = "GameUI/";
 
@@ -22,8 +22,8 @@ public class GameUI : Singleton<GameUI>
     protected override void Awake()
     {
         base.Awake();
-        ActiveElements = new List<UIElement>();
-        Elements = new Dictionary<Type, UIElement>();
+        ActiveElements = new List<BaseUIElement>();
+        Elements = new Dictionary<Type, BaseUIElement>();
         CreateFrontAndBehindPanel();
 
         var canvas = GetComponent<Canvas>();
@@ -43,7 +43,7 @@ public class GameUI : Singleton<GameUI>
     {
         int activeCount = ActiveCount;
         if (activeCount == 0) return;
-        UIElement element = ActiveElements[--activeCount];
+        BaseUIElement element = ActiveElements[--activeCount];
         if (!element.ManualHide) element.Hide();
     }
     public void Block(bool value)
@@ -61,24 +61,24 @@ public class GameUI : Singleton<GameUI>
         if (element != null) SetParent(element.transform, transform);
         return element;
     }
-    public void Submit(UIElement element)
+    public void Submit(BaseUIElement element)
     {
         if (ActiveElements.Contains(element)) return;
         ActiveElements.Add(element);
         element.transform.SetAsLastSibling();
         UpdateBehindPanelSibling();
     }
-    public void Unsubmit(UIElement element)
+    public void Unsubmit(BaseUIElement element)
     {
         if (ActiveElements.Remove(element)) UpdateBehindPanelSibling();
     }
-    public void Register(UIElement element)
+    public void Register(BaseUIElement element)
     {
         Type type = element.GetType();
         if (Elements.ContainsKey(type)) return;
         Elements.Add(type, element);
     }
-    public void Unregister(UIElement element)
+    public void Unregister(BaseUIElement element)
     {
         Elements.Remove(element.GetType());
     }
@@ -98,7 +98,7 @@ public class GameUI : Singleton<GameUI>
     private void CreateFrontAndBehindPanel()
     {
         FrontPanel = CreatePanel("FrontPanel", new Color(1, 1, 1, 0));
-        BehindPanel = CreatePanel("BehindPanel", new Color(0, 0, 0, 0.9725f));
+        BehindPanel = CreatePanel("BehindPanel", new Color(0, 0, 0, 0.9f));
         Button button = BehindPanel.gameObject.AddComponent<Button>();
         button.transition = Selectable.Transition.None;
         button.onClick.AddListener(HideOnTop);

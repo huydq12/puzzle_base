@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
-public class UINotification : UIElement
+public class UINotification : BaseNotify
 {
     [SerializeField] TextMeshProUGUI toastText;
     [SerializeField] GameObject toast;

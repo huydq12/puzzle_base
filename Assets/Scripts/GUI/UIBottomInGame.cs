@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Sirenix.OdinInspector;
 
-public class UIBottomInGame : UIElement
+public class UIBottomInGame : BaseScreen
 {
     public override bool ManualHide => false;
     public override bool DestroyOnHide => false;

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 
-public class UITopInGame : UIElement
+public class UITopInGame : BaseScreen
 {
     public override bool ManualHide => false;
     public override bool DestroyOnHide => false;

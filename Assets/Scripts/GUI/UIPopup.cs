@@ -4,11 +4,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
-public class UIPopup : UIElement
+public class UIPopup : BasePopup
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
-    public override bool UseBehindPanel => false;
+    public override bool UseBehindPanel => true;
 
     [Header("Animation Settings")]
     [SerializeField] private float scaleDuration = 0.3f;

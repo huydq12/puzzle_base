@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
-public class UITutorialBotter :UIElement
+public class UITutorialBotter : BaseScreen
 {
     public override bool ManualHide => true;
     public override bool DestroyOnHide => false;
