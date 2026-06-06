@@ -20,12 +20,19 @@ public enum BoosterType
 }
 public class Board : Singleton<Board>
 {
+    private const float ConveyorEnterEndpointYawOffset = -90f;
+    private const float ConveyorExitEndpointYawOffset = 90f;
+
     [SerializeField] private GridCell _cellPrefab;
     [SerializeField] private Line _linePrefab;
     [SerializeField] private CubeLine _cubePrefab;
     [SerializeField] private Elevator _elevatorPrefab;
     [SerializeField] private LineDoor _lineDoorPrefab;
     [SerializeField] private ConveyorTunel _conveyorTunelPrefab;
+
+    [SerializeField] private GameObject _conveyorEnterInOutPrefab;
+    [SerializeField] private GameObject _conveyorExitInOutPrefab;
+    
     [SerializeField] private GameColorConfig _colorConfig;
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
@@ -1348,18 +1355,41 @@ public class Board : Singleton<Board>
         if (_currentConfig.ConveyorLine == null || _currentConfig.ConveyorLine.Cells.IsNullOrEmpty()) return;
         int rows = _currentConfig.Rows;
         int columns = _currentConfig.Columns;
-        var conveyorCells = FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows);
+        var conveyorCells = NormalizeConveyorCells(FilterInBoundsDistinct(_currentConfig.ConveyorLine.Cells, columns, rows), columns, rows);
         if (conveyorCells.Count < 3)
         {
             Debug.LogWarning("ConveyorLine has too few valid cells; skipping conveyor setup.");
             return;
         }
 
-        var orderedCells = IsClosedNeighborLoop(conveyorCells) ? conveyorCells : BuildOrderedBoundaryCells(conveyorCells);
+        bool isClosedLoop = IsClosedNeighborLoop(conveyorCells);
+        bool isOpenChain = !isClosedLoop && IsNeighborChain(conveyorCells);
+        var orderedCells = isClosedLoop || isOpenChain ? conveyorCells : BuildOrderedBoundaryCells(conveyorCells);
+        if (!isClosedLoop && !isOpenChain && orderedCells != null)
+        {
+            isClosedLoop = IsClosedNeighborLoop(orderedCells);
+        }
+
         if (orderedCells == null || orderedCells.Count < 3)
         {
-            Debug.LogWarning("ConveyorLine cannot be ordered into a valid loop; skipping conveyor setup.");
+            Debug.LogWarning("ConveyorLine cannot be ordered into a valid loop or chain; skipping conveyor setup.");
             return;
+        }
+
+        if (!isClosedLoop && !isOpenChain)
+        {
+            Debug.LogWarning("ConveyorLine cells are not connected in serialized order; skipping conveyor setup instead of auto-connecting them.");
+            return;
+        }
+
+        for (int row = 0; row < rows; row++)
+        {
+            for (int col = 0; col < columns; col++)
+            {
+                GridCell cell = Cells[col, row];
+                cell.CellType = _currentConfig.Cells[col, row].CellType;
+                cell.ShowRenderer(cell.IsOccupied);
+            }
         }
 
         // Ensure runtime grid cells are marked as Conveyor even if the serialized Cells[,] is out of sync.
@@ -1372,46 +1402,27 @@ public class Board : Singleton<Board>
 
         Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(_currentConfig.ConveyorLine);
 
-        List<Vector2> conveyorPolygon = new();
-        foreach (var c in orderedCells)
-        {
-            GridCell cell = GetCellAt(c);
-            if (cell == null) continue;
-
-            Vector3 p = cell.transform.position;
-            conveyorPolygon.Add(new Vector2(p.x, p.z));
-        }
-        for (int row = 0; row < rows; row++)
-        {
-            for (int col = 0; col < columns; col++)
-            {
-                GridCell cell = Cells[col, row];
-                cell.CellType = _currentConfig.Cells[col, row].CellType;
-                cell.ShowRenderer(cell.IsOccupied);
-            }
-        }
-
         List<Vector3> allPositions = new();
         float cornerOffset = _cellSize * 0.45f;
 
         for (int i = 0; i < orderedCells.Count; i++)
         {
-            GridCell prevCell = GetCellAt(orderedCells[(i - 1 + orderedCells.Count) % orderedCells.Count]);
+            GridCell prevCell = i > 0 ? GetCellAt(orderedCells[i - 1]) : (isClosedLoop ? GetCellAt(orderedCells[orderedCells.Count - 1]) : null);
             GridCell currCell = GetCellAt(orderedCells[i]);
-            GridCell nextCell = GetCellAt(orderedCells[(i + 1) % orderedCells.Count]);
+            GridCell nextCell = i < orderedCells.Count - 1 ? GetCellAt(orderedCells[i + 1]) : (isClosedLoop ? GetCellAt(orderedCells[0]) : null);
 
-            if (prevCell == null || currCell == null || nextCell == null)
+            if (currCell == null || (isClosedLoop && (prevCell == null || nextCell == null)))
             {
                 Debug.LogWarning("ConveyorLine contains invalid cell references; skipping conveyor setup.");
                 return;
             }
 
-            Vector3 prev = prevCell.transform.position;
             Vector3 curr = currCell.transform.position;
-            Vector3 next = nextCell.transform.position;
 
-            if (IsRightAngle(prev, curr, next))
+            if (prevCell != null && nextCell != null && IsRightAngle(prevCell.transform.position, curr, nextCell.transform.position))
             {
+                Vector3 prev = prevCell.transform.position;
+                Vector3 next = nextCell.transform.position;
                 Vector3 dirIn = (curr - prev).normalized;
                 Vector3 dirOut = (next - curr).normalized;
 
@@ -1425,10 +1436,10 @@ public class Board : Singleton<Board>
         }
 
         float totalDistance = 0f;
-        for (int i = 0; i < allPositions.Count; i++)
+        int segmentCount = isClosedLoop ? allPositions.Count : allPositions.Count - 1;
+        for (int i = 0; i < segmentCount; i++)
         {
-            int nextIdx = (i + 1) % allPositions.Count;
-            totalDistance += Vector3.Distance(allPositions[i], allPositions[nextIdx]);
+            totalDistance += Vector3.Distance(allPositions[i], allPositions[(i + 1) % allPositions.Count]);
         }
         if (allPositions.Count < 2)
         {
@@ -1436,11 +1447,11 @@ public class Board : Singleton<Board>
             return;
         }
 
-        float avgSegmentLength = totalDistance / allPositions.Count;
+        float avgSegmentLength = totalDistance / Mathf.Max(1, segmentCount);
 
         List<SplinePoint> points = new();
 
-        for (int i = 0; i < allPositions.Count; i++)
+        for (int i = 0; i < segmentCount; i++)
         {
             Vector3 curr = allPositions[i];
             Vector3 next = allPositions[(i + 1) % allPositions.Count];
@@ -1457,12 +1468,54 @@ public class Board : Singleton<Board>
             }
         }
 
+        if (!isClosedLoop)
+            points.Add(CreatePoint(allPositions[allPositions.Count - 1]));
+
         ConveyorController.Instance.SplineComputer.SetPoints(points.ToArray());
-        ConveyorController.Instance.SplineComputer.Close();
+        if (isClosedLoop)
+            ConveyorController.Instance.SplineComputer.Close();
+        else
+            ConveyorController.Instance.SplineComputer.Break();
         ConveyorController.Instance.SplineComputer.RebuildImmediate(true, true);
         ConveyorController.Instance.SetupFromSpline();
 
+        if (!isClosedLoop)
+            SpawnOpenConveyorEndpoints(orderedCells);
+
         SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
+    }
+
+    private void SpawnOpenConveyorEndpoints(List<Vector2Int> orderedCells)
+    {
+        if (orderedCells == null || orderedCells.Count < 2) return;
+
+        GridCell startCell = GetCellAt(orderedCells[0]);
+        GridCell startNextCell = GetCellAt(orderedCells[1]);
+        GridCell endPrevCell = GetCellAt(orderedCells[orderedCells.Count - 2]);
+        GridCell endCell = GetCellAt(orderedCells[orderedCells.Count - 1]);
+
+        SpawnConveyorEndpoint(_conveyorEnterInOutPrefab, startCell, startCell, startNextCell, ConveyorEnterEndpointYawOffset);
+        SpawnConveyorEndpoint(_conveyorExitInOutPrefab, endCell, endPrevCell, endCell, ConveyorExitEndpointYawOffset);
+    }
+
+    private void SpawnConveyorEndpoint(GameObject prefab, GridCell positionCell, GridCell fromCell, GridCell toCell, float yawOffset)
+    {
+        if (prefab == null || positionCell == null || fromCell == null || toCell == null) return;
+
+        Vector3 from = fromCell.transform.position;
+        Vector3 to = toCell.transform.position;
+        Vector3 dir = to - from;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = Vector3.forward;
+        else
+            dir.Normalize();
+
+        Quaternion rotation = Quaternion.LookRotation(dir, Vector3.up) * Quaternion.Euler(0f, yawOffset, 0f);
+        GameObject endpoint = Instantiate(prefab);
+        endpoint.transform.SetParent(transform, false);
+        endpoint.transform.SetPositionAndRotation(positionCell.transform.position, rotation);
     }
 
     private static Dictionary<Vector2Int, ConveyorMeta> BuildConveyorMetaByCell(ConveyorLine line)
@@ -1674,6 +1727,110 @@ public class Board : Singleton<Board>
         return result;
     }
 
+    private static List<Vector2Int> NormalizeConveyorCells(List<Vector2Int> cells, int columns, int rows)
+    {
+        List<Vector2Int> result = new();
+        if (cells == null || cells.Count == 0) return result;
+
+        HashSet<Vector2Int> seen = new();
+        result.Add(cells[0]);
+        seen.Add(cells[0]);
+
+        for (int i = 1; i < cells.Count; i++)
+        {
+            Vector2Int prev = result[result.Count - 1];
+            Vector2Int curr = cells[i];
+
+            if (TryGetConveyorBridgeCell(prev, curr, i + 1 < cells.Count ? cells[i + 1] : (Vector2Int?)null, columns, rows, seen, out Vector2Int bridge))
+            {
+                result.Add(bridge);
+                seen.Add(bridge);
+            }
+
+            if (seen.Add(curr))
+                result.Add(curr);
+        }
+
+        return result;
+    }
+
+    private static bool TryGetConveyorBridgeCell(
+        Vector2Int from,
+        Vector2Int to,
+        Vector2Int? next,
+        int columns,
+        int rows,
+        HashSet<Vector2Int> seen,
+        out Vector2Int bridge)
+    {
+        bridge = default;
+        Vector2Int delta = to - from;
+        int ax = Mathf.Abs(delta.x);
+        int ay = Mathf.Abs(delta.y);
+
+        if (ax == 2 && ay == 0)
+        {
+            bridge = new Vector2Int(from.x + Math.Sign(delta.x), from.y);
+            return IsValidBridgeCell(bridge, columns, rows, seen);
+        }
+
+        if (ax == 0 && ay == 2)
+        {
+            bridge = new Vector2Int(from.x, from.y + Math.Sign(delta.y));
+            return IsValidBridgeCell(bridge, columns, rows, seen);
+        }
+
+        if (ax == 1 && ay == 1)
+        {
+            Vector2Int bridgeX = new Vector2Int(to.x, from.y);
+            Vector2Int bridgeY = new Vector2Int(from.x, to.y);
+
+            if (next.HasValue)
+            {
+                if (AreCardinalNeighbors(bridgeX, next.Value) && IsValidBridgeCell(bridgeX, columns, rows, seen))
+                {
+                    bridge = bridgeX;
+                    return true;
+                }
+
+                if (AreCardinalNeighbors(bridgeY, next.Value) && IsValidBridgeCell(bridgeY, columns, rows, seen))
+                {
+                    bridge = bridgeY;
+                    return true;
+                }
+            }
+
+            if (IsValidBridgeCell(bridgeX, columns, rows, seen))
+            {
+                bridge = bridgeX;
+                return true;
+            }
+
+            if (IsValidBridgeCell(bridgeY, columns, rows, seen))
+            {
+                bridge = bridgeY;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsValidBridgeCell(Vector2Int cell, int columns, int rows, HashSet<Vector2Int> seen)
+    {
+        return cell.x >= 0
+            && cell.x < columns
+            && cell.y >= 0
+            && cell.y < rows
+            && (seen == null || !seen.Contains(cell));
+    }
+
+    private static bool AreCardinalNeighbors(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int d = b - a;
+        return Mathf.Abs(d.x) + Mathf.Abs(d.y) == 1;
+    }
+
     private static bool IsClosedNeighborLoop(List<Vector2Int> cells)
     {
         if (cells == null || cells.Count < 3) return false;
@@ -1682,10 +1839,19 @@ public class Board : Singleton<Board>
         {
             Vector2Int a = cells[i];
             Vector2Int b = cells[(i + 1) % cells.Count];
-            Vector2Int d = b - a;
-            int ax = Mathf.Abs(d.x);
-            int ay = Mathf.Abs(d.y);
-            if (Mathf.Max(ax, ay) != 1) return false;
+            if (!AreCardinalNeighbors(a, b)) return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsNeighborChain(List<Vector2Int> cells)
+    {
+        if (cells == null || cells.Count < 2) return false;
+
+        for (int i = 1; i < cells.Count; i++)
+        {
+            if (!AreCardinalNeighbors(cells[i - 1], cells[i])) return false;
         }
 
         return true;
@@ -2271,8 +2437,8 @@ public class Board : Singleton<Board>
             else
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
-        Camera.main.transform.position = new Vector3(0, 10, 6f);
-        Camera.main.orthographicSize = 10.6f;
+        Camera.main.transform.position = new Vector3(0, 9, 6f);
+        Camera.main.orthographicSize = 13.07f;
         StartCoroutine(Common.DelayAction(1, () =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);

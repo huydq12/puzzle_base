@@ -15,6 +15,7 @@ public class ConveyorController : Singleton<ConveyorController>
     public float _cubeSize;
     [SerializeField] private int _walkAroundSpeed;
     [SerializeField] private float _baseOffsetAmount;
+    [SerializeField] private float _wrapHideDistanceMultiplier = 1.5f;
     private int _totalLineMoved;
 
     public SplineComputer SplineComputer => _splineComputer;
@@ -565,6 +566,7 @@ public class ConveyorController : Singleton<ConveyorController>
             }
 
             CubeLine tempCubeSlot = null;
+            bool wrapFromEndToStart = false;
 
             for (int i = _lstPaths.Count - 1; i >= 0; i--)
             {
@@ -621,6 +623,7 @@ public class ConveyorController : Singleton<ConveyorController>
                         {
                             tempCubeSlot = _lstPaths[curIndex].CubeSlot;
                             _lstPaths[curIndex].CubeSlot = null;
+                            wrapFromEndToStart = tempCubeSlot != null;
                         }
                     }
                 }
@@ -630,6 +633,7 @@ public class ConveyorController : Singleton<ConveyorController>
                     {
                         tempCubeSlot = _lstPaths[curIndex].CubeSlot;
                         _lstPaths[curIndex].CubeSlot = null;
+                        wrapFromEndToStart = tempCubeSlot != null;
                     }
                 }
 
@@ -641,6 +645,14 @@ public class ConveyorController : Singleton<ConveyorController>
                     {
                         _lstPaths[curIndex].CubeSlot = tempCubeSlot;
                         tempCubeSlot = null;
+                        if (wrapFromEndToStart && ShouldHideWrapMove())
+                        {
+                            CubeWrapMoving(curIndex, timePerCycle);
+                            wrapFromEndToStart = false;
+                            continue;
+                        }
+
+                        wrapFromEndToStart = false;
                     }
                     else
                     {
@@ -661,6 +673,39 @@ public class ConveyorController : Singleton<ConveyorController>
 
             yield return GetCycleWait(timePerCycle);
         }
+    }
+
+    private bool ShouldHideWrapMove()
+    {
+        if (_lstPaths == null || _lstPaths.Count < 2) return false;
+
+        Vector3 first = _lstPaths[0].Position;
+        Vector3 last = _lstPaths[_lstPaths.Count - 1].Position;
+        float hideDistance = Mathf.Max(0.01f, _cubeSize * _wrapHideDistanceMultiplier);
+        return Vector3.Distance(first, last) > hideDistance;
+    }
+
+    private void CubeWrapMoving(int idx, float time)
+    {
+        var slot = _lstPaths[idx];
+        if (slot.CubeSlot == null) return;
+
+        CubeLine cube = slot.CubeSlot;
+        Vector3 dir = slot.Forward;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
+        Vector3 left = slot.Left;
+        if (left.sqrMagnitude < 0.0001f) left = Vector3.right;
+        Vector3 targetPos = slot.Position + left * _baseOffsetAmount;
+
+        cube.transform.DOKill();
+        cube.gameObject.SetActive(false);
+        cube.transform.position = targetPos;
+        cube.transform.LookAt(targetPos + dir);
+        DOVirtual.DelayedCall(time, () =>
+        {
+            if (cube != null)
+                cube.gameObject.SetActive(true);
+        }).SetTarget(cube.transform);
     }
 
     private WaitForSeconds GetCycleWait(float seconds)

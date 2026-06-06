@@ -47,7 +47,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private float _pendingAutoHideSeconds;
 
     private const int LoopStartLevel = 30;
-    private const int LoopEndLevel = 292;
+    private const int LoopEndLevel = 295;
 
     [SerializeField] private float CONST_TIME_HIDE_LOADING = 2f;
     [SerializeField] private float CONST_TIME_HIDE_LOADING_FIRST = 3f;
