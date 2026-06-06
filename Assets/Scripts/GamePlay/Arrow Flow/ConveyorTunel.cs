@@ -95,7 +95,7 @@ public class ConveyorTunel : MonoBehaviour
         {
             int midIdx = Mathf.Clamp(worldPositions.Count / 2, 0, worldPositions.Count - 1);
 
-            _bg_text.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
+            _bg_text.transform.position = new Vector3(worldPositions[midIdx].x, 2.5f, worldPositions[midIdx].z);
             _countTunel.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.Setup() toggle _countTunel");

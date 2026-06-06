@@ -596,6 +596,7 @@ public class Line : MonoBehaviour
         _waitingForConveyorEnter = false;
         _blockingCube = null;
         _conveyorWaitInterruptedByLose = false;
+        _reuseGridDirNextMove = false;
         CancelConveyorWait();
     }
 
@@ -1030,6 +1031,7 @@ public class Line : MonoBehaviour
             _pendingDetach[i].transform.SetParent(Board.Instance.transform, true);
         }
         _pendingDetach.Clear();
+        PromoteLastCubeToHead();
         RefreshCounterText();
         if (Cubes.Count == 0)
         {
@@ -1037,6 +1039,36 @@ public class Line : MonoBehaviour
             ConveyorController.Instance.OnLineMoved();
             Destroy(gameObject);
         }
+    }
+
+    private void PromoteLastCubeToHead()
+    {
+        if (Cubes == null || Cubes.Count == 0) return;
+
+        CubeLine head = Cubes[^1];
+        if (head == null) return;
+
+        head.SetType(CubeType.Head);
+
+        Vector2Int dir = _gridDir;
+        if (dir == Vector2Int.zero && Cubes.Count >= 2)
+        {
+            CubeLine prev = Cubes[^2];
+            if (prev != null && prev.Cell != null && head.Cell != null)
+                dir = Board.Instance != null ? Board.Instance.NormalizeGridDir(head.Cell.Position - prev.Cell.Position) : head.Cell.Position - prev.Cell.Position;
+        }
+
+        if (dir == Vector2Int.zero) return;
+        head.transform.localRotation = Quaternion.Euler(0f, GetHeadYawFromGridDir(dir), 0f);
+    }
+
+    private static float GetHeadYawFromGridDir(Vector2Int dir)
+    {
+        if (dir == Vector2Int.up) return 180f;
+        if (dir == Vector2Int.right) return 270f;
+        if (dir == Vector2Int.down) return 0f;
+        if (dir == Vector2Int.left) return 90f;
+        return 180f;
     }
 
     private bool TryReserveConveyorBaseIfNeeded()
@@ -1134,6 +1166,7 @@ public class Line : MonoBehaviour
         }
 
         head.transform.DOKill();
+        GridCell vacatedHeadCell = head.Cell;
 
         if (head != null && head.Cell != null && head.Cell.CubeOnCell == head)
         {
@@ -1151,6 +1184,99 @@ public class Line : MonoBehaviour
         FlushPendingDetach();
 
         // Sau khi head lên conveyor, kiểm tra còn cubes không
+        if (Cubes == null || Cubes.Count == 0)
+        {
+            _isMoving = false;
+            Board.Instance.RefreshAllHeadHighlights();
+            return;
+        }
+
+        _isMoving = true;
+
+        if (TryMoveRemainingCubesIntoVacatedHeadCell(vacatedHeadCell))
+            return;
+
+        ContinueAfterConveyorEnter();
+    }
+
+    private bool TryMoveRemainingCubesIntoVacatedHeadCell(GridCell vacatedHeadCell)
+    {
+        if (vacatedHeadCell == null) return false;
+        if (Cubes == null || Cubes.Count == 0) return false;
+        if (Board.Instance == null) return false;
+
+        GridCell[] targets = new GridCell[Cubes.Count];
+        for (int i = 0; i < Cubes.Count; i++)
+        {
+            CubeLine cube = Cubes[i];
+            if (cube == null || cube.Cell == null)
+                return false;
+
+            if (i == Cubes.Count - 1)
+            {
+                targets[i] = vacatedHeadCell;
+            }
+            else
+            {
+                CubeLine nextCube = Cubes[i + 1];
+                if (nextCube == null || nextCube.Cell == null)
+                    return false;
+
+                targets[i] = nextCube.Cell;
+            }
+
+            if (targets[i] == null)
+                return false;
+        }
+
+        float duration = GetStepDuration();
+        int finished = 0;
+        int expected = Cubes.Count;
+        CubeLine anchor = Cubes[Cubes.Count / 2];
+
+        for (int i = 0; i < Cubes.Count; i++)
+        {
+            CubeLine cube = Cubes[i];
+            GridCell from = cube.Cell;
+            GridCell to = targets[i];
+
+            Tween tween = cube.transform.DOMove(to.transform.position, duration)
+                .SetEase(Ease.Linear)
+                .OnStart(() =>
+                {
+                    if (from != null && from.CubeOnCell == cube)
+                        from.CubeOnCell = null;
+                })
+                .OnComplete(() =>
+                {
+                    cube.Cell = to;
+                    finished++;
+
+                    if (finished == expected)
+                    {
+                        for (int j = 0; j < Cubes.Count; j++)
+                        {
+                            CubeLine c = Cubes[j];
+                            if (c != null && c.Cell != null)
+                                c.Cell.CubeOnCell = c;
+                        }
+
+                        PromoteLastCubeToHead();
+                        Board.Instance.RefreshAllHeadHighlights();
+                        RefreshCounterText();
+                        ContinueAfterConveyorEnter();
+                    }
+                });
+
+            if (cube == anchor && _counterText != null)
+                tween.OnUpdate(UpdateCounterTextPosition);
+        }
+
+        return true;
+    }
+
+    private void ContinueAfterConveyorEnter()
+    {
         if (Cubes == null || Cubes.Count == 0)
         {
             _isMoving = false;

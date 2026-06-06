@@ -10,6 +10,7 @@ public class UIBuyBooster : UIPopup
     [SerializeField] private ButtonBehavior btn_close;
 
     [SerializeField] private ButtonBehavior btn_buy;
+    [SerializeField] private ButtonBehavior btn_watchAdsBuy;
     [SerializeField] private TextMeshProUGUI txt_title;
     [SerializeField] private TextMeshProUGUI txt_price;
     [SerializeField] private Image img_booster;
@@ -45,6 +46,11 @@ public class UIBuyBooster : UIPopup
         {
             btn_buy.OnClick.AddListener(OnBuyClicked);
         }
+
+        if (btn_watchAdsBuy != null)
+        {
+            btn_watchAdsBuy.OnClick.AddListener(OnWatchAdsBuyClicked);
+        }
     }
 
     public void ShowForBooster(int boosterType)
@@ -61,9 +67,10 @@ public class UIBuyBooster : UIPopup
 
     private void RefreshView()
     {
-        int price = GetPrice() * amountPerBuy;
+        int price = GetTotalPrice();
 
-        txt_amountPerBuy.text = "x" + amountPerBuy.ToString();
+        if (txt_amountPerBuy != null)
+            txt_amountPerBuy.text = "x" + GetAmountPerBuy();
 
         if (txt_coin != null)
         {
@@ -130,6 +137,16 @@ public class UIBuyBooster : UIPopup
         };
     }
 
+    private int GetAmountPerBuy()
+    {
+        return Mathf.Max(1, amountPerBuy);
+    }
+
+    private int GetTotalPrice()
+    {
+        return GetPrice() * GetAmountPerBuy();
+    }
+
     private void OnBuyClicked()
     {
         if (InventoryManager.Instance == null)
@@ -137,7 +154,7 @@ public class UIBuyBooster : UIPopup
             return;
         }
 
-        int price = GetPrice();
+        int price = GetTotalPrice();
         if (!InventoryManager.Instance.SpendCoin(price))
         {
             UIManager.Instance.Get<UINotification>().ShowToast("Not enough gold");
@@ -145,33 +162,59 @@ public class UIBuyBooster : UIPopup
             return;
         }
 
-        switch (RequestedBoosterType)
-        {
-            case 1:
-                InventoryManager.Instance.AddBoosterType1(amountPerBuy);
-                break;
-            case 2:
-                InventoryManager.Instance.AddBoosterType2(amountPerBuy);
-                break;
-            case 3:
-                InventoryManager.Instance.AddBoosterType3(amountPerBuy);
-                break;
-            case 4:
-                InventoryManager.Instance.AddBoosterType4(amountPerBuy);
-                break;
-        }
+        AddRequestedBooster();
 
         UIManager.Instance.Get<UINotification>().ShowToast("Booster bought");
 
-        var bottomInGame = UIManager.Instance.Get<UIBottomInGame>();
-        if (bottomInGame != null)
-        {
-            bottomInGame.RefreshBoosterQuantity();
-        }
+        RefreshBottomBoosterUI();
 
         RefreshView();
 
         UIManager.Instance.HideUI<UIBuyBooster>();
+    }
+
+    private void OnWatchAdsBuyClicked()
+    {
+        if (InventoryManager.Instance == null)
+            return;
+
+        AddRequestedBooster();
+
+        var toast = UIManager.Instance.Get<UINotification>();
+        if (toast != null)
+            toast.ShowToast("Booster received");
+
+        RefreshBottomBoosterUI();
+        RefreshView();
+
+        UIManager.Instance.HideUI<UIBuyBooster>();
+    }
+
+    private void AddRequestedBooster()
+    {
+        int amount = GetAmountPerBuy();
+        switch (RequestedBoosterType)
+        {
+            case 1:
+                InventoryManager.Instance.AddBoosterType1(amount);
+                break;
+            case 2:
+                InventoryManager.Instance.AddBoosterType2(amount);
+                break;
+            case 3:
+                InventoryManager.Instance.AddBoosterType3(amount);
+                break;
+            case 4:
+                InventoryManager.Instance.AddBoosterType4(amount);
+                break;
+        }
+    }
+
+    private void RefreshBottomBoosterUI()
+    {
+        var bottomInGame = UIManager.Instance.Get<UIBottomInGame>();
+        if (bottomInGame != null)
+            bottomInGame.RefreshBoosterQuantity();
     }
 
     private void OnCloseClicked()

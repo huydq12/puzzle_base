@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3874818048760201448}
   - component: {fileID: 2645528985766937347}
   - component: {fileID: 726092695430266975}
+  - component: {fileID: 1147185465472580757}
   m_Layer: 0
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -171,6 +172,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 2645528985766937347}
   m_maskType: 0
+--- !u!114 &1147185465472580757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476235783169369914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c454eefff774ba44c821976885e57235, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GrabMainCameraOnStart: 1
+  NestObject: 0
+  OffsetDirection: {x: 0, y: 0, z: 1}
+  Up: {x: 0, y: 1, z: 0}
 --- !u!1 &2236646536483129552
 GameObject:
   m_ObjectHideFlags: 0
@@ -5242,8 +5259,8 @@ MonoBehaviour:
   _renderer: {fileID: 6101544238812094336}
   _splineComputer: {fileID: 2588312825938170053}
   _splineHeight: 0.75
-  _gateHeight: 0.8
-  _textHeight: 1.5
+  _gateHeight: 1.55
+  _textHeight: 1.6
   _closeDuration: 0.8
   _shooterVfxTravelDuration: 0.8
   _shooterVfxArcHeight: 1.5
