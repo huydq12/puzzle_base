@@ -51,6 +51,7 @@ public class UserData : SavePlayerPrefs
 
     public bool isFirstClaimDailyReward;
     public bool isShowDailyReward;
+    public string lastDailyRewardAutoShowDate = string.Empty;
     public DailyBonus dailyBonus = new();
     public DailyRewardHandler dailyRewardHandler = new();
 
@@ -123,6 +124,7 @@ public class UserData : SavePlayerPrefs
         listMap = new List<MapData>();
         isFirstClaimDailyReward = false;
         isShowDailyReward = false;
+        lastDailyRewardAutoShowDate = string.Empty;
         dailyBonus = new DailyBonus();
         dailyRewardHandler = new DailyRewardHandler();
         dailyRewardHandler.UpdateCurrentDay();

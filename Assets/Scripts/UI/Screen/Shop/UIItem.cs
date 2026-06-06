@@ -1,15 +1,24 @@
-using Spine.Unity;
-using System.Collections;
-using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIItem : MonoBehaviour
 {
-    [SerializeField] private SkeletonGraphic m_iconSpine;
+    [SerializeField] private Image m_iconImage;
     [SerializeField] private TextMeshProUGUI m_amountText;
+    [SerializeField] private Sprite m_coinSprite;
+    [SerializeField] private Sprite m_boosterType1Sprite;
+    [SerializeField] private Sprite m_boosterType2Sprite;
+    [SerializeField] private Sprite m_boosterType3Sprite;
+    [SerializeField] private Sprite m_infiniteHealthSprite;
+    [SerializeField] private Sprite m_noAdsSprite;
+    [SerializeField] private float m_iconShakeAngle = 4f;
+    [SerializeField] private float m_iconShakeDuration = 1.2f;
+    [SerializeField] private float m_iconShakeDelay = 0.35f;
 
     private Item _item;
+    private Tween _iconShakeTween;
 
     public void Init(Item item)
     {
@@ -19,43 +28,32 @@ public class UIItem : MonoBehaviour
         int amount = item.Quantity;
 
         string amountText = amount.ToString();
-        string animName = "";
+        Sprite iconSprite = null;
 
 
         switch (type)
         {
             case ItemType.Gold:
-                if (amount <= 100)
-                    animName = "coin/coin1";
-                else if (amount <= 200 && amount > 100)
-                    animName = "coin/coin2";
-                else if (amount <= 500 && amount > 200)
-                    animName = "coin/coin3";
-                else if (amount <= 1000 && amount > 500)
-                    animName = "coin/coin4";
-                else if (amount <= 2000 && amount > 1000)
-                    animName = "coin/coin5";
-                else if (amount <= 5000 & amount > 2000)
-                    animName = "coin/coin6";
+                iconSprite = m_coinSprite;
                 break;
             case ItemType.Booster_Type1:
-                animName = "magnet";
+                iconSprite = m_boosterType1Sprite;
                 amountText = "x" + amountText;
                 break;
             case ItemType.Booster_Type2:
-                animName = "shuffle";
+                iconSprite = m_boosterType2Sprite;
                 amountText = "x" + amountText;
                 break;
             case ItemType.Booster_Type3:
-                animName = "clear";
+                iconSprite = m_boosterType3Sprite;
                 amountText = "x" + amountText;
                 break;
             case ItemType.InfiniteHealth:
-                animName = "heart";
-                amountText = "<sprite=0>" + amountText + "h";
+                iconSprite = m_infiniteHealthSprite;
+                amountText = amountText + "h";
                 break;
             case ItemType.NoAds:
-                animName = "ads";
+                iconSprite = m_noAdsSprite;
                 amountText = "Skip Ads";
                 break;
             
@@ -64,10 +62,37 @@ public class UIItem : MonoBehaviour
 
         m_amountText.text = amountText;
 
-        if (string.IsNullOrEmpty(animName)) return;
+        if (m_iconImage == null) return;
+        m_iconImage.sprite = iconSprite;
+        m_iconImage.preserveAspect = true;
+        m_iconImage.enabled = iconSprite != null;
+        PlayIconShake();
+    }
 
-        m_iconSpine.Initialize(true);
-        m_iconSpine.AnimationState.SetAnimation(0, animName, true);
+    private void PlayIconShake()
+    {
+        if (m_iconImage == null) return;
+
+        Transform iconTransform = m_iconImage.transform;
+        _iconShakeTween?.Kill();
+        iconTransform.localRotation = Quaternion.identity;
+
+        if (!m_iconImage.enabled) return;
+
+        _iconShakeTween = iconTransform
+            .DOPunchRotation(new Vector3(0f, 0f, m_iconShakeAngle), m_iconShakeDuration, 6, 0.45f)
+            .SetDelay(m_iconShakeDelay)
+            .SetLoops(-1, LoopType.Restart)
+            .SetTarget(iconTransform);
+    }
+
+    private void OnDisable()
+    {
+        _iconShakeTween?.Kill();
+        _iconShakeTween = null;
+
+        if (m_iconImage != null)
+            m_iconImage.transform.localRotation = Quaternion.identity;
     }
 
     public void Claim()

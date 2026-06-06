@@ -58,8 +58,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 851ef81d41324b44f9685a1d9f555c2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_iconSpine: {fileID: 7574349790563280882}
+  m_iconImage: {fileID: 7574349790563280883}
   m_amountText: {fileID: 5335793735245394524}
+  m_coinSprite: {fileID: 21300000, guid: 59e4e0033e9192149a3951ca43281524, type: 2}
+  m_boosterType1Sprite: {fileID: 21300000, guid: b36a0aad6d9010a46b182027cf23aa5f,
+    type: 3}
+  m_boosterType2Sprite: {fileID: 21300000, guid: 9c520c0e384e64eb5854de5f18c48ae3,
+    type: 3}
+  m_boosterType3Sprite: {fileID: 21300000, guid: 58e5ee3030972ad449078985884510f4,
+    type: 3}
+  m_infiniteHealthSprite: {fileID: 21300000, guid: eefc3c82b691d824abf391ad3d33ebfe,
+    type: 2}
+  m_noAdsSprite: {fileID: 21300000, guid: 795cddd75705de84fae777166714e421, type: 3}
+  m_iconShakeAngle: 4
+  m_iconShakeDuration: 1.2
+  m_iconShakeDelay: 0.35
 --- !u!1 &2955963656120354071
 GameObject:
   m_ObjectHideFlags: 0
@@ -70,7 +83,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8577040714097430428}
   - component: {fileID: 50140838693790221}
-  - component: {fileID: 7574349790563280882}
+  - component: {fileID: 7574349790563280883}
   m_Layer: 0
   m_Name: SpineCoin
   m_TagString: Untagged
@@ -87,7 +100,7 @@ RectTransform:
   m_GameObject: {fileID: 2955963656120354071}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5572824664685818572}
@@ -96,7 +109,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 16}
-  m_SizeDelta: {x: 84, y: 168}
+  m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &50140838693790221
 CanvasRenderer:
@@ -106,7 +119,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2955963656120354071}
   m_CullTransparentMesh: 0
---- !u!114 &7574349790563280882
+--- !u!114 &7574349790563280883
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -115,10 +128,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2955963656120354071}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d85b887af7e6c3f45a2e2d2920d641bc, type: 3}
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 2100000, guid: 7cac9bb1e765c554788b26d01d248e5c, type: 2}
+  m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -126,50 +139,16 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  skeletonDataAsset: {fileID: 11400000, guid: d377886607c0af345aeced9b64cff720, type: 2}
-  additiveMaterial: {fileID: 2100000, guid: 4b28561be24e65c418138962b9bbafcd, type: 2}
-  multiplyMaterial: {fileID: 2100000, guid: 310a258b6c4a4144cb4997fe48ce29ae, type: 2}
-  screenMaterial: {fileID: 2100000, guid: 0f1ba41f8474dfb4d93a008899038e84, type: 2}
-  forceAdditiveMaterial: 0
-  m_SkeletonColor: {r: 1, g: 1, b: 1, a: 1}
-  initialSkinName: 
-  initialFlipX: 0
-  initialFlipY: 0
-  startingAnimation: ads
-  startingLoop: 1
-  timeScale: 1
-  freeze: 0
-  layoutScaleMode: 0
-  referenceSize: {x: 84, y: 168}
-  pivotOffset: {x: 0, y: 0}
-  referenceScale: 1
-  layoutScale: 1
-  rectTransformSize: {x: 100, y: 100}
-  editReferenceRect: 0
-  updateWhenInvisible: 3
-  allowMultipleCanvasRenderers: 0
-  canvasRenderers: []
-  separatorSlotNames: []
-  enableSeparatorSlots: 0
-  separatorParts: []
-  updateSeparatorPartLocation: 1
-  updateSeparatorPartScale: 0
-  disableMeshAssignmentOnOverride: 1
-  physicsPositionInheritanceFactor: {x: 1, y: 1}
-  physicsRotationInheritanceFactor: 1
-  physicsMovementRelativeTo: {fileID: 0}
-  meshGenerator:
-    settings:
-      useClipping: 1
-      zSpacing: 0
-      tintBlack: 0
-      canvasGroupCompatible: 1
-      pmaVertexColors: 0
-      addNormals: 0
-      calculateTangents: 0
-      immutableTriangles: 0
-  updateTiming: 1
-  unscaledTime: 0
+  m_Sprite: {fileID: 21300000, guid: 59e4e0033e9192149a3951ca43281524, type: 2}
+  m_Type: 0
+  m_PreserveAspect: 1
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &8200904242460845673
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,14 +176,14 @@ RectTransform:
   m_GameObject: {fileID: 8200904242460845673}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8577040714097430428}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: -71.19998}
+  m_AnchoredPosition: {x: 0, y: 2}
   m_SizeDelta: {x: 84, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3728646992318436669
@@ -237,8 +216,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: x2
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 822fa9c67b100134e93a2593183d06d6, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 42c178258d08f1b4daccc50711d31110, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 67a695f1135bc9d49afc9ba02ff28d6c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -262,7 +241,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 52.45
+  m_fontSize: 44.9
   m_fontSizeBase: 56
   m_fontWeight: 400
   m_enableAutoSizing: 1

@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: ea7804670cef83041bf68a0bed9301a3, type: 2}
+  m_Sprite: {fileID: 21300000, guid: b6f4bd56f47f59945870468dfca5493d, type: 2}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -109,8 +109,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -35}
-  m_SizeDelta: {x: 88, y: 94}
+  m_AnchoredPosition: {x: 0, y: -41.45}
+  m_SizeDelta: {x: 90, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6086521562772964958
 CanvasRenderer:
@@ -140,7 +140,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2b31fbc159e1c5a4da294731cb7e1a2d, type: 2}
+  m_Sprite: {fileID: 21300000, guid: e31acb5748201f64daf44534a289dc54, type: 2}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -162,6 +162,7 @@ GameObject:
   - component: {fileID: 90714337107561345}
   - component: {fileID: 772031200135925655}
   - component: {fileID: 7515283882392757987}
+  - component: {fileID: 1769059318217753113}
   m_Layer: 5
   m_Name: BgActive
   m_TagString: Untagged
@@ -216,7 +217,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a7a1b444dc617f344a5f51f8244d2d38, type: 2}
+  m_Sprite: {fileID: 21300000, guid: 7276772a212ea8e4facbbd9b9e445b0d, type: 2}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -242,18 +243,65 @@ MonoBehaviour:
   onInvalidClick:
     m_PersistentCalls:
       m_Calls: []
-  _isInteractable: 1
   tweenType: 1
   duration: 0.2
   strength: 0.2
+  _soundClick: 13
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _activeAnimate: 0
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
   colorEffect: 1
   tintColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   colorDuration: 0.1
   disabledMultiplier: 0.6
-  target: {fileID: 190640216514973308}
-  targetGraphic: {fileID: 772031200135925655}
-  targetImage: {fileID: 772031200135925655}
+  _button: {fileID: 1769059318217753113}
   onClick:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1769059318217753113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3749024879102507022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 772031200135925655}
+  m_OnClick:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &5197728126435535755
@@ -310,7 +358,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 0
+  m_Spacing: -10
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -377,15 +425,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.5803922}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 647c3c25e7f12ba4187a1024e283de2c, type: 2}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: e883c4fc7f82c454f9ac058ea0b9bee2, type: 2}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -406,6 +454,7 @@ GameObject:
   - component: {fileID: 3533953683247881781}
   - component: {fileID: 9012815314284966217}
   - component: {fileID: 5795844668129121206}
+  - component: {fileID: 1009492140391540968}
   m_Layer: 5
   m_Name: BgLoseStreak
   m_TagString: Untagged
@@ -460,7 +509,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: e67c84b4a74546041be37e6563031520, type: 2}
+  m_Sprite: {fileID: 21300000, guid: 1cce447f6283c5c4eb8586fead0b620a, type: 2}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -486,18 +535,65 @@ MonoBehaviour:
   onInvalidClick:
     m_PersistentCalls:
       m_Calls: []
-  _isInteractable: 1
   tweenType: 1
   duration: 0.2
   strength: 0.2
+  _soundClick: 13
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _activeAnimate: 0
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
   colorEffect: 1
   tintColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   colorDuration: 0.1
   disabledMultiplier: 0.6
-  target: {fileID: 1715916065567684050}
-  targetGraphic: {fileID: 9012815314284966217}
-  targetImage: {fileID: 9012815314284966217}
+  _button: {fileID: 1009492140391540968}
   onClick:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1009492140391540968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8157070872022479747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 9012815314284966217}
+  m_OnClick:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &8608740877210635073
@@ -567,23 +663,24 @@ MonoBehaviour:
       m_Calls: []
   m_text: Day 1
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 822fa9c67b100134e93a2593183d06d6, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: d4b9106c957b9d04995e79cda4c7d2a5, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: f383d870d4a8e6848b05565afdd8e655, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
-  m_enableVertexGradient: 0
+    rgba: 4293388263
+  m_fontColor: {r: 0.9056604, g: 0.9056604, b: 0.9056604, a: 1}
+  m_enableVertexGradient: 1
   m_colorMode: 3
   m_fontColorGradient:
     topLeft: {r: 1, g: 1, b: 1, a: 1}
     topRight: {r: 1, g: 1, b: 1, a: 1}
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
-  m_fontColorGradientPreset: {fileID: 0}
+  m_fontColorGradientPreset: {fileID: 11400000, guid: 1937404d432eb8648957f5a1b689d9eb,
+    type: 2}
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
@@ -685,7 +782,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_dayText: {fileID: 2497073490394516945}
   m_rewardHolder: {fileID: 8332933641335110405}
-  m_itemPrefabs: {fileID: 8228366241832415046, guid: 01ba47d54bf4f0b488e8311cc252f31b, type: 3}
+  m_itemPrefabs: {fileID: 8228366241832415046, guid: 01ba47d54bf4f0b488e8311cc252f31b,
+    type: 3}
   m_button: {fileID: 7515283882392757987}
   m_claimedOverlay: {fileID: 7654492093918686516}
   m_failedButton: {fileID: 5795844668129121206}

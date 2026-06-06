@@ -25,6 +25,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 {
     public static GameManagerInGame intance => Instance;
     public DailyRewardConfigSO dailyRewardConfigSO;
+    public int levelShowDailyReward = 2;
     public int MaxLevel = 1;
     public int CurrentLevel = 1;
     public int LastCompletedLevel { get; private set; }
@@ -324,6 +325,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         SetState(GameStateInGame.Init);
 
         SpawnUI();
+        TryShowDailyRewardOncePerDay(level);
         var tutorialManager = TutorialManager.Instance;
         if (tutorialManager != null) tutorialManager.TryShowTutorial(_contentLevelInPlay);
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
@@ -360,6 +362,23 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             UILoadingInGame.Instance.Show();
         else
             UILoadingInGame.Instance.Hide();
+    }
+
+    private void TryShowDailyRewardOncePerDay(int level)
+    {
+        if (userData == null) return;
+        if (dailyRewardConfigSO == null) return;
+        if (UIManager.Instance == null) return;
+        if (level < Mathf.Max(1, levelShowDailyReward)) return;
+
+        string todayKey = DateTime.Today.ToString("yyyyMMdd");
+        if (userData.lastDailyRewardAutoShowDate == todayKey) return;
+
+        userData.EnsureDailyRewardHandler();
+        userData.lastDailyRewardAutoShowDate = todayKey;
+        userData.Save();
+
+        UIManager.Instance.ShowUI<UIDailyRewardPopup>(false);
     }
 
     public void UpdateValueData()
