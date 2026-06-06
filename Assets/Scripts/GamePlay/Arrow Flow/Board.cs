@@ -2272,7 +2272,7 @@ public class Board : Singleton<Board>
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
         Camera.main.transform.position = new Vector3(0, 10, 6f);
-        Camera.main.orthographicSize = 9.41f;
+        Camera.main.orthographicSize = 10.6f;
         StartCoroutine(Common.DelayAction(1, () =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);
