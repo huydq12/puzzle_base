@@ -231,8 +231,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         int cash = userData != null ? userData.playerCash : 0;
 
-        TinySauce.OnGameStarted(level);
-        TinySauce.TrackCustomEvent("level_start", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
+        AnalyticsBridge.OnGameStarted(level);
+        AnalyticsBridge.TrackCustomEvent("level_start", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
     }
 
     private void TrackLevelFinished(bool win, int level)
@@ -244,8 +244,8 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         int cash = userData != null ? userData.playerCash : 0;
 
-        TinySauce.OnGameFinished(win, 0f, level);
-        TinySauce.TrackCustomEvent(win ? "level_win" : "level_lose", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
+        AnalyticsBridge.OnGameFinished(win, 0f, level);
+        AnalyticsBridge.TrackCustomEvent(win ? "level_win" : "level_lose", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
     }
     public void SetState(GameStateInGame state)
     {
