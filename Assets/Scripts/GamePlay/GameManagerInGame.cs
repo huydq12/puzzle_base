@@ -55,6 +55,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _hasPendingLose;
     private bool _hasCommittedPendingLose;
     private int _pendingLoseLevel;
+    private int _losePopupShowCountInCurrentLevel;
 
     private const int LoopStartLevel = 30;
     private const int LoopEndLevel = 180;
@@ -288,6 +289,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _lastStartRequestTime = Time.unscaledTime;
 
         _levelInPlay = level;
+        _losePopupShowCountInCurrentLevel = 0;
         LastCompletedLevel = 0;
         LastResultWasWin = false;
         _contentLevelInPlay = NormalizeLoopLevel(level);
@@ -331,6 +333,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
         TutorialPopupService.TryShowAtLevelStart(_contentLevelInPlay);
         ClearVfx();
+    }
+
+    public int RegisterLosePopupShown()
+    {
+        _losePopupShowCountInCurrentLevel++;
+        return _losePopupShowCountInCurrentLevel;
     }
 
     private bool CanStartLevel()

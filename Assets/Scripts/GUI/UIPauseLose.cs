@@ -26,7 +26,6 @@ public class UIPauseLose : BasePopup
 
     [Header("Use Rainbow (Buy with coin)")]
     [SerializeField] private int useRainbowCoinPrice = 200;
-    [SerializeField] private int useRainbowCoinPriceIncreasePerLose = 100;
     [SerializeField] private TextMeshProUGUI txt_useRainbowCoinPrice;
     [SerializeField] private string notEnoughGoldToast = "Not enough gold";
 
@@ -44,9 +43,7 @@ public class UIPauseLose : BasePopup
 
     private Tween _step1Tween;
     private Tween _step2Tween;
-    private int _loseCountInCurrentLevel;
     private int _currentUseRainbowCoinPrice;
-    private bool _registeredStartLevelCallback;
 
     public void OnHoldStart()
     {
@@ -64,7 +61,6 @@ public class UIPauseLose : BasePopup
     public override void BeforeShow()
     {
         base.BeforeShow();
-        EnsureLevelStartCallbackRegistered();
         CacheStep1Pos();
         UpdateUseRainbowCoinPriceOnLose();
         RefreshCoin();
@@ -123,7 +119,6 @@ public class UIPauseLose : BasePopup
     private void Start()
     {
         ResetUseRainbowCoinPrice();
-        EnsureLevelStartCallbackRegistered();
 
         if (btnClose != null)
             btnClose.OnClick.AddListener(SetLose);
@@ -216,14 +211,16 @@ public class UIPauseLose : BasePopup
 
     private void UpdateUseRainbowCoinPriceOnLose()
     {
-        _currentUseRainbowCoinPrice = useRainbowCoinPrice + (_loseCountInCurrentLevel * useRainbowCoinPriceIncreasePerLose);
-        _loseCountInCurrentLevel++;
+        int showCount = 1;
+        if (GameManagerInGame.intance != null)
+            showCount = Mathf.Max(1, GameManagerInGame.intance.RegisterLosePopupShown());
+
+        _currentUseRainbowCoinPrice = useRainbowCoinPrice * showCount;
         RefreshUseRainbowCoinPrice();
     }
 
     private void ResetUseRainbowCoinPrice()
     {
-        _loseCountInCurrentLevel = 0;
         _currentUseRainbowCoinPrice = useRainbowCoinPrice;
         RefreshUseRainbowCoinPrice();
     }
@@ -234,32 +231,11 @@ public class UIPauseLose : BasePopup
         txt_useRainbowCoinPrice.text = _currentUseRainbowCoinPrice.ToString();
     }
 
-    private void EnsureLevelStartCallbackRegistered()
-    {
-        if (_registeredStartLevelCallback) return;
-        var gameManagerInGame = GameManagerInGame.intance;
-        if (gameManagerInGame == null) return;
-
-        gameManagerInGame.OnStartLevel += ResetUseRainbowCoinPrice;
-        _registeredStartLevelCallback = true;
-    }
-
     private void CacheStep1Pos()
     {
         if (_cachedStep1Pos) return;
         if (step1 == null) return;
         _step1ShownPos = step1.anchoredPosition;
         _cachedStep1Pos = true;
-    }
-
-    protected override void OnDestroy()
-    {
-        var gameManagerInGame = GameManagerInGame.intance;
-        if (_registeredStartLevelCallback && gameManagerInGame != null)
-        {
-            gameManagerInGame.OnStartLevel -= ResetUseRainbowCoinPrice;
-        }
-
-        base.OnDestroy();
     }
 }
