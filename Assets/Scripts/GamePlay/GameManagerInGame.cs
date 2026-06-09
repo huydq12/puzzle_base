@@ -1,14 +1,15 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro; // Quản lý TextMeshPro
+using Gley.Notifications;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-
-using System.Collections;
-using System.Collections.Generic;
-using Gley.Notifications;
 
 public enum GameStateInGame
 {
@@ -59,6 +60,13 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     [SerializeField] private int _debugAddCoinAmount = 100;
 #endif
 
+    [Header("---- Debug Tool Setup ----")]
+    [SerializeField] private GameObject tool;
+    [SerializeField] private Button btnNEXT_LV;
+    [SerializeField] private Button btnBACK_LV;
+    [SerializeField] private TMP_InputField inputLevel; // Đã sửa từ InputTextMeshPro thành TMP_InputField chuẩn
+    [SerializeField] private Button btnHideProject;
+
     private new void Awake()
     {
         base.Awake();
@@ -77,7 +85,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             //    LoadData();
         }
         API.Initialize();
+
+        // Khởi tạo và gán sự kiện cho Debug Tool
+        SetupDebugTool();
     }
+
     void Start()
     {
         StartGame(CurrentLevel);
@@ -92,6 +104,86 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
 #endif
     }
+
+    #region Debug Tool Logic
+    private void SetupDebugTool()
+    {
+        // Chỉ kích hoạt Tool này trong Editor hoặc bản Build Test (Development)
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (tool != null) tool.SetActive(false);
+        return;
+#endif
+
+        if (btnNEXT_LV != null)
+        {
+            btnNEXT_LV.onClick.RemoveAllListeners();
+            btnNEXT_LV.onClick.AddListener(DebugNextLevel);
+        }
+
+        if (btnBACK_LV != null)
+        {
+            btnBACK_LV.onClick.RemoveAllListeners();
+            btnBACK_LV.onClick.AddListener(DebugBackLevel);
+        }
+
+        if (btnHideProject != null)
+        {
+            btnHideProject.onClick.RemoveAllListeners();
+            btnHideProject.onClick.AddListener(ToggleDebugToolPanel);
+        }
+
+        if (inputLevel != null)
+        {
+            inputLevel.onEndEdit.RemoveAllListeners();
+            inputLevel.onEndEdit.AddListener(DebugJumpToLevelFromInput);
+        }
+    }
+
+    private void DebugNextLevel()
+    {
+        int nextLv = CurrentLevel + 1;
+        Debug.Log($"[Debug Tool] Chuyển sang Level: {nextLv}");
+        StartGame(nextLv);
+    }
+
+    private void DebugBackLevel()
+    {
+        int prevLv = Mathf.Max(1, CurrentLevel - 1);
+        Debug.Log($"[Debug Tool] Quay lại Level: {prevLv}");
+        StartGame(prevLv);
+    }
+
+    private void DebugJumpToLevelFromInput(string text)
+    {
+        if (int.TryParse(text, out int targetLevel))
+        {
+            targetLevel = Mathf.Max(1, targetLevel);
+            Debug.Log($"[Debug Tool] Nhảy thẳng tới Level: {targetLevel}");
+            StartGame(targetLevel);
+        }
+        else
+        {
+            UpdateDebugUI(); // Hoàn tác chữ hiển thị nếu nhập sai định dạng số
+        }
+    }
+
+    private void ToggleDebugToolPanel()
+    {
+        if (tool != null)
+        {
+            tool.SetActive(!tool.activeSelf);
+        }
+    }
+
+    private void UpdateDebugUI()
+    {
+        if (inputLevel != null)
+        {
+            inputLevel.text = CurrentLevel.ToString();
+        }
+    }
+    #endregion
+
     public void PlayVfxWin()
     {
         foreach (var effect in _winEffect)
@@ -109,7 +201,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
     }
 
-
     public void SetWin()
     {
         int completedLevel = Mathf.Max(1, _levelInPlay);
@@ -118,8 +209,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         _queuedNextLevel = nextLevel;
         MaxLevel = Mathf.Max(MaxLevel, nextLevel);
         SaveData();
-        // Grant unlock gift for the newly reached level (config unlockLevel matches StartGame level).
-        // If an unlock tutorial will be shown at level start, we defer the gift until the tutorial FX completes.
+
         int contentLevel = NormalizeLoopLevel(CurrentLevel);
         if (!BoosterUnlockService.ShouldDeferGift(contentLevel))
         {
@@ -132,15 +222,13 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         SetState(GameStateInGame.Result);
         _nextStartIsAfterWin = true;
     }
+
     public void SetLose()
     {
         int failedLevel = Mathf.Max(1, _levelInPlay);
         _queuedNextLevel = failedLevel;
         TrackLevelFinished(false, failedLevel);
         SetState(GameStateInGame.Result);
-
-        // if (Board.Instance != null)
-        //     Board.Instance.SpawnLoseRainbowShooter();
     }
 
     private void TrackLevelStarted(int level)
@@ -167,6 +255,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         TinySauce.OnGameFinished(win, 0f, level);
         TinySauce.TrackCustomEvent(win ? "level_win" : "level_lose", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
     }
+
     public void SetState(GameStateInGame state)
     {
         CurrentGameStateInGame = state;
@@ -190,14 +279,15 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
                 break;
         }
     }
+
     public void StartGame()
     {
         StartGame(CurrentLevel);
     }
+
     public void StartGame(int level)
     {
         level = Mathf.Max(1, level);
-        // Prevent spam-tapping Replay/Restart from interrupting setup and leaving pooled objects mid-state.
         if (_playRoutine != null) return;
         if (Time.unscaledTime - _lastStartRequestTime < StartRequestCooldownSeconds) return;
         _lastStartRequestTime = Time.unscaledTime;
@@ -237,6 +327,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
         TutorialPopupService.TryShowAtLevelStart(_contentLevelInPlay);
         ClearVfx();
+
+        // Cập nhật lại số màn hiển thị trên ô nhập Text của Debug Tool
+        UpdateDebugUI();
     }
 
     public void SpawnUI()
@@ -320,6 +413,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         if (UILoadingInGame.Instance != null) UILoadingInGame.Instance.Hide();
         _hideLoadingRoutine = null;
     }
+
     public void SaveData()
     {
         if (userData == null) return;
@@ -327,6 +421,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         userData.currentLevel = Mathf.Max(1, Mathf.Max(userData.currentLevel, CurrentLevel));
         userData.Save();
     }
+
     public void LoadData()
     {
         if (userData == null)
@@ -348,6 +443,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         int offset = (level - LoopStartLevel) % loopLen;
         return LoopStartLevel + offset;
     }
+
 #if UNITY_EDITOR
     new void OnApplicationQuit()
     {
@@ -379,5 +475,4 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
             API.CancelAllNotifications();
         }
     }
-
 }
