@@ -71,6 +71,9 @@ public class Board : Singleton<Board>
 
     private readonly List<(ConveyorTunel tunnel, List<Vector2Int> cells)> _activeTunnels = new();
 
+    [SerializeField] private Vector3 startCam;
+    [SerializeField] private float orthographicSize;
+
     private struct ConveyorMeta
     {
         public int Type;
@@ -2437,8 +2440,8 @@ public class Board : Singleton<Board>
             else
                 SetupCamera(config.Camera.Padding, config.Camera.MinOrthoSize);
         }
-        Camera.main.transform.position = new Vector3(0, 9, 6f);
-        Camera.main.orthographicSize = 13.07f;
+        Camera.main.transform.position = startCam;
+        Camera.main.orthographicSize = orthographicSize;
         StartCoroutine(Common.DelayAction(1, () =>
         {
             GameManagerInGame.Instance.SetState(GameStateInGame.Init);

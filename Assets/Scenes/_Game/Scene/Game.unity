@@ -1431,7 +1431,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 138176886}
-  m_Mesh: {fileID: 1536202263}
+  m_Mesh: {fileID: 1576749764}
 --- !u!114 &138176891
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1739,6 +1739,8 @@ MonoBehaviour:
   _overlay: {fileID: 1749338067}
   CurrentBooster: 0
   IsUsingBooster: 0
+  startCam: {x: 0, y: 9, z: 6}
+  orthographicSize: 15
 --- !u!1 &615510554
 GameObject:
   m_ObjectHideFlags: 0
@@ -2914,7 +2916,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1426038449}
   m_CullTransparentMesh: 1
---- !u!43 &1536202263
+--- !u!43 &1576749764
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3350,6 +3352,7 @@ MonoBehaviour:
   _cubeSize: 1
   _walkAroundSpeed: 12
   _baseOffsetAmount: 0
+  _wrapHideDistanceMultiplier: 1.5
 --- !u!1 &1899384183
 GameObject:
   m_ObjectHideFlags: 0
