@@ -1,0 +1,151 @@
+buildscript {
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.5.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+// Android Resolver Repos Start
+([rootProject] + (rootProject.subprojects as List)).each { project ->
+    project.repositories {
+        def unityProjectPath = $/file:///**DIR_UNITYPROJECT**/$.replace("\\", "/")
+        maven {
+            url "https://maven.google.com"
+        }
+        maven {
+            url "https://maven.google.com/" // Assets/Plugins/GoogleUMP/Editor/GoogleUmpDependencies.xml:7
+        }
+        maven {
+            url "https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea" // Packages/com.applovin.mediation.adapters.mintegral.android/Editor/Dependencies.xml:8
+        }
+        maven {
+            url (unityProjectPath + "/Assets/GeneratedLocalRepo/Firebase/m2repository") // Packages/com.google.firebase.app/Firebase/Editor/AppDependencies.xml:25, Packages/com.google.firebase.remote-config/Firebase/Editor/RemoteConfigDependencies.xml:23, Packages/com.google.firebase.analytics/Firebase/Editor/AnalyticsDependencies.xml:21
+        }
+        mavenLocal()
+        mavenCentral()
+    }
+}
+// Android Resolver Repos End
+apply plugin: 'com.android.library'
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:multidex:1.0.3'
+  	implementation 'com.android.installreferrer:installreferrer:1.0'
+// Android Resolver Dependencies Start
+    implementation 'androidx.annotation:annotation:1.7.1' // Packages/io.appmetrica.analytics/Editor/AppMetricaDependencies.xml:5
+    implementation 'androidx.recyclerview:recyclerview:1.2.1' // Packages/com.applovin.mediation.adapters.mintegral.android/Editor/Dependencies.xml:9
+    implementation 'com.android.installreferrer:installreferrer:2.1' // Assets/AppsFlyer/Editor/AppsFlyerDependencies.xml:7
+    implementation 'com.android.support:appcompat-v7:25.3.1' // Facebook.Unity.Editor.AndroidSupportLibraryResolver.addSupportLibraryDependency
+    implementation 'com.android.support:cardview-v7:25.3.1' // Facebook.Unity.Editor.AndroidSupportLibraryResolver.addSupportLibraryDependency
+    implementation 'com.android.support:customtabs:25.3.1' // Facebook.Unity.Editor.AndroidSupportLibraryResolver.addSupportLibraryDependency
+    implementation 'com.android.support:support-v4:25.3.1' // Facebook.Unity.Editor.AndroidSupportLibraryResolver.addSupportLibraryDependency
+    implementation 'com.applovin.mediation:facebook-adapter:[6.20.0.0]' // Packages/com.applovin.mediation.adapters.facebook.android/Editor/Dependencies.xml:7
+    implementation 'com.applovin.mediation:fyber-adapter:8.4.5.0' // Packages/com.applovin.mediation.adapters.fyber.android/Editor/Dependencies.xml:4
+    implementation 'com.applovin.mediation:google-adapter:[25.3.0.0]' // Packages/com.applovin.mediation.adapters.google.android/Editor/Dependencies.xml:4
+    implementation 'com.applovin.mediation:ironsource-adapter:9.4.3.0.0' // Packages/com.applovin.mediation.adapters.ironsource.android/Editor/Dependencies.xml:4
+    implementation 'com.applovin.mediation:mintegral-adapter:17.1.61.0' // Packages/com.applovin.mediation.adapters.mintegral.android/Editor/Dependencies.xml:8
+    implementation 'com.applovin.mediation:unityads-adapter:4.18.0.0' // Packages/com.applovin.mediation.adapters.unityads.android/Editor/Dependencies.xml:4
+    implementation 'com.applovin:applovin-sdk:12.6.1' // Assets/MaxSdk/AppLovin/Editor/Dependencies.xml:4
+    implementation 'com.appsflyer:af-android-sdk:6.16.2' // Assets/AppsFlyer/Editor/AppsFlyerDependencies.xml:5
+    implementation 'com.appsflyer:unity-wrapper:6.16.2' // Assets/AppsFlyer/Editor/AppsFlyerDependencies.xml:6
+    implementation 'com.facebook.android:facebook-applinks:[18.0.0,19)' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:6
+    implementation 'com.facebook.android:facebook-core:[18.0.0,19)' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:5
+    implementation 'com.facebook.android:facebook-gamingservices:[18.0.0,19)' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:9
+    implementation 'com.facebook.android:facebook-login:[18.0.0,19)' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:7
+    implementation 'com.facebook.android:facebook-share:[18.0.0,19)' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:8
+    implementation 'com.google.android.gms:play-services-appset:16.1.0' // Packages/com.azur.application-identity/Editor/Android/Dependencies.xml:4
+    implementation 'com.google.android.gms:play-services-base:18.10.0' // Packages/com.google.firebase.app/Firebase/Editor/AppDependencies.xml:20
+    // implementation 'com.google.android.gms:play-services-base:18.5.0' // Packages/com.azur.application-identity/Editor/Android/Dependencies.xml:5
+    implementation 'com.google.android.gms:play-services-basement:18.4.0' // Packages/com.azur.application-identity/Editor/Android/Dependencies.xml:6
+    implementation 'com.google.android.ump:user-messaging-platform:3.2.0' // Assets/Plugins/GoogleUMP/Editor/GoogleUmpDependencies.xml:7
+    implementation 'com.google.firebase:firebase-analytics:23.2.0' // Packages/com.google.firebase.analytics/Firebase/Editor/AnalyticsDependencies.xml:16
+    implementation 'com.google.firebase:firebase-analytics-unity:13.11.0' // Packages/com.google.firebase.analytics/Firebase/Editor/AnalyticsDependencies.xml:21
+    implementation 'com.google.firebase:firebase-app-unity:13.11.0' // Packages/com.google.firebase.app/Firebase/Editor/AppDependencies.xml:25
+    implementation 'com.google.firebase:firebase-common:22.0.1' // Packages/com.google.firebase.app/Firebase/Editor/AppDependencies.xml:16
+    implementation 'com.google.firebase:firebase-config:23.1.0' // Packages/com.google.firebase.remote-config/Firebase/Editor/RemoteConfigDependencies.xml:16
+    implementation 'com.google.firebase:firebase-config-unity:13.11.0' // Packages/com.google.firebase.remote-config/Firebase/Editor/RemoteConfigDependencies.xml:23
+    implementation 'com.parse.bolts:bolts-android:1.4.0' // Assets/FacebookSDK/Plugins/Editor/Dependencies.xml:4
+    implementation 'io.appmetrica.analytics:analytics:7.11.0' // Packages/io.appmetrica.analytics/Editor/AppMetricaDependencies.xml:4
+// Android Resolver Dependencies End
+    **DEPS**
+}
+
+// Android Resolver Exclusions Start
+android {
+  packagingOptions {
+      exclude ('/lib/armeabi/*' + '*')
+      exclude ('/lib/mips/*' + '*')
+      exclude ('/lib/mips64/*' + '*')
+      exclude ('/lib/x86/*' + '*')
+      exclude ('/lib/x86_64/*' + '*')
+  }
+}
+// Android Resolver Exclusions End
+android {
+    ndkPath "**NDKPATH**"
+    compileSdkVersion 35
+    buildToolsVersion '**BUILDTOOLS**'
+
+    defaultConfig {
+        multiDexEnabled true
+        minSdkVersion **MINSDKVERSION**
+        targetSdkVersion 35
+        versionCode **VERSIONCODE**
+        versionName '**VERSIONNAME**'
+        
+    }
+
+    dexOptions {
+        preDexLibraries false
+        javaMaxHeapSize "4g"
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    packagingOptions {
+       exclude  'jsr305_annotations/Jsr305_annotations.gwt.xml'
+       jniLibs{
+        useLegacyPackaging true
+       }
+    }
+
+    aaptOptions {
+        noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ')
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+    **SIGN**
+
+    buildTypes {
+        debug {
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+            **SIGNCONFIG**
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}**REPOSITORIES**
+**IL_CPP_BUILD_SETUP**
+**SOURCE_BUILD_SETUP**
+**EXTERNAL_SOURCES**

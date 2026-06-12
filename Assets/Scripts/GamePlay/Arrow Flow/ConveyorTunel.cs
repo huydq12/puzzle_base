@@ -15,6 +15,8 @@ public class ConveyorTunel : MonoBehaviour
     [SerializeField] private SplineComputer _splineComputer;
 
     [SerializeField] private float _splineHeight;
+    [SerializeField] private float _baseSplineMeshSize = 0.85f;
+    [SerializeField] private float _baseChannelScaleX = 0.45f;
     [SerializeField] private float _gateHeight = 0.5f;
     [SerializeField] private float _textHeight = 2f;
     [SerializeField] private float _closeDuration = 0.25f;
@@ -62,10 +64,10 @@ public class ConveyorTunel : MonoBehaviour
     }
 #endif
 
-    public void Setup(int type, int counter, IReadOnlyList<Vector3> worldPositions)
+    public void Setup(int type, int counter, IReadOnlyList<Vector3> worldPositions, float expand)
     {
         Type = type;
-        SetCounter(counter);
+        Counter = Mathf.Max(0, counter);
 
         if (Type != 0)
             gameObject.name = $"ConveyorTunel_T{Type}_{Counter}";
@@ -87,23 +89,12 @@ public class ConveyorTunel : MonoBehaviour
                 _gate_end.transform.rotation = Quaternion.LookRotation(endDir.normalized, Vector3.up);
         }
 
-        // If counter is 0, tunnel should be hidden and not block.
-        if (Counter <= 0)
-            return;
-
         if (_countTunel != null)
         {
             int midIdx = Mathf.Clamp(worldPositions.Count / 2, 0, worldPositions.Count - 1);
 
             _bg_text.transform.position = new Vector3(worldPositions[midIdx].x, 2.5f, worldPositions[midIdx].z);
             _countTunel.transform.position = new Vector3(worldPositions[midIdx].x, 2f, worldPositions[midIdx].z);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            DebugSetActive(_countTunel.gameObject, Counter > 0, this, "ConveyorTunel.Setup() toggle _countTunel");
-#else
-            _countTunel.gameObject.SetActive(Counter > 0);
-#endif
-            _countTunel.text = Counter.ToString();
-
             _countTunel.transform.position = worldPositions[midIdx] + Vector3.up * _splineHeight + Vector3.up * _textHeight;
         }
 
@@ -117,6 +108,7 @@ public class ConveyorTunel : MonoBehaviour
             _splineMesh.clipFrom = 0.0;
             _splineMesh.clipTo = 1.0;
             _splineMesh.autoUpdate = true;
+            ApplySplineMeshExpand(expand);
         }
 
         if (_splineComputer.isClosed)
@@ -144,6 +136,30 @@ public class ConveyorTunel : MonoBehaviour
 
         if (_splineMesh != null)
             _splineMesh.RebuildImmediate();
+
+        ApplyInitialCounterVisualState();
+    }
+
+    private void ApplySplineMeshExpand(float expand)
+    {
+        if (_splineMesh == null) return;
+
+        _splineMesh.size = Mathf.Max(0.01f, _baseSplineMeshSize + expand);
+
+        if (_splineMesh.GetChannelCount() <= 0)
+            return;
+
+        SplineMesh.Channel channel = _splineMesh.GetChannel(0);
+        if (channel == null || channel.GetMeshCount() <= 0)
+            return;
+
+        SplineMesh.Channel.MeshDefinition mesh = channel.GetMesh(0);
+        if (mesh == null)
+            return;
+
+        Vector3 scale = mesh.scale;
+        scale.x = Mathf.Max(0.01f, _baseChannelScaleX + expand);
+        mesh.scale = scale;
     }
 
     private static List<Vector3> GenerateRoundedPath(IReadOnlyList<Vector3> positions, float radius, int segments, float minAngleDeg)
@@ -229,15 +245,6 @@ public class ConveyorTunel : MonoBehaviour
         if (Counter <= 0)
         {
             SetGatesActive(false);
-            if (_countTunel != null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                DebugSetActive(_countTunel.gameObject, false, this, "ConveyorTunel.SetCounter() toggle _countTunel");
-#else
-                _countTunel.gameObject.SetActive(false);
-#endif
-            }
-
             StartCloseAnimation();
             return;
         }
@@ -252,15 +259,31 @@ public class ConveyorTunel : MonoBehaviour
         gameObject.SetActive(true);
 #endif
 
-        if (_countTunel == null) return;
+        SetCounterVisualActive(true);
+        if (_countTunel != null)
+            _countTunel.text = Counter.ToString();
+    }
+
+    private void ApplyInitialCounterVisualState()
+    {
+        bool hasPersistentVisual = Type != 0;
+
+        if (Counter > 0)
+        {
+            SetCounter(Counter);
+            return;
+        }
+
+        StopCloseAnimation();
+        ResetSplineClip();
+        SetGatesActive(hasPersistentVisual);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        DebugSetActive(_countTunel.gameObject, true, this, "ConveyorTunel.SetCounter() toggle _countTunel");
+        DebugSetActive(gameObject, hasPersistentVisual, this, "ConveyorTunel.ApplyInitialCounterVisualState() tunnel");
 #else
-        _countTunel.gameObject.SetActive(true);
+        gameObject.SetActive(hasPersistentVisual);
 #endif
-
-        _countTunel.text = Counter.ToString();
+        SetCounterVisualActive(false);
     }
 
     private void SetGatesActive(bool active)
@@ -283,6 +306,7 @@ public class ConveyorTunel : MonoBehaviour
 
         if (_closeDuration <= 0f || _splineMesh == null)
         {
+            SetCounterVisualActive(false);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DebugSetActive(gameObject, false, this, "ConveyorTunel.StartCloseAnimation() no spline");
 #else
@@ -339,6 +363,8 @@ public class ConveyorTunel : MonoBehaviour
 
         while (_shooterVfxRoutine != null)
             yield return null;
+
+        SetCounterVisualActive(false);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         DebugSetActive(gameObject, false, this, "ConveyorTunel.CloseRoutine() done");
@@ -433,6 +459,27 @@ public class ConveyorTunel : MonoBehaviour
             if (!_particleSystemHole2.gameObject.activeSelf)
                 _particleSystemHole2.gameObject.SetActive(true);
             _particleSystemHole2.Play(true);
+        }
+    }
+
+    private void SetCounterVisualActive(bool active)
+    {
+        if (_countTunel != null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DebugSetActive(_countTunel.gameObject, active, this, "ConveyorTunel.SetCounterVisualActive() count");
+#else
+            _countTunel.gameObject.SetActive(active);
+#endif
+        }
+
+        if (_bg_text != null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DebugSetActive(_bg_text, active, this, "ConveyorTunel.SetCounterVisualActive() bg");
+#else
+            _bg_text.SetActive(active);
+#endif
         }
     }
 }

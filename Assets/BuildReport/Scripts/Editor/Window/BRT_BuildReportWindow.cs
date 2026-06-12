@@ -656,10 +656,147 @@ public class BRT_BuildReportWindow : EditorWindow
 		}
 	}
 
+	static GUIStyle CreateNamedStyle(string name, GUIStyle sourceStyle)
+	{
+		var style = sourceStyle != null ? new GUIStyle(sourceStyle) : new GUIStyle();
+		style.name = name;
+		style.richText = true;
+		return style;
+	}
+
+	static void EnsureStyle(List<GUIStyle> styles, GUISkin skin, string name, GUIStyle fallbackStyle)
+	{
+		if (skin.FindStyle(name) != null)
+		{
+			return;
+		}
+
+		styles.Add(CreateNamedStyle(name, fallbackStyle));
+	}
+
+	static GUISkin CreateFallbackSkinFromNative(GUISkin nativeSkin)
+	{
+		var fallbackSkin = ScriptableObject.CreateInstance<GUISkin>();
+
+		fallbackSkin.box = new GUIStyle(nativeSkin.box);
+		fallbackSkin.label = new GUIStyle(nativeSkin.label);
+		fallbackSkin.textField = new GUIStyle(nativeSkin.textField);
+		fallbackSkin.textArea = new GUIStyle(nativeSkin.textArea);
+		fallbackSkin.button = new GUIStyle(nativeSkin.button);
+		fallbackSkin.toggle = new GUIStyle(nativeSkin.toggle);
+		fallbackSkin.window = new GUIStyle(nativeSkin.window);
+		fallbackSkin.horizontalSlider = new GUIStyle(nativeSkin.horizontalSlider);
+		fallbackSkin.horizontalSliderThumb = new GUIStyle(nativeSkin.horizontalSliderThumb);
+		fallbackSkin.verticalSlider = new GUIStyle(nativeSkin.verticalSlider);
+		fallbackSkin.verticalSliderThumb = new GUIStyle(nativeSkin.verticalSliderThumb);
+		fallbackSkin.horizontalScrollbar = new GUIStyle(nativeSkin.horizontalScrollbar);
+		fallbackSkin.horizontalScrollbarThumb = new GUIStyle(nativeSkin.horizontalScrollbarThumb);
+		fallbackSkin.horizontalScrollbarLeftButton = new GUIStyle(nativeSkin.horizontalScrollbarLeftButton);
+		fallbackSkin.horizontalScrollbarRightButton = new GUIStyle(nativeSkin.horizontalScrollbarRightButton);
+		fallbackSkin.verticalScrollbar = new GUIStyle(nativeSkin.verticalScrollbar);
+		fallbackSkin.verticalScrollbarThumb = new GUIStyle(nativeSkin.verticalScrollbarThumb);
+		fallbackSkin.verticalScrollbarUpButton = new GUIStyle(nativeSkin.verticalScrollbarUpButton);
+		fallbackSkin.verticalScrollbarDownButton = new GUIStyle(nativeSkin.verticalScrollbarDownButton);
+		fallbackSkin.scrollView = new GUIStyle(nativeSkin.scrollView);
+
+		fallbackSkin.label.richText = true;
+		fallbackSkin.box.richText = true;
+		fallbackSkin.button.richText = true;
+
+		var customStyles = new List<GUIStyle>();
+		EnsureStyle(customStyles, fallbackSkin, "MiniButton", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOOLBAR_LEFT_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOOLBAR_MIDDLE_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOOLBAR_RIGHT_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TAB_LEFT_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TAB_MIDDLE_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TAB_RIGHT_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.STATUS_BAR_BG_STYLE_NAME, nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.STATUS_BAR_LABEL_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.VERSION_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOP_BAR_LABEL_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOP_BAR_BTN_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TOP_BAR_BG_STYLE_NAME, nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_COLUMN_HEADER_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_COLUMN_HEADER_ASC_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_COLUMN_HEADER_DESC_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.FILE_FILTER_POPUP_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.HIDDEN_SCROLLBAR_STYLE_NAME, nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.MAIN_TITLE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.MAIN_SUBTITLE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.TINY_HELP_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.BOXED_LABEL_STYLE_NAME, nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.INFO_TITLE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.SUB_TITLE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.INFO_SUBTITLE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.INFO_SUBTITLE_BOLD_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.BIG_NUMBER_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.INFO_TEXT_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.SETTING_NAME_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.SETTING_VALUE_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.SETTING_VALUE_NO_WRAP_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_NORMAL_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_NORMAL_ALT_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_NORMAL_SELECTED_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_ICON_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_ICON_ALT_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_SMALL_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_SMALL_ALT_STYLE_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.LIST_SMALL_SELECTED_NAME, nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.BIG_LEFT_ARROW_ICON_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.BIG_RIGHT_ARROW_ICON_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, BuildReportTool.Window.Settings.COLUMN_ICON_STYLE_NAME, nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "Text", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "TextBold", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "TextNoWrap", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "TextInfo", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "TextSelected", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Tooltip", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "TooltipText", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Asset", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "AssetHovered", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "AssetInfoPanel", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "AssetInfoPanelNoList", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "AssetInfoPanelToolbarTop", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "AssetInfoPanelToolbarTopAllList", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "LabelSingleLine", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "ExpandButton", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "IndentStyle1", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "AssetUsageArrow", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "ProjectSettingsGroup", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "DrawTexture", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "PopupPanel", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "Header2", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Header2Bold", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Header3", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Big1", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Big2", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Big3", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "RadioLeft", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "RadioMiddle", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "RadioRight", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "TextField-Search-DropDown", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "TextField-Search-Text", nativeSkin.textField);
+		EnsureStyle(customStyles, fallbackSkin, "TextField-Search-ClearButton", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "ListButton", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "IconHovered", nativeSkin.box);
+		EnsureStyle(customStyles, fallbackSkin, "IconValidity", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Warning", nativeSkin.label);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Toolbar-Log", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Toolbar-Open", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Toolbar-Save", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Toolbar-Options", nativeSkin.button);
+		EnsureStyle(customStyles, fallbackSkin, "Icon-Toolbar-Help", nativeSkin.button);
+
+		fallbackSkin.customStyles = customStyles.ToArray();
+		return fallbackSkin;
+	}
+
 
 	void InitGUISkin()
 	{
 		string guiSkinToUse;
+		bool usingFallbackSkin = false;
 		if (EditorGUIUtility.isProSkin || FORCE_USE_DARK_SKIN)
 		{
 			guiSkinToUse = BuildReportTool.Window.Settings.DARK_GUI_SKIN_FILENAME;
@@ -697,7 +834,16 @@ public class BRT_BuildReportWindow : EditorWindow
 			}
 			else
 			{
-				Debug.LogError(BuildReportTool.Options.BUILD_REPORT_PACKAGE_MISSING_MSG);
+				Debug.LogWarning(BuildReportTool.Options.BUILD_REPORT_PACKAGE_MISSING_MSG);
+			}
+
+			if (_usedSkin == null)
+			{
+				GUISkin nativeFallback =
+					EditorGUIUtility.GetBuiltinSkin(EditorGUIUtility.isProSkin ? EditorSkin.Scene : EditorSkin.Inspector);
+				_usedSkin = CreateFallbackSkinFromNative(nativeFallback);
+				usingFallbackSkin = true;
+				Debug.LogWarning("Build Report Tool: GUI skin assets are missing. Falling back to Unity builtin editor skin.");
 			}
 
 			//Debug.Log("_usedSkin " + (_usedSkin != null));
@@ -973,17 +1119,34 @@ public class BRT_BuildReportWindow : EditorWindow
 
 			// ----------------------------------------------------
 
-			_toolbarIconLog = _usedSkin.GetStyle("Icon-Toolbar-Log").normal.background;
-			_toolbarIconOpen = _usedSkin.GetStyle("Icon-Toolbar-Open").normal.background;
-			_toolbarIconSave = _usedSkin.GetStyle("Icon-Toolbar-Save").normal.background;
-			_toolbarIconOptions = _usedSkin.GetStyle("Icon-Toolbar-Options").normal.background;
-			_toolbarIconHelp = _usedSkin.GetStyle("Icon-Toolbar-Help").normal.background;
+			var toolbarLogStyle = _usedSkin.FindStyle("Icon-Toolbar-Log");
+			var toolbarOpenStyle = _usedSkin.FindStyle("Icon-Toolbar-Open");
+			var toolbarSaveStyle = _usedSkin.FindStyle("Icon-Toolbar-Save");
+			var toolbarOptionsStyle = _usedSkin.FindStyle("Icon-Toolbar-Options");
+			var toolbarHelpStyle = _usedSkin.FindStyle("Icon-Toolbar-Help");
 
-			_toolbarLabelLog = new GUIContent(Labels.REFRESH_LABEL, _toolbarIconLog);
-			_toolbarLabelOpen = new GUIContent(Labels.OPEN_LABEL, _toolbarIconOpen);
-			_toolbarLabelSave = new GUIContent(Labels.SAVE_LABEL, _toolbarIconSave);
-			_toolbarLabelOptions = new GUIContent(Labels.OPTIONS_CATEGORY_LABEL, _toolbarIconOptions);
-			_toolbarLabelHelp = new GUIContent(Labels.HELP_CATEGORY_LABEL, _toolbarIconHelp);
+			_toolbarIconLog = toolbarLogStyle != null ? toolbarLogStyle.normal.background : null;
+			_toolbarIconOpen = toolbarOpenStyle != null ? toolbarOpenStyle.normal.background : null;
+			_toolbarIconSave = toolbarSaveStyle != null ? toolbarSaveStyle.normal.background : null;
+			_toolbarIconOptions = toolbarOptionsStyle != null ? toolbarOptionsStyle.normal.background : null;
+			_toolbarIconHelp = toolbarHelpStyle != null ? toolbarHelpStyle.normal.background : null;
+
+			if (usingFallbackSkin)
+			{
+				_toolbarLabelLog = new GUIContent(Labels.REFRESH_LABEL);
+				_toolbarLabelOpen = new GUIContent(Labels.OPEN_LABEL);
+				_toolbarLabelSave = new GUIContent(Labels.SAVE_LABEL);
+				_toolbarLabelOptions = new GUIContent(Labels.OPTIONS_CATEGORY_LABEL);
+				_toolbarLabelHelp = new GUIContent(Labels.HELP_CATEGORY_LABEL);
+			}
+			else
+			{
+				_toolbarLabelLog = new GUIContent(Labels.REFRESH_LABEL, _toolbarIconLog);
+				_toolbarLabelOpen = new GUIContent(Labels.OPEN_LABEL, _toolbarIconOpen);
+				_toolbarLabelSave = new GUIContent(Labels.SAVE_LABEL, _toolbarIconSave);
+				_toolbarLabelOptions = new GUIContent(Labels.OPTIONS_CATEGORY_LABEL, _toolbarIconOptions);
+				_toolbarLabelHelp = new GUIContent(Labels.HELP_CATEGORY_LABEL, _toolbarIconHelp);
+			}
 		}
 		else
 		{

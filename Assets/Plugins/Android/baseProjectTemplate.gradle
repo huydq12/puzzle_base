@@ -1,0 +1,66 @@
+plugins {
+    // If you are changing the Android Gradle Plugin version, make sure it is compatible with the Gradle version preinstalled with Unity
+    // See which Gradle version is preinstalled with Unity here https://docs.unity3d.com/Manual/android-gradle-overview.html
+    // See official Gradle and Android Gradle Plugin compatibility table here https://developer.android.com/studio/releases/gradle-plugin#updating-gradle
+    // To specify a custom Gradle version in Unity, go do "Preferences > External Tools", uncheck "Gradle Installed with Unity (recommended)" and specify a path to a custom Gradle version
+    id 'com.android.application' version '7.4.2' apply false
+    id 'com.android.library' version '7.4.2' apply false
+}
+
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'com.applovin' && details.requested.name == 'applovin-sdk') {
+                details.useVersion '12.6.1'
+                details.because 'Unity 2022.3 / AGP 7.4.2 D8 is unstable with AppLovin Android SDK 13.x on this project.'
+            }
+
+            if (details.requested.group == 'com.google.firebase') {
+                switch (details.requested.name) {
+                    case 'firebase-analytics':
+                        details.useVersion '21.2.0'
+                        details.because 'Unity 2022.3 / AGP 7.4.2 D8 fails to dex newer Firebase Android artifacts in this project.'
+                        break
+                    case 'firebase-common':
+                        details.useVersion '20.2.0'
+                        details.because 'Keep Firebase Android artifacts aligned to the last known-stable set for this Unity toolchain.'
+                        break
+                    case 'firebase-config':
+                        details.useVersion '21.2.0'
+                        details.because 'Unity 2022.3 / AGP 7.4.2 D8 fails to dex newer Remote Config Android artifacts in this project.'
+                        break
+                }
+            }
+
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                switch (details.requested.name) {
+                    case 'kotlin-stdlib':
+                    case 'kotlin-stdlib-common':
+                    case 'kotlin-stdlib-jdk7':
+                    case 'kotlin-stdlib-jdk8':
+                    case 'kotlin-android-extensions-runtime':
+                    case 'kotlin-parcelize-runtime':
+                        details.useVersion '1.8.22'
+                        details.because 'Unity 2022.3 / AGP 7.4.2 D8 cannot dex Kotlin 1.9/2.0 artifacts reliably.'
+                        break
+                }
+            }
+
+            if (details.requested.group == 'org.jetbrains.kotlinx') {
+                switch (details.requested.name) {
+                    case 'kotlinx-coroutines-core':
+                    case 'kotlinx-coroutines-core-jvm':
+                    case 'kotlinx-coroutines-android':
+                    case 'kotlinx-coroutines-play-services':
+                        details.useVersion '1.7.3'
+                        details.because 'Unity 2022.3 / AGP 7.4.2 D8 cannot dex coroutines 1.9 artifacts reliably.'
+                        break
+                }
+            }
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -34,6 +34,7 @@ public class Board : Singleton<Board>
     [SerializeField] private float _cellSize;
     [SerializeField] private float _paddingCamera;
     [SerializeField] private Vector2 _spacing;
+    [SerializeField] private float _conveyorTunnelExpand = 0.5f;
     [Header("Elevator Spawn Timing")]
     [SerializeField] private float _elevatorLineStagger = 0.05f;
     [SerializeField] private float _elevatorCubeScaleDuration = 0.12f;
@@ -541,7 +542,7 @@ public class Board : Singleton<Board>
             SetLayerRecursively(root.GetChild(i), layer);
         }
     }
-    private SplinePoint CreatePoint(Vector3 pos)
+    private static SplinePoint CreatePoint(Vector3 pos)
     {
         SplinePoint p = new SplinePoint(pos);
         p.type = SplinePoint.Type.SmoothMirrored;
@@ -1377,7 +1378,8 @@ public class Board : Singleton<Board>
             ConveyorLine conveyorLine = conveyorLines[conveyorIndex];
             if (conveyorLine == null || conveyorLine.Cells.IsNullOrEmpty()) continue;
 
-            List<Vector2Int> conveyorCells = NormalizeConveyorCells(FilterInBoundsDistinct(conveyorLine.Cells, columns, rows));
+            List<Vector2Int> sourceConveyorCells = FilterInBoundsDistinct(conveyorLine.Cells, columns, rows);
+            List<Vector2Int> conveyorCells = NormalizeConveyorCells(sourceConveyorCells);
             if (conveyorCells.Count < 3)
             {
                 Debug.LogWarning($"ConveyorLine[{conveyorIndex}] has too few valid cells; skipping conveyor setup.");
@@ -1401,7 +1403,7 @@ public class Board : Singleton<Board>
                     cell.CellType = GridCellType.Conveyor;
             }
 
-            Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(conveyorLine);
+            Dictionary<Vector2Int, ConveyorMeta> metaByCell = BuildConveyorMetaByCell(conveyorLine, columns, rows, isClosedLoop);
             List<Vector2Int> splineCells = SimplifyConveyorSplineCells(orderedCells, isClosedLoop);
             List<Vector3> allPositions = new();
             bool invalidPath = false;
@@ -1453,6 +1455,9 @@ public class Board : Singleton<Board>
                 continue;
             }
 
+            Vector3 conveyorExpandCenter = GetConveyorSplineCenter(allPositions);
+            ExpandConveyorSplinePositions(allPositions, _conveyorTunnelExpand, conveyorExpandCenter);
+
             float totalDistance = 0f;
             int segmentCount = isClosedLoop ? allPositions.Count : allPositions.Count - 1;
             for (int i = 0; i < segmentCount; i++)
@@ -1483,12 +1488,15 @@ public class Board : Singleton<Board>
                 }
             }
 
+            if (isClosedLoop)
+                PrepareClosedSplineSeam(points);
+
             trackSetups.Add(new ConveyorController.TrackSplineSetup(points.ToArray(), isClosedLoop));
 
             if (!isClosedLoop)
                 SpawnOpenConveyorEndpoints(orderedCells);
 
-            SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset);
+            SpawnConveyorTunels(orderedCells, metaByCell, cornerOffset, conveyorExpandCenter);
         }
 
         if (ConveyorController.Instance == null)
@@ -1532,35 +1540,78 @@ public class Board : Singleton<Board>
         endpoint.transform.SetPositionAndRotation(positionCell.transform.position, rotation);
     }
 
-    private static Dictionary<Vector2Int, ConveyorMeta> BuildConveyorMetaByCell(ConveyorLine line)
+    private static Dictionary<Vector2Int, ConveyorMeta> BuildConveyorMetaByCell(ConveyorLine line, int columns, int rows, bool isClosedLoop)
     {
         Dictionary<Vector2Int, ConveyorMeta> result = new();
         if (line == null || line.Cells == null) return result;
 
+        List<Vector2Int> filteredCells = new();
+        List<ConveyorMeta> filteredMeta = new();
+        HashSet<Vector2Int> seen = new();
+
         for (int i = 0; i < line.Cells.Count; i++)
         {
-            int type = (line.Types != null && i < line.Types.Count) ? line.Types[i] : 0;
-            int counter = (line.Counters != null && i < line.Counters.Count) ? line.Counters[i] : 0;
-            bool isHole = (line.IsHoles != null && i < line.IsHoles.Count) && line.IsHoles[i];
-
-            // Some legacy/serialized data uses -1 to mean "unset".
-            if (type < 0) type = 0;
-            if (counter < 0) counter = 0;
-
-            ConveyorMeta meta = new ConveyorMeta
-            {
-                Type = type,
-                Counter = counter,
-                IsHole = isHole
-            };
-
-            if (!meta.HasAny) continue;
             Vector2Int cell = line.Cells[i];
-            if (!result.ContainsKey(cell))
-                result.Add(cell, meta);
+            if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows) continue;
+            if (!seen.Add(cell)) continue;
+
+            ConveyorMeta meta = GetConveyorMeta(line, i);
+            filteredCells.Add(cell);
+            filteredMeta.Add(meta);
+
+            if (!meta.HasAny || result.ContainsKey(cell)) continue;
+            result.Add(cell, meta);
+        }
+
+        for (int i = 0; i < filteredCells.Count - 1; i++)
+        {
+            if (!ShouldPropagateMetaToBridge(filteredMeta[i], filteredMeta[i + 1]))
+                continue;
+
+            if (!TryGetConveyorBridgeCell(filteredCells, i, filteredCells[i], filteredCells[i + 1], out Vector2Int bridge))
+                continue;
+
+            if (!result.ContainsKey(bridge))
+                result.Add(bridge, filteredMeta[i]);
+        }
+
+        if (isClosedLoop && filteredCells.Count >= 3)
+        {
+            int lastIndex = filteredCells.Count - 1;
+            if (ShouldPropagateMetaToBridge(filteredMeta[lastIndex], filteredMeta[0])
+                && TryGetConveyorBridgeCell(filteredCells, lastIndex, filteredCells[lastIndex], filteredCells[0], out Vector2Int loopBridge)
+                && !result.ContainsKey(loopBridge))
+            {
+                result.Add(loopBridge, filteredMeta[lastIndex]);
+            }
         }
 
         return result;
+    }
+
+    private static ConveyorMeta GetConveyorMeta(ConveyorLine line, int index)
+    {
+        int type = (line.Types != null && index < line.Types.Count) ? line.Types[index] : 0;
+        int counter = (line.Counters != null && index < line.Counters.Count) ? line.Counters[index] : 0;
+        bool isHole = (line.IsHoles != null && index < line.IsHoles.Count) && line.IsHoles[index];
+
+        if (type < 0) type = 0;
+        if (counter < 0) counter = 0;
+
+        return new ConveyorMeta
+        {
+            Type = type,
+            Counter = counter,
+            IsHole = isHole
+        };
+    }
+
+    private static bool ShouldPropagateMetaToBridge(ConveyorMeta a, ConveyorMeta b)
+    {
+        if (!a.HasAny || !b.HasAny) return false;
+        if (a.IsHole || b.IsHole) return false;
+        if (a.Type == 0 || b.Type == 0) return false;
+        return a.SameAs(b);
     }
 
     private static List<Vector2Int> NormalizeConveyorCells(List<Vector2Int> cells)
@@ -1691,14 +1742,11 @@ public class Board : Singleton<Board>
         return false;
     }
 
-    private void SpawnConveyorTunels(List<Vector2Int> orderedCells, Dictionary<Vector2Int, ConveyorMeta> metaByCell, float cornerOffset)
+    private void SpawnConveyorTunels(List<Vector2Int> orderedCells, Dictionary<Vector2Int, ConveyorMeta> metaByCell, float cornerOffset, Vector3 expandCenter)
     {
         if (_conveyorTunelPrefab == null) return;
         if (orderedCells == null || orderedCells.Count < 2) return;
         if (metaByCell == null || metaByCell.Count == 0) return;
-
-        _conveyorTunnelBlockCounts.Clear();
-        _activeTunnels.Clear();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (_currentConfig != null && _currentConfig.Level == 39)
@@ -1751,7 +1799,7 @@ public class Board : Singleton<Board>
             var group = groups[i];
             if (group.cells.Count < 2) continue;
 
-            List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset);
+            List<Vector3> worldPositions = BuildOpenConveyorSplinePositions(group.cells, cornerOffset, expandCenter);
             if (worldPositions.Count < 2) continue;
 
 	            ConveyorTunel tunel = Instantiate(_conveyorTunelPrefab);
@@ -1767,7 +1815,7 @@ public class Board : Singleton<Board>
                 Debug.Log($"[Board] Level 39 spawn tunnel type={group.meta.Type} counter={group.meta.Counter} cells={group.cells.Count} splinePoints={worldPositions.Count} activeInHierarchy={tunel.gameObject.activeInHierarchy}", tunel);
             }
 #endif
-            tunel.Setup(group.meta.Type, group.meta.Counter, worldPositions);
+            tunel.Setup(group.meta.Type, group.meta.Counter, worldPositions, _conveyorTunnelExpand);
 
             if (group.meta.Counter > 0)
             {
@@ -1805,7 +1853,7 @@ public class Board : Singleton<Board>
         }
     }
 
-    private List<Vector3> BuildOpenConveyorSplinePositions(List<Vector2Int> cells, float cornerOffset)
+    private List<Vector3> BuildOpenConveyorSplinePositions(List<Vector2Int> cells, float cornerOffset, Vector3 expandCenter)
     {
         List<Vector3> allPositions = new();
         if (cells == null || cells.Count < 2) return allPositions;
@@ -1844,7 +1892,36 @@ public class Board : Singleton<Board>
                 allPositions.Add(curr);
         }
 
+        ExpandConveyorSplinePositions(allPositions, _conveyorTunnelExpand, expandCenter);
         return allPositions;
+    }
+
+    private static Vector3 GetConveyorSplineCenter(List<Vector3> positions)
+    {
+        if (positions == null || positions.Count == 0) return Vector3.zero;
+
+        Vector3 center = Vector3.zero;
+        for (int i = 0; i < positions.Count; i++)
+            center += positions[i];
+
+        return center / positions.Count;
+    }
+
+    private static void ExpandConveyorSplinePositions(List<Vector3> positions, float expand, Vector3 center)
+    {
+        if (positions == null || positions.Count == 0) return;
+        if (Mathf.Approximately(expand, 0f)) return;
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            Vector3 offset = positions[i] - center;
+            offset.y = 0f;
+
+            if (offset.sqrMagnitude < 0.0001f)
+                continue;
+
+            positions[i] += offset.normalized * expand;
+        }
     }
 
     private static List<Vector2Int> SimplifyConveyorSplineCells(List<Vector2Int> cells, bool isClosedLoop)
@@ -1919,6 +1996,60 @@ public class Board : Singleton<Board>
         curveIn = curr - dirIn * inOffset;
         curveOut = curr + dirOut * outOffset;
         return true;
+    }
+
+    private static void PrepareClosedSplineSeam(List<SplinePoint> points)
+    {
+        if (points == null || points.Count < 4) return;
+
+        const float straightDotThreshold = 0.995f;
+        int bestIndex = -1;
+        float bestDot = -2f;
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            Vector3 prev = points[(i - 1 + points.Count) % points.Count].position;
+            Vector3 curr = points[i].position;
+            Vector3 next = points[(i + 1) % points.Count].position;
+
+            Vector3 inDir = curr - prev;
+            Vector3 outDir = next - curr;
+            inDir.y = 0f;
+            outDir.y = 0f;
+
+            if (inDir.sqrMagnitude <= 0.0001f || outDir.sqrMagnitude <= 0.0001f)
+                continue;
+
+            float dot = Vector3.Dot(inDir.normalized, outDir.normalized);
+            if (dot > bestDot)
+            {
+                bestDot = dot;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex > 0 && bestDot >= straightDotThreshold)
+        {
+            List<SplinePoint> rotated = new(points.Count);
+            for (int i = 0; i < points.Count; i++)
+                rotated.Add(points[(bestIndex + i) % points.Count]);
+
+            points.Clear();
+            points.AddRange(rotated);
+        }
+
+        if (points.Count < 2)
+            return;
+
+        Vector3 first = points[0].position;
+        Vector3 last = points[^1].position;
+        Vector3 seamMidpoint = (first + last) * 0.5f;
+
+        if ((seamMidpoint - first).sqrMagnitude <= 0.0001f || (seamMidpoint - last).sqrMagnitude <= 0.0001f)
+            return;
+
+        SplinePoint seamPoint = CreatePoint(seamMidpoint);
+        points.Insert(0, seamPoint);
     }
 
     private static List<Vector2Int> FilterInBoundsDistinct(List<Vector2Int> cells, int columns, int rows)

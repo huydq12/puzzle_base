@@ -501,6 +501,11 @@ public class UIManager : Singleton<UIManager>
         HideAllOnSceneAsync(UIType.Overlap).Forget();
     }
 
+    public void ToggleAllContainers()
+    {
+        SetAllContainersActive(!AreAllContainersActive());
+    }
+
     public async UniTask HideAllBaseAsync(UIType uiType)
     {
         switch (uiType)
@@ -566,6 +571,35 @@ public class UIManager : Singleton<UIManager>
     }
 
     #endregion
+
+    private void SetAllContainersActive(bool isActive)
+    {
+        SetContainerActive(cScreen, isActive);
+        SetContainerActive(cPopup, isActive);
+        SetContainerActive(cNotify, isActive);
+        SetContainerActive(cOverlap, isActive);
+    }
+
+    private bool AreAllContainersActive()
+    {
+        return IsContainerActive(cScreen)
+            && IsContainerActive(cPopup)
+            && IsContainerActive(cNotify)
+            && IsContainerActive(cOverlap);
+    }
+
+    private void SetContainerActive(Transform container, bool isActive)
+    {
+        if (container == null)
+            return;
+
+        container.gameObject.SetActive(isActive);
+    }
+
+    private bool IsContainerActive(Transform container)
+    {
+        return container != null && container.gameObject.activeSelf;
+    }
 
     #region Overlay
 

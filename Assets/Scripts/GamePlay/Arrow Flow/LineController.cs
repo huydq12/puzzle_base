@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using AZUR;
 
 public class LineController : Singleton<LineController>
 {
@@ -10,6 +12,7 @@ public class LineController : Singleton<LineController>
     [SerializeField] private LayerMask _gateLayer;
     [SerializeField] private Hammer _hammerPrefab;
     [SerializeField] private Shuffle _shufflePrefab;
+    private bool _isShowingFallbackRainbowReward;
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.P))
@@ -53,7 +56,7 @@ public class LineController : Singleton<LineController>
             return true;
         }
 
-        return EventSystem.current != null && Common.IsPointerOverUI();
+        return IsPointerOverBlockingUI();
     }
     private void OnTouchBegan()
     {
@@ -76,7 +79,7 @@ public class LineController : Singleton<LineController>
                 int gateLayer = LayerMask.NameToLayer("Gate");
                 if (gateLayer >= 0) mask |= 1 << gateLayer;
             }
-            RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
+            RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, mask);
             if (hits != null && hits.Length > 0)
             {
                 System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -163,9 +166,10 @@ public class LineController : Singleton<LineController>
             return;
         }
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100, _cubeLayer))
+        if (TryRaycastCube(ray, out RaycastHit hit))
         {
-            if (hit.transform.TryGetComponent(out CubeLine cube))
+            CubeLine cube = hit.transform != null ? hit.transform.GetComponentInParent<CubeLine>() : null;
+            if (cube != null)
             {
                 var tutorialManager = TutorialManager.Instance;
                 if (tutorialManager == null) return;
@@ -243,9 +247,58 @@ public class LineController : Singleton<LineController>
         }
     }
 
+    private bool TryRaycastCube(Ray ray, out RaycastHit hit)
+    {
+        int mask = GetCubeTouchMask();
+        if (Physics.Raycast(ray, out hit, 1000f, mask))
+        {
+            if (hit.transform != null && hit.transform.GetComponentInParent<CubeLine>() != null)
+                return true;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, mask);
+        if (hits == null || hits.Length == 0)
+        {
+            hit = default;
+            return false;
+        }
+
+        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform tr = hits[i].transform;
+            if (tr == null) continue;
+            if (tr.GetComponentInParent<CubeLine>() == null) continue;
+
+            hit = hits[i];
+            return true;
+        }
+
+        hit = default;
+        return false;
+    }
+
+    private int GetCubeTouchMask()
+    {
+        int mask = _cubeLayer.value != 0 ? _cubeLayer.value : ~0;
+        if (mask == ~0)
+            return mask;
+
+        int cubeLayer = LayerMask.NameToLayer("Cube");
+        if (cubeLayer >= 0)
+            mask |= 1 << cubeLayer;
+
+        int topLayer = LayerMask.NameToLayer("Top");
+        if (topLayer >= 0)
+            mask |= 1 << topLayer;
+
+        return mask;
+    }
+
     private bool TryActivateFallbackShooterOnGate(Ray ray)
     {
-        if (Common.IsPointerOverUI()) return false;
+        if (IsPointerOverBlockingUI()) return false;
+        if (_isShowingFallbackRainbowReward) return true;
 
         int mask = _gateLayer.value != 0 ? _gateLayer.value : ~0;
         if (mask != ~0)
@@ -256,7 +309,7 @@ public class LineController : Singleton<LineController>
             if (gateLayer >= 0) mask |= 1 << gateLayer;
         }
 
-        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, mask);
         if (hits == null || hits.Length == 0) return false;
 
         Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -269,17 +322,109 @@ public class LineController : Singleton<LineController>
             Shooter shooter = tr.GetComponentInParent<Shooter>(includeInactive: true);
             if (shooter != null && shooter.Gate is Gate shooterGate)
             {
-                if (shooterGate.TryActivateFallbackShooter(shooter))
+                if (shooterGate.CanActivateFallbackShooter(shooter))
+                {
+                    ShowFallbackRainbowRewarded(shooterGate, shooter);
                     return true;
+                }
             }
 
             Gate hitGate = tr.GetComponentInParent<Gate>(includeInactive: true);
             if (hitGate == null) continue;
-            if (hitGate.TryActivateFallbackShooter(hitGate.CurrentShooter))
+            if (hitGate.CanActivateFallbackShooter(hitGate.CurrentShooter))
+            {
+                ShowFallbackRainbowRewarded(hitGate, hitGate.CurrentShooter);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsPointerOverBlockingUI()
+    {
+        if (EventSystem.current == null)
+            return false;
+
+        PointerEventData eventData = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        if (results.Count == 0)
+            return false;
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            GameObject go = results[i].gameObject;
+            if (go == null) continue;
+
+            if (go.GetComponentInParent<Selectable>() != null)
+                return true;
+
+            if (go.GetComponentInParent<ScrollRect>() != null)
+                return true;
+
+            if (HasBlockingUiHandler(go))
                 return true;
         }
 
         return false;
+    }
+
+    private static bool HasBlockingUiHandler(GameObject go)
+    {
+        MonoBehaviour[] behaviours = go.GetComponentsInParent<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            MonoBehaviour behaviour = behaviours[i];
+            if (behaviour == null) continue;
+
+            if (behaviour is IPointerClickHandler ||
+                behaviour is IPointerDownHandler ||
+                behaviour is IBeginDragHandler ||
+                behaviour is IDragHandler)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ShowFallbackRainbowRewarded(Gate gate, Shooter shooter)
+    {
+        if (gate == null || shooter == null) return;
+
+        const string placement = "fallback_rainbow_unlock";
+        var notification = UIManager.Instance != null ? UIManager.Instance.Get<UINotification>() : null;
+        notification?.HideNow();
+        _isShowingFallbackRainbowReward = true;
+        AnalyticsBridge.OnRewardedAdRequested(placement);
+
+        bool shown = AzurAds.ShowRewarded(
+            onRewardGranted: () =>
+            {
+                _isShowingFallbackRainbowReward = false;
+                AnalyticsBridge.OnRewardedAdRewardGranted(placement);
+                gate.TryActivateFallbackShooter(shooter);
+            },
+            placement: placement,
+            onClosedWithoutGrant: () =>
+            {
+                _isShowingFallbackRainbowReward = false;
+                AnalyticsBridge.OnRewardedAdClosedWithoutGrant(placement);
+                notification?.ShowRewardNotGrantedToast();
+            });
+
+        if (!shown)
+        {
+            _isShowingFallbackRainbowReward = false;
+            AnalyticsBridge.OnRewardedAdUnavailable(placement);
+            notification?.ShowRewardedUnavailableToast();
+        }
     }
     private void OnTouchMoved()
     {

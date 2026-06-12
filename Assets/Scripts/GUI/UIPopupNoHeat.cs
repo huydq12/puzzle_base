@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using AZUR;
 
 public class UIPopupNoHeat : UIPopup
 {
@@ -80,7 +81,34 @@ public class UIPopupNoHeat : UIPopup
     
     private void OnClickWatchAd()
     {
-        UIManager.Instance.HideUI<UIPopupNoHeat>();
+        const string placement = "ui_no_heat_reward";
+        var notification = UIManager.Instance != null ? UIManager.Instance.Get<UINotification>() : null;
+        notification?.HideNow();
+        AnalyticsBridge.OnRewardedAdRequested(placement);
+        bool shown = AzurAds.ShowRewarded(
+            onRewardGranted: () =>
+            {
+                AnalyticsBridge.OnRewardedAdRewardGranted(placement);
+                var heatManager = HeatManager.TryGetInstance();
+                if (heatManager != null)
+                {
+                    heatManager.RefillToMax();
+                }
+
+                UIManager.Instance.HideUI<UIPopupNoHeat>();
+            },
+            placement: placement,
+            onClosedWithoutGrant: () =>
+            {
+                AnalyticsBridge.OnRewardedAdClosedWithoutGrant(placement);
+                notification?.ShowRewardNotGrantedToast();
+            });
+
+        if (!shown)
+        {
+            AnalyticsBridge.OnRewardedAdUnavailable(placement);
+            notification?.ShowRewardedUnavailableToast();
+        }
     }
     
     private void OnClickBuyUnlimited()

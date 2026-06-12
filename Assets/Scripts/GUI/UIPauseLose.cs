@@ -26,6 +26,7 @@ public class UIPauseLose : BasePopup
 
     [Header("Use Rainbow (Buy with coin)")]
     [SerializeField] private int useRainbowCoinPrice = 200;
+    [SerializeField] private int useRainbowCoinPriceIncreasePerLose = 200;
     [SerializeField] private TextMeshProUGUI txt_useRainbowCoinPrice;
     [SerializeField] private string notEnoughGoldToast = "Not enough gold";
 
@@ -118,7 +119,7 @@ public class UIPauseLose : BasePopup
 
     private void Start()
     {
-        ResetUseRainbowCoinPrice();
+        RefreshUseRainbowCoinPrice();
 
         if (btnClose != null)
             btnClose.OnClick.AddListener(SetLose);
@@ -211,22 +212,21 @@ public class UIPauseLose : BasePopup
 
     private void UpdateUseRainbowCoinPriceOnLose()
     {
-        int showCount = 1;
-        if (GameManagerInGame.intance != null)
-            showCount = Mathf.Max(1, GameManagerInGame.intance.RegisterLosePopupShown());
-
-        _currentUseRainbowCoinPrice = useRainbowCoinPrice * showCount;
-        RefreshUseRainbowCoinPrice();
-    }
-
-    private void ResetUseRainbowCoinPrice()
-    {
-        _currentUseRainbowCoinPrice = useRainbowCoinPrice;
+        int loseCount = GameManagerInGame.intance != null
+            ? GameManagerInGame.intance.GetLoseCountInCurrentLevel()
+            : 0;
+        _currentUseRainbowCoinPrice = useRainbowCoinPrice + (loseCount * useRainbowCoinPriceIncreasePerLose);
+        GameManagerInGame.intance?.IncreaseLoseCountInCurrentLevel();
         RefreshUseRainbowCoinPrice();
     }
 
     private void RefreshUseRainbowCoinPrice()
     {
+        if (_currentUseRainbowCoinPrice <= 0)
+        {
+            _currentUseRainbowCoinPrice = useRainbowCoinPrice;
+        }
+
         if (txt_useRainbowCoinPrice == null) return;
         txt_useRainbowCoinPrice.text = _currentUseRainbowCoinPrice.ToString();
     }

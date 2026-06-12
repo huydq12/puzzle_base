@@ -8,6 +8,7 @@ using UnityEditor;
 
 using System.Collections;
 using System.Collections.Generic;
+using AZUR;
 using Gley.Notifications;
 using TMPro;
 using UnityEngine.UI;
@@ -23,6 +24,24 @@ public enum GameStateInGame
 
 public class GameManagerInGame : Singleton<GameManagerInGame>
 {
+    private readonly struct ReengagementNotification
+    {
+        public ReengagementNotification(string title, string message, TimeSpan delay, string smallIcon, string largeIcon)
+        {
+            Title = title;
+            Message = message;
+            Delay = delay;
+            SmallIcon = smallIcon;
+            LargeIcon = largeIcon;
+        }
+
+        public string Title { get; }
+        public string Message { get; }
+        public TimeSpan Delay { get; }
+        public string SmallIcon { get; }
+        public string LargeIcon { get; }
+    }
+
     public static GameManagerInGame intance => Instance;
     public DailyRewardConfigSO dailyRewardConfigSO;
     public int levelShowDailyReward = 2;
@@ -50,12 +69,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     private bool _isFirstSceneStart = true;
     private bool _nextStartIsAfterWin;
     private bool _pendingAutoHideLoading;
-    private bool _initialLoadingCompleted;
     private float _pendingAutoHideSeconds;
     private bool _hasPendingLose;
     private bool _hasCommittedPendingLose;
     private int _pendingLoseLevel;
-    private int _losePopupShowCountInCurrentLevel;
+    private int _loseCountInCurrentLevel;
 
     private const int LoopStartLevel = 30;
     private const int LoopEndLevel = 180;
@@ -72,6 +90,11 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     [SerializeField] private Button nextLevel;
     [SerializeField] private Button backLevel;
     [SerializeField] private TMP_InputField selectlevel;
+    [SerializeField] private Button btnDebugMax;
+
+    [SerializeField] private Button btnActiveTool;
+
+    [SerializeField] private GameObject ObjTool;
 
     private new void Awake()
     {
@@ -111,6 +134,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         if (selectlevel != null)
             selectlevel.onEndEdit.AddListener(SelectLevelEndEdit);
+
+        if (btnDebugMax != null)
+            btnDebugMax.onClick.AddListener(OnClickDebugMax);
+
+        if (btnActiveTool != null)
+            btnActiveTool.onClick.AddListener(OnClickActiveTool);
     }
 
     private void OnDisable()
@@ -123,22 +152,26 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
         if (selectlevel != null)
             selectlevel.onEndEdit.RemoveListener(SelectLevelEndEdit);
+
+        if (btnDebugMax != null)
+            btnDebugMax.onClick.RemoveListener(OnClickDebugMax);
+
+        if (btnActiveTool != null)
+            btnActiveTool.onClick.RemoveListener(OnClickActiveTool);
     }
 
     private void Start()
     {
-        StartCoroutine(StartAfterInitialLoading());
+        StartAfterInitialLoading();
     }
 
-    private IEnumerator StartAfterInitialLoading()
+    private void StartAfterInitialLoading()
     {
         if (UILoadingInGame.Instance != null)
         {
             UILoadingInGame.Instance.Show();
-            yield return new WaitForSeconds(Mathf.Max(0f, CONST_TIME_HIDE_LOADING_FIRST));
         }
 
-        _initialLoadingCompleted = true;
         StartGame(CurrentLevel);
     }
 
@@ -246,6 +279,12 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         int cash = userData != null ? userData.playerCash : 0;
 
         AnalyticsBridge.OnGameFinished(win, 0f, level);
+        AnalyticsBridge.TrackCustomEvent("level_finish", new Dictionary<string, object>
+        {
+            { "level", level },
+            { "player_cash", cash },
+            { "result", win ? "win" : "lose" }
+        });
         AnalyticsBridge.TrackCustomEvent(win ? "level_win" : "level_lose", new Dictionary<string, object> { { "level", level }, { "player_cash", cash } });
     }
     public void SetState(GameStateInGame state)
@@ -287,9 +326,9 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         if (!CanStartLevel()) return;
 
         _lastStartRequestTime = Time.unscaledTime;
+        _loseCountInCurrentLevel = 0;
 
         _levelInPlay = level;
-        _losePopupShowCountInCurrentLevel = 0;
         LastCompletedLevel = 0;
         LastResultWasWin = false;
         _contentLevelInPlay = NormalizeLoopLevel(level);
@@ -319,7 +358,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         }
 
         bool isFirstStart = _isFirstSceneStart;
-        _pendingAutoHideLoading = (_isFirstSceneStart && !_initialLoadingCompleted) || (_nextStartIsAfterWin && level > CONST_LEVEL_SHOW_LOADING);
+        _pendingAutoHideLoading = _isFirstSceneStart || (_nextStartIsAfterWin && level > CONST_LEVEL_SHOW_LOADING);
         _pendingAutoHideSeconds = isFirstStart ? Mathf.Max(CONST_TIME_HIDE_LOADING, CONST_TIME_HIDE_LOADING_FIRST) : CONST_TIME_HIDE_LOADING;
         _isFirstSceneStart = false;
         _nextStartIsAfterWin = false;
@@ -333,12 +372,6 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         BoosterUnlockService.TryShowUnlockTutorialAtLevelStart(_contentLevelInPlay);
         TutorialPopupService.TryShowAtLevelStart(_contentLevelInPlay);
         ClearVfx();
-    }
-
-    public int RegisterLosePopupShown()
-    {
-        _losePopupShowCountInCurrentLevel++;
-        return _losePopupShowCountInCurrentLevel;
     }
 
     private bool CanStartLevel()
@@ -431,6 +464,17 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
         StartGame(Mathf.Max(1, level));
     }
 
+    private void OnClickDebugMax()
+    {
+        AzurAds.ShowMediationDebugger();
+    }
+
+    private void OnClickActiveTool()
+    {
+        if (ObjTool == null) return;
+        ObjTool.SetActive(!ObjTool.activeSelf);
+    }
+
     private void RefreshSelectLevelInput(int level)
     {
         if (selectlevel == null) return;
@@ -440,6 +484,16 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     public void ReplayLevel()
     {
         StartGame(_levelInPlay);
+    }
+
+    public int GetLoseCountInCurrentLevel()
+    {
+        return _loseCountInCurrentLevel;
+    }
+
+    public void IncreaseLoseCountInCurrentLevel()
+    {
+        _loseCountInCurrentLevel++;
     }
 
     private IEnumerator PlayGame(int level)
@@ -544,15 +598,39 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
     {
         if (!focus)
         {
-            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(0, 5, 0), "icon_0", "icon_1");
-            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(1, 0, 0, 0), "icon_0", "icon_1");
-            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(3, 0, 0, 0), "icon_0", "icon_1");
-            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(6, 0, 0, 0), "icon_0", "icon_1");
-            API.SendNotification("Arrow Shooter!", "Come get your free coins", new System.TimeSpan(9, 0, 0, 0), "icon_0", "icon_1");
+            ScheduleReengagementNotifications();
         }
         else
         {
             API.CancelAllNotifications();
+        }
+    }
+
+    private void ScheduleReengagementNotifications()
+    {
+        API.CancelAllNotifications();
+
+        ReengagementNotification[] notifications =
+        {
+            new("🏹 Arrow Shooter!", "Your arrows miss you. Coins too.", new TimeSpan(0, 5, 0), "icon_0", "icon_1"),
+            new("🚪 Gate Check", "The gates are rude again.", new TimeSpan(1, 0, 0, 0), "icon_1", "icon_0"),
+            new("🌈 Rainbow Ready", "Chaos is colorful today.", new TimeSpan(2, 0, 0, 0), "icon_0", "icon_1"),
+            new("🪙 Coin Alert", "Tiny treasure. Big tap.", new TimeSpan(3, 0, 0, 0), "icon_1", "icon_0"),
+            new("🎯 Aim Time", "Those arrows won't shoot themselves.", new TimeSpan(4, 0, 0, 0), "icon_0", "icon_1"),
+            new("🔨 Booster Mood", "Hammer says bonk. Shuffle says hi.", new TimeSpan(5, 0, 0, 0), "icon_1", "icon_0"),
+            new("👀 Come Back", "Your next win is getting impatient.", new TimeSpan(7, 0, 0, 0), "icon_0", "icon_1"),
+        };
+
+        for (int i = 0; i < notifications.Length; i++)
+        {
+            var notification = notifications[i];
+            API.SendNotification(
+                notification.Title,
+                notification.Message,
+                notification.Delay,
+                notification.SmallIcon,
+                notification.LargeIcon,
+                $"reengagement_day_{i + 1}");
         }
     }
 

@@ -164,6 +164,14 @@ public class ShooterController : Singleton<ShooterController>
     public bool UnlockNextLockOnAnyGate(Key key = null)
     {
         if (Gates == null || Gates.Count == 0) return false;
+
+        for (int i = 0; i < Gates.Count; i++)
+        {
+            IGate gate = Gates[i];
+            if (gate != null && gate.UnlockCurrentLock(key))
+                return true;
+        }
+
         for (int i = 0; i < Gates.Count; i++)
         {
             IGate gate = Gates[i];

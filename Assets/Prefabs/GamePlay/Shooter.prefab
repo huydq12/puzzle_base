@@ -128,6 +128,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5033166673141208948}
   - component: {fileID: 8132367238269518310}
+  - component: {fileID: 2153133673494693929}
   m_Layer: 0
   m_Name: Lock
   m_TagString: Untagged
@@ -203,6 +204,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2153133673494693929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3406742827833663998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c454eefff774ba44c821976885e57235, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GrabMainCameraOnStart: 1
+  NestObject: 0
+  OffsetDirection: {x: 0, y: 0, z: 1}
+  Up: {x: 0, y: 1, z: 0}
 --- !u!1 &3639059376680102567
 GameObject:
   m_ObjectHideFlags: 0

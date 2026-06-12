@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,9 +8,13 @@ public class UISettingHome : UIPopup
     [SerializeField] private ButtonBehavior btnSFX;
     [SerializeField] private ButtonBehavior btnBGM;
     [SerializeField] private ButtonBehavior btnVibrate;
+
+    [SerializeField] private ButtonBehavior btnPrivacyPolicy;
+    [SerializeField] private ButtonBehavior btnTermsOfUse;
     [SerializeField] private ButtonBehavior btnClose;
 
     private UserData userData;
+    private Object userConsentSettings;
 
     protected override void Start()
     {
@@ -22,6 +25,8 @@ public class UISettingHome : UIPopup
         if (btnSFX != null) btnSFX.OnClick.AddListener(ToggleSound);
         if (btnBGM != null) btnBGM.OnClick.AddListener(ToggleMusic);
         if (btnVibrate != null) btnVibrate.OnClick.AddListener(ToggleVibrate);
+        if (btnPrivacyPolicy != null) btnPrivacyPolicy.OnClick.AddListener(OpenPrivacyPolicy);
+        if (btnTermsOfUse != null) btnTermsOfUse.OnClick.AddListener(OpenTermsOfUse);
         if (btnClose != null) btnClose.OnClick.AddListener(ClosePopup);
 
         // Cập nhật UI theo trạng thái hiện tại
@@ -84,6 +89,69 @@ public class UISettingHome : UIPopup
     private void ClosePopup()
     {
         UIManager.Instance.HideUI<UISettingHome>();
+    }
+
+    private void OpenPrivacyPolicy()
+    {
+        OpenConfiguredUrl("privacyLink", "privacyLinkIos");
+    }
+
+    private void OpenTermsOfUse()
+    {
+        OpenConfiguredUrl("termsLink", "termsLinkIos");
+    }
+
+    private void OpenConfiguredUrl(string defaultFieldName, string iosFieldName)
+    {
+        var settings = GetUserConsentSettings();
+        if (settings == null)
+        {
+            Debug.LogWarning("UISettingHome: Could not load Resources/UserConsentSettings.");
+            return;
+        }
+
+        string url = GetStringFieldValue(settings, defaultFieldName);
+#if UNITY_IOS
+        string iosUrl = GetStringFieldValue(settings, iosFieldName);
+        if (!string.IsNullOrEmpty(iosUrl))
+        {
+            url = iosUrl;
+        }
+#endif
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            Debug.LogWarning($"UISettingHome: URL field is empty for {defaultFieldName}.");
+            return;
+        }
+
+        Application.OpenURL(url);
+    }
+
+    private Object GetUserConsentSettings()
+    {
+        if (userConsentSettings == null)
+        {
+            userConsentSettings = Resources.Load("UserConsentSettings");
+        }
+
+        return userConsentSettings;
+    }
+
+    private static string GetStringFieldValue(Object target, string fieldName)
+    {
+        if (target == null || string.IsNullOrEmpty(fieldName))
+        {
+            return string.Empty;
+        }
+
+        var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        if (field == null || field.FieldType != typeof(string))
+        {
+            return string.Empty;
+        }
+
+        return field.GetValue(target) as string ?? string.Empty;
     }
 
     private void SetSoundEnabled(bool enabled)

@@ -1192,7 +1192,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Privacy
+  m_text: Privacy Policy
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 8edbc6f602abffe49af8fd43f3e74d98, type: 2}
@@ -1712,8 +1712,9 @@ GameObject:
   - component: {fileID: 5601555290861691951}
   - component: {fileID: 6507968076617155323}
   - component: {fileID: 6499364498728999729}
+  - component: {fileID: 3822893755621479493}
   m_Layer: 5
-  m_Name: RestoreButtonContainer
+  m_Name: TernButtonContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1824,6 +1825,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &3822893755621479493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1892288164079471527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &2036413705759554157
 GameObject:
   m_ObjectHideFlags: 0
@@ -7488,6 +7517,8 @@ MonoBehaviour:
   btnSFX: {fileID: 6266590670520070448}
   btnBGM: {fileID: 2439177258067578318}
   btnVibrate: {fileID: 1618730534543554711}
+  btnPrivacyPolicy: {fileID: 5663469337467539548}
+  btnTermsOfUse: {fileID: 3822893755621479493}
   btnClose: {fileID: 1789489376089305606}
   btnContinue: {fileID: 7850696944195035348}
   btnResetLevel: {fileID: 2938005899279251423}
@@ -21097,7 +21128,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Restore Purchases
+  m_text: Terms of Use
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 651a769f17a6fe144a1deea3025b3804, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 8edbc6f602abffe49af8fd43f3e74d98, type: 2}
@@ -25298,6 +25329,7 @@ GameObject:
   - component: {fileID: 523043698016342536}
   - component: {fileID: 7915014660348831477}
   - component: {fileID: 3080451628599356917}
+  - component: {fileID: 5663469337467539548}
   m_Layer: 5
   m_Name: PrivacyButtonContainer
   m_TagString: Untagged
@@ -25410,6 +25442,34 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &5663469337467539548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7734954497902971437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ac521f7b5d144f29ce7fa51ab822f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _frame: {fileID: 0}
+  _clickSprite: {fileID: 0}
+  _defaultSprite: {fileID: 0}
+  _disabledSprite: {fileID: 0}
+  _soundClick: 13
+  _text: {fileID: 0}
+  _activeTextScale: 0
+  _textBounceDuration: 0.2
+  _activeObject: {fileID: 0}
+  _deactiveObject: {fileID: 0}
+  OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+  _activeAnimate: 1
+  _bounceScale: 1.2
+  _bounceDuration: 0.2
 --- !u!1 &7826835810641013482
 GameObject:
   m_ObjectHideFlags: 0

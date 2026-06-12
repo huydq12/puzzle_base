@@ -1,5 +1,103 @@
 {
   "dependencies": {
+    "com.applovin.mediation.adapters.facebook.android": {
+      "version": "6200000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.facebook.ios": {
+      "version": "6210100.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.fyber.android": {
+      "version": "8040500.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.fyber.ios": {
+      "version": "8040700.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.google.android": {
+      "version": "25030000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.google.ios": {
+      "version": "13040000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.ironsource.android": {
+      "version": "904030000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.ironsource.ios": {
+      "version": "904010000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.mintegral.android": {
+      "version": "17016100.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.mintegral.ios": {
+      "version": "801030000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.unityads.android": {
+      "version": "4180000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.applovin.mediation.adapters.unityads.ios": {
+      "version": "4180000.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unity.packages.applovin.com"
+    },
+    "com.azur.application-identity": {
+      "version": "3.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://npm-ex.azurgames.com"
+    },
+    "com.azur.user-consent-manager": {
+      "version": "6.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://npm-ex.azurgames.com"
+    },
     "com.coffee.ui-effect": {
       "version": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
       "depth": 0,
@@ -7,7 +105,7 @@
       "dependencies": {
         "com.unity.ugui": "1.0.0"
       },
-      "hash": "815162eab9760a7567423deb47fd9d3437eb26d8"
+      "hash": "70937d2ce39b61c29c4feb4d13642c65bb553d6c"
     },
     "com.coffee.ui-particle": {
       "version": "https://github.com/mob-sakai/ParticleEffectForUGUI.git",
@@ -17,20 +115,45 @@
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
       },
-      "hash": "04c1ca72cde82318e11eb1281dc4c3d314a2e68c"
+      "hash": "92fb173507ece2c135c38733deeca82a6d49cacd"
     },
     "com.cysharp.unitask": {
-      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "version": "2.5.10",
       "depth": 0,
-      "source": "git",
+      "source": "registry",
       "dependencies": {},
-      "hash": "e5acc106ee196bc5a32fb14cdf2987b0f96d11e0"
+      "url": "https://package.openupm.com"
     },
-    "com.unity.2d.sprite": {
-      "version": "1.0.0",
+    "com.google.external-dependency-manager": {
+      "version": "1.2.186",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.google.firebase.analytics": {
+      "version": "file:../ThirdParty/OfficialSDKs/Firebase/com.google.firebase.analytics-13.11.0.tgz",
       "depth": 0,
-      "source": "builtin",
-      "dependencies": {}
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.11.0"
+      }
+    },
+    "com.google.firebase.app": {
+      "version": "file:../ThirdParty/OfficialSDKs/Firebase/com.google.firebase.app-13.11.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.186"
+      }
+    },
+    "com.google.firebase.remote-config": {
+      "version": "file:../ThirdParty/OfficialSDKs/Firebase/com.google.firebase.remote-config-13.11.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.11.0"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.21",
@@ -43,14 +166,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "2.11.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.device-simulator.devices": {
-      "version": "1.0.1",
+      "version": "2.12.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -88,15 +204,6 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.inputsystem": {
-      "version": "1.14.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.modules.uielements": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.mathematics": {
       "version": "1.2.6",
       "depth": 1,
@@ -114,19 +221,10 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.nuget.newtonsoft-json": {
-      "version": "3.2.2",
+      "version": "3.2.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.recorder": {
-      "version": "4.0.3",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.timeline": "1.0.0"
-      },
       "url": "https://packages.unity.com"
     },
     "com.unity.render-pipelines.core": {
@@ -226,6 +324,15 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "io.appmetrica.analytics": {
+      "version": "https://github.com/appmetrica/appmetrica-unity-plugin.git#v6.6.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.183"
+      },
+      "hash": "3281752ff1815c9f182283ae846ed87f1f194c7f"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

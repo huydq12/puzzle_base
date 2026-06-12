@@ -215,14 +215,22 @@ public class Gate : MonoBehaviour
 
     public bool TryActivateFallbackShooter(Shooter shooter)
     {
+        if (!CanActivateFallbackShooter(shooter)) return false;
+
+        shooter.CanShoot = true;
+        return true;
+    }
+
+    public bool CanActivateFallbackShooter(Shooter shooter)
+    {
         if (shooter == null) return false;
         if (IsClosed) return false;
         if (shooter.Gate != this) return false;
         if (shooter.Type != Shooter.RainbowType) return false;
         if (shooter.TieID != Shooter.FallbackRainbowShooterTieId) return false;
         if (shooter.Total <= 0) return false;
+        if (shooter.CanShoot) return false;
 
-        shooter.CanShoot = true;
         return true;
     }
 
