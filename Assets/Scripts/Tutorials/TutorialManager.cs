@@ -260,7 +260,7 @@ public class TutorialManager : Singleton<TutorialManager>
 
 	private void EnsureUIRefs(UIManager gameUI)
 	{
-		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.Get<UIBottomInGame>();
+		if (_uiBottomInGame == null) _uiBottomInGame = gameUI.GetExistUI<UIBottomInGame>();
 	}
 
 	private void HideActiveBoosterUseTutorial()

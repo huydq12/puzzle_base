@@ -204,6 +204,12 @@ public class UIManager : Singleton<UIManager>
         if (!TryResolveCreateInfo(type, out Transform container, out string resourcePath, out UIType uiType))
             return null;
 
+        if (container == null)
+        {
+            Debug.LogError($"[UIManager] Cannot create {type.Name}: missing UI container.");
+            return null;
+        }
+
         GameObject prefab = Resources.Load<GameObject>(resourcePath + type.Name);
         if (prefab == null)
         {
@@ -211,7 +217,10 @@ public class UIManager : Singleton<UIManager>
         }
 
         if (prefab == null)
+        {
+            Debug.LogError($"[UIManager] Cannot create {type.Name}: prefab not found at Resources/{resourcePath}{type.Name}.");
             return null;
+        }
 
         GameObject instance = Instantiate(prefab, container);
         instance.transform.localScale = Vector3.one;
