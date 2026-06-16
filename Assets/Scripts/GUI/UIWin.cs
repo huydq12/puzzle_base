@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
 using System.Collections.Generic;
-using AZUR;
 public class UIWin : UIPopup
 {
     [SerializeField] private Button btn_next;
@@ -377,24 +376,8 @@ public class UIWin : UIPopup
         var notification = UIManager.Instance != null ? UIManager.Instance.Get<UINotification>() : null;
         notification?.HideNow();
         AnalyticsBridge.OnRewardedAdRequested(placement);
-        bool shown = AzurAds.ShowRewarded(
-            onRewardGranted: () =>
-            {
-                AnalyticsBridge.OnRewardedAdRewardGranted(placement);
-                StartClaimRewardFlow(true, true);
-            },
-            placement: placement,
-            onClosedWithoutGrant: () =>
-            {
-                AnalyticsBridge.OnRewardedAdClosedWithoutGrant(placement);
-                notification?.ShowRewardNotGrantedToast();
-            });
-
-        if (!shown)
-        {
-            AnalyticsBridge.OnRewardedAdUnavailable(placement);
-            notification?.ShowRewardedUnavailableToast();
-        }
+        AnalyticsBridge.OnRewardedAdUnavailable(placement);
+        notification?.ShowRewardedUnavailableToast();
     }
 
     private void StartClaimRewardFlow(bool closeAfterAnimation, bool useAdsMultiplier)

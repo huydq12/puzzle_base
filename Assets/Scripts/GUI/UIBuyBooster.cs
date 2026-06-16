@@ -1,7 +1,6 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
-using AZUR;
 
 public class UIBuyBooster : UIPopup
 {
@@ -183,31 +182,8 @@ public class UIBuyBooster : UIPopup
         var toast = UIManager.Instance.Get<UINotification>();
         toast?.HideNow();
         AnalyticsBridge.OnRewardedAdRequested(placement);
-        bool shown = AzurAds.ShowRewarded(
-            onRewardGranted: () =>
-            {
-                AnalyticsBridge.OnRewardedAdRewardGranted(placement);
-                AddRequestedBooster();
-
-                if (toast != null)
-                    toast.ShowToast("Booster received");
-
-                RefreshBottomBoosterUI();
-                RefreshView();
-                UIManager.Instance.HideUI<UIBuyBooster>();
-            },
-            placement: placement,
-            onClosedWithoutGrant: () =>
-            {
-                AnalyticsBridge.OnRewardedAdClosedWithoutGrant(placement);
-                toast?.ShowRewardNotGrantedToast();
-            });
-
-        if (!shown)
-        {
-            AnalyticsBridge.OnRewardedAdUnavailable(placement);
-            toast?.ShowRewardedUnavailableToast();
-        }
+        AnalyticsBridge.OnRewardedAdUnavailable(placement);
+        toast?.ShowRewardedUnavailableToast();
     }
 
     private void AddRequestedBooster()

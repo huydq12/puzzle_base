@@ -4,7 +4,6 @@ using UnityEngine;
 using System;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using AZUR;
 
 public class LineController : Singleton<LineController>
 {
@@ -403,28 +402,9 @@ public class LineController : Singleton<LineController>
         notification?.HideNow();
         _isShowingFallbackRainbowReward = true;
         AnalyticsBridge.OnRewardedAdRequested(placement);
-
-        bool shown = AzurAds.ShowRewarded(
-            onRewardGranted: () =>
-            {
-                _isShowingFallbackRainbowReward = false;
-                AnalyticsBridge.OnRewardedAdRewardGranted(placement);
-                gate.TryActivateFallbackShooter(shooter);
-            },
-            placement: placement,
-            onClosedWithoutGrant: () =>
-            {
-                _isShowingFallbackRainbowReward = false;
-                AnalyticsBridge.OnRewardedAdClosedWithoutGrant(placement);
-                notification?.ShowRewardNotGrantedToast();
-            });
-
-        if (!shown)
-        {
-            _isShowingFallbackRainbowReward = false;
-            AnalyticsBridge.OnRewardedAdUnavailable(placement);
-            notification?.ShowRewardedUnavailableToast();
-        }
+        _isShowingFallbackRainbowReward = false;
+        AnalyticsBridge.OnRewardedAdUnavailable(placement);
+        notification?.ShowRewardedUnavailableToast();
     }
     private void OnTouchMoved()
     {

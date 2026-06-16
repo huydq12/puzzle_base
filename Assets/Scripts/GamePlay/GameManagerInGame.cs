@@ -8,7 +8,6 @@ using UnityEditor;
 
 using System.Collections;
 using System.Collections.Generic;
-using AZUR;
 using Gley.Notifications;
 using TMPro;
 using UnityEngine.UI;
@@ -466,7 +465,7 @@ public class GameManagerInGame : Singleton<GameManagerInGame>
 
     private void OnClickDebugMax()
     {
-        AzurAds.ShowMediationDebugger();
+        Debug.Log("Mediation debugger is unavailable because the ad SDK has been removed.");
     }
 
     private void OnClickActiveTool()

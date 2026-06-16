@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using AZUR;
 
 public static class AnalyticsBridgeAzurRelay
 {
@@ -18,6 +17,5 @@ public static class AnalyticsBridgeAzurRelay
 
     private static void ForwardCustomEvent(string eventName, Dictionary<string, object> parameters)
     {
-        AzurSdk.TrackEvent(eventName, parameters);
     }
 }
