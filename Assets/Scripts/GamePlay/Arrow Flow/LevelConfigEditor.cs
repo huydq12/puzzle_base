@@ -50,6 +50,7 @@ public class LevelConfigEditor : OdinEditor
     private bool _isColorDragging;
     private ColorLine _currentDrawingLine;
     private ColorLine _selectedLine;
+    private bool _isConveyorDragging;
 
     private bool _showElementTypes = true;
     private bool _showElementTypeZero = false;
@@ -345,6 +346,16 @@ public class LevelConfigEditor : OdinEditor
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             _conveyorIsHoleBrush = EditorGUILayout.ToggleLeft("Conveyor Is Hole", _conveyorIsHoleBrush, GUILayout.Width(240));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Close / Normalize Active Conveyor Loop", GUILayout.Width(320)))
+            {
+                if (TryCloseActiveConveyorLoop())
+                    EditorUtility.SetDirty(_levelconfig);
+            }
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }
@@ -832,6 +843,7 @@ public class LevelConfigEditor : OdinEditor
                     {
                         if (e.button == 0)
                         {
+                            _isConveyorDragging = true;
                             Vector2Int targetPos = new Vector2Int(x, y);
                             cell.CellType = GridCellType.Conveyor;
 
@@ -854,6 +866,16 @@ public class LevelConfigEditor : OdinEditor
                         }
                         EditorUtility.SetDirty(_levelconfig);
                         e.Use();
+                    }
+                    else if (e.type == EventType.MouseUp)
+                    {
+                        if (_isConveyorDragging)
+                        {
+                            TryCloseActiveConveyorLoop();
+                            EditorUtility.SetDirty(_levelconfig);
+                        }
+
+                        _isConveyorDragging = false;
                     }
                 }
             }
@@ -1108,6 +1130,277 @@ public class LevelConfigEditor : OdinEditor
         if (conveyor.IsHoles == null) conveyor.IsHoles = new List<bool>();
         _levelconfig.SetConveyorLines(conveyors);
         return conveyor;
+    }
+
+    private bool TryCloseActiveConveyorLoop()
+    {
+        List<ConveyorLine> conveyors = GetEditableConveyorLines();
+        if (_activeConveyorLineIndex < 0 || _activeConveyorLineIndex >= conveyors.Count) return false;
+
+        ConveyorLine conveyor = conveyors[_activeConveyorLineIndex];
+        bool changed = TryNormalizeConveyorLoop(conveyor, _levelconfig.Columns, _levelconfig.Rows);
+        if (changed)
+        {
+            SyncGridCellsFromConveyors();
+            _levelconfig.SetConveyorLines(conveyors);
+            Repaint();
+        }
+
+        return changed;
+    }
+
+    private static bool TryNormalizeConveyorLoop(ConveyorLine conveyor, int columns, int rows)
+    {
+        if (conveyor == null || conveyor.Cells == null || conveyor.Cells.Count < 2) return false;
+
+        EnsureConveyorMeta(conveyor);
+
+        List<ConveyorNodeData> nodes = BuildDistinctInBoundsConveyorNodes(conveyor, columns, rows);
+        if (nodes.Count < 2) return false;
+
+        bool changed = nodes.Count != conveyor.Cells.Count;
+        List<ConveyorNodeData> orderedNodes = nodes;
+
+        if (!IsNeighborChain(orderedNodes))
+        {
+            List<ConveyorNodeData> reordered = TryOrderConnectedConveyorNodes(orderedNodes);
+            if (reordered == null || reordered.Count != orderedNodes.Count) return false;
+
+            orderedNodes = reordered;
+            changed = true;
+        }
+
+        if (!IsClosedNeighborLoop(orderedNodes))
+        {
+            List<Vector2Int> bridge = BuildChebyshevPath(orderedNodes[orderedNodes.Count - 1].Cell, orderedNodes[0].Cell);
+            if (bridge.Count > 0)
+            {
+                HashSet<Vector2Int> existing = new HashSet<Vector2Int>(orderedNodes.Select(n => n.Cell));
+                foreach (Vector2Int p in bridge)
+                {
+                    if (p.x < 0 || p.x >= columns || p.y < 0 || p.y >= rows) return false;
+                    if (existing.Contains(p)) return false;
+
+                    orderedNodes.Add(new ConveyorNodeData(p, 0, 0, false));
+                    existing.Add(p);
+                    changed = true;
+                }
+            }
+        }
+
+        if (!IsClosedNeighborLoop(orderedNodes)) return false;
+
+        ApplyConveyorNodes(conveyor, orderedNodes);
+        return changed;
+    }
+
+    private static void EnsureConveyorMeta(ConveyorLine conveyor)
+    {
+        if (conveyor.Types == null) conveyor.Types = new List<int>();
+        if (conveyor.Counters == null) conveyor.Counters = new List<int>();
+        if (conveyor.IsHoles == null) conveyor.IsHoles = new List<bool>();
+
+        int count = conveyor.Cells?.Count ?? 0;
+        while (conveyor.Types.Count < count) conveyor.Types.Add(0);
+        while (conveyor.Counters.Count < count) conveyor.Counters.Add(0);
+        while (conveyor.IsHoles.Count < count) conveyor.IsHoles.Add(false);
+
+        if (conveyor.Types.Count > count) conveyor.Types.RemoveRange(count, conveyor.Types.Count - count);
+        if (conveyor.Counters.Count > count) conveyor.Counters.RemoveRange(count, conveyor.Counters.Count - count);
+        if (conveyor.IsHoles.Count > count) conveyor.IsHoles.RemoveRange(count, conveyor.IsHoles.Count - count);
+    }
+
+    private static List<ConveyorNodeData> BuildDistinctInBoundsConveyorNodes(ConveyorLine conveyor, int columns, int rows)
+    {
+        List<ConveyorNodeData> nodes = new List<ConveyorNodeData>();
+        HashSet<Vector2Int> seen = new HashSet<Vector2Int>();
+
+        for (int i = 0; i < conveyor.Cells.Count; i++)
+        {
+            Vector2Int cell = conveyor.Cells[i];
+            if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows) continue;
+            if (!seen.Add(cell)) continue;
+
+            int type = conveyor.Types != null && i < conveyor.Types.Count ? conveyor.Types[i] : 0;
+            int counter = conveyor.Counters != null && i < conveyor.Counters.Count ? conveyor.Counters[i] : 0;
+            bool isHole = conveyor.IsHoles != null && i < conveyor.IsHoles.Count && conveyor.IsHoles[i];
+            nodes.Add(new ConveyorNodeData(cell, type, counter, isHole));
+        }
+
+        return nodes;
+    }
+
+    private static List<ConveyorNodeData> TryOrderConnectedConveyorNodes(List<ConveyorNodeData> nodes)
+    {
+        Dictionary<Vector2Int, ConveyorNodeData> byCell = nodes.ToDictionary(n => n.Cell, n => n);
+        Dictionary<Vector2Int, List<Vector2Int>> neighbors = new Dictionary<Vector2Int, List<Vector2Int>>();
+
+        foreach (ConveyorNodeData node in nodes)
+        {
+            List<Vector2Int> nodeNeighbors = new List<Vector2Int>();
+            foreach (Vector2Int candidate in GetNeighborCells(node.Cell))
+            {
+                if (byCell.ContainsKey(candidate))
+                    nodeNeighbors.Add(candidate);
+            }
+
+            if (nodeNeighbors.Count == 0 || nodeNeighbors.Count > 2)
+                return null;
+
+            nodeNeighbors.Sort((a, b) =>
+            {
+                int cmp = a.y.CompareTo(b.y);
+                return cmp != 0 ? cmp : a.x.CompareTo(b.x);
+            });
+            neighbors[node.Cell] = nodeNeighbors;
+        }
+
+        List<Vector2Int> endpoints = neighbors
+            .Where(kvp => kvp.Value.Count == 1)
+            .Select(kvp => kvp.Key)
+            .OrderBy(c => c.y)
+            .ThenBy(c => c.x)
+            .ToList();
+        Vector2Int start = endpoints.Count > 0
+            ? endpoints[0]
+            : nodes.OrderBy(n => n.Cell.y).ThenBy(n => n.Cell.x).First().Cell;
+
+        List<ConveyorNodeData> ordered = new List<ConveyorNodeData>();
+        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+        Vector2Int current = start;
+        Vector2Int previous = new Vector2Int(int.MinValue, int.MinValue);
+
+        while (true)
+        {
+            ordered.Add(byCell[current]);
+            visited.Add(current);
+
+            Vector2Int next = new Vector2Int(int.MinValue, int.MinValue);
+            foreach (Vector2Int neighbor in neighbors[current])
+            {
+                if (neighbor == previous) continue;
+                if (visited.Contains(neighbor)) continue;
+                next = neighbor;
+                break;
+            }
+
+            if (next.x == int.MinValue) break;
+
+            previous = current;
+            current = next;
+        }
+
+        return ordered.Count == nodes.Count ? ordered : null;
+    }
+
+    private void SyncGridCellsFromConveyors()
+    {
+        if (_levelconfig == null || _levelconfig.Cells == null) return;
+
+        int columns = _levelconfig.Columns;
+        int rows = _levelconfig.Rows;
+
+        for (int x = 0; x < columns; x++)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                if (_levelconfig.Cells[x, y] == null)
+                    _levelconfig.Cells[x, y] = new GridCellData();
+
+                if (_levelconfig.Cells[x, y].CellType == GridCellType.Conveyor)
+                    _levelconfig.Cells[x, y].CellType = GridCellType.Normal;
+            }
+        }
+
+        List<ConveyorLine> conveyors = GetEditableConveyorLines();
+        foreach (ConveyorLine conveyor in conveyors)
+        {
+            if (conveyor?.Cells == null) continue;
+            foreach (Vector2Int cell in conveyor.Cells)
+            {
+                if (cell.x < 0 || cell.x >= columns || cell.y < 0 || cell.y >= rows) continue;
+                _levelconfig.Cells[cell.x, cell.y].CellType = GridCellType.Conveyor;
+            }
+        }
+    }
+
+    private static bool IsNeighborChain(List<ConveyorNodeData> nodes)
+    {
+        if (nodes == null || nodes.Count < 2) return false;
+
+        for (int i = 0; i < nodes.Count - 1; i++)
+        {
+            if (!Are8Neighbors(nodes[i].Cell, nodes[i + 1].Cell))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsClosedNeighborLoop(List<ConveyorNodeData> nodes)
+    {
+        if (nodes == null || nodes.Count < 3) return false;
+        if (!IsNeighborChain(nodes)) return false;
+        return Are8Neighbors(nodes[nodes.Count - 1].Cell, nodes[0].Cell);
+    }
+
+    private static bool Are8Neighbors(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int d = b - a;
+        return Mathf.Max(Mathf.Abs(d.x), Mathf.Abs(d.y)) == 1;
+    }
+
+    private static IEnumerable<Vector2Int> GetNeighborCells(Vector2Int cell)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                yield return new Vector2Int(cell.x + dx, cell.y + dy);
+            }
+        }
+    }
+
+    private static List<Vector2Int> BuildChebyshevPath(Vector2Int from, Vector2Int to)
+    {
+        List<Vector2Int> path = new List<Vector2Int>();
+        Vector2Int current = from;
+
+        while (current != to)
+        {
+            int sx = Math.Sign(to.x - current.x);
+            int sy = Math.Sign(to.y - current.y);
+            current = new Vector2Int(current.x + sx, current.y + sy);
+            if (current == to) break;
+            path.Add(current);
+        }
+
+        return path;
+    }
+
+    private static void ApplyConveyorNodes(ConveyorLine conveyor, List<ConveyorNodeData> nodes)
+    {
+        conveyor.Cells = nodes.Select(n => n.Cell).ToList();
+        conveyor.Types = nodes.Select(n => n.Type).ToList();
+        conveyor.Counters = nodes.Select(n => n.Counter).ToList();
+        conveyor.IsHoles = nodes.Select(n => n.IsHole).ToList();
+    }
+
+    private readonly struct ConveyorNodeData
+    {
+        public readonly Vector2Int Cell;
+        public readonly int Type;
+        public readonly int Counter;
+        public readonly bool IsHole;
+
+        public ConveyorNodeData(Vector2Int cell, int type, int counter, bool isHole)
+        {
+            Cell = cell;
+            Type = type;
+            Counter = counter;
+            IsHole = isHole;
+        }
     }
 
     private void RemoveConveyorCellFromAllLines(Vector2Int targetPos)
